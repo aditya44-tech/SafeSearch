@@ -92,7 +92,15 @@ export default function ReportDetailClient({ report }: { report: Report }) {
 
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
 
-  const TEAM = ["Mike Chen", "Sarah Park", "James Wilson", "Lisa Rodriguez", "Tom Bradley"];
+  const DEPARTMENTS = [
+    { name: "Electrical", icon: "\u26A1" },
+    { name: "Structural", icon: "\uD83C\uDFD7\uFE0F" },
+    { name: "Chemical Safety", icon: "\u2622\uFE0F" },
+    { name: "Mechanical", icon: "\u2699\uFE0F" },
+    { name: "Traffic & Vehicles", icon: "\uD83D\uDE97" },
+    { name: "General Maintenance", icon: "\uD83D\uDD27" },
+    { name: "Safety Compliance", icon: "\uD83D\uDEE1\uFE0F" },
+  ];
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) return;
@@ -378,7 +386,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               <div className="flex gap-2">
                 <select value={taskForm.assignedTo} onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
                   className="flex-1 px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>
-                  {TEAM.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {DEPARTMENTS.map((d) => <option key={d.name} value={d.name}>{d.icon} {d.name}</option>)}
                 </select>
                 <select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
                   className="px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>
@@ -414,7 +422,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                   low: { bg: "var(--color-safe-light)", text: "var(--color-safe)" },
                 };
                 const pc = priorityColors[task.priority] || priorityColors.normal;
-                const isComplete = task.status === "completed";
+                const isComplete = task.status === "done";
                 return (
                   <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg transition-all duration-200"
                     style={{ background: isComplete ? "var(--color-surface-sunken)" : "var(--color-surface-raised)", border: "1px solid var(--color-border)", opacity: isComplete ? 0.7 : 1 }}>
@@ -430,7 +438,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                           background: isComplete ? "var(--color-safe-light)" : task.status === "in_progress" ? "var(--color-warning-light)" : "var(--color-surface-sunken)",
                           color: isComplete ? "var(--color-safe)" : task.status === "in_progress" ? "var(--color-warning)" : "var(--color-ink-faint)",
                         }}>
-                          {task.status === "in_progress" ? "In Progress" : task.status}
+                          {task.status === "in_progress" ? "In Progress" : task.status === "done" ? "Done" : task.status}
                         </span>
                       </div>
                       <div className="text-[11px] text-[var(--color-ink-faint)]">
@@ -440,16 +448,16 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                       {task.description && <p className="text-xs text-[var(--color-ink-muted)] mt-1">{task.description}</p>}
                     </div>
                     <div className="flex gap-1.5 flex-shrink-0">
-                      {task.status === "assigned" && (
+                      {task.status === "open" && (
                         <button onClick={() => handleTaskStatus(task.id, "in_progress")}
                           className="px-3 py-1 text-[11px] font-medium rounded-md text-white" style={{ background: "var(--color-accent)" }}>
-                          Start
+                          Start work
                         </button>
                       )}
                       {task.status === "in_progress" && (
-                        <button onClick={() => handleTaskStatus(task.id, "completed")}
+                        <button onClick={() => handleTaskStatus(task.id, "done")}
                           className="px-3 py-1 text-[11px] font-medium rounded-md text-white" style={{ background: "var(--color-safe)" }}>
-                          Complete
+                          Mark done
                         </button>
                       )}
                       {!isComplete && (

@@ -80,9 +80,9 @@ model SiteScore {
 }
 
 enum TaskStatus {
-  assigned
+  open
   in_progress
-  completed
+  done
   cancelled
 }
 
@@ -100,7 +100,7 @@ model Task {
   title       String
   description String?
   assignedTo  String
-  status      TaskStatus   @default(assigned)
+  status      TaskStatus   @default(open)
   priority    TaskPriority @default(normal)
   dueDate     DateTime?
   createdAt   DateTime     @default(now())

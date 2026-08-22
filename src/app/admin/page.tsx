@@ -20,7 +20,7 @@ export default async function AdminPage() {
   // Stats
   const pendingReports = reports.filter((r) => r.status === "pending" || r.status === "analyzed").length;
   const overdueTasks = tasks.filter((t) =>
-    t.status !== "completed" && t.status !== "cancelled" && t.dueDate && new Date(t.dueDate) < new Date()
+    t.status !== "done" && t.status !== "cancelled" && t.dueDate && new Date(t.dueDate) < new Date()
   ).length;
 
   return (

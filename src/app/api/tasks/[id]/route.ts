@@ -39,13 +39,13 @@ export async function PATCH(
     });
   }
 
-  // If task completed and report was acknowledged, auto-resolve
-  if (body.status === "completed" && task.status !== "completed") {
+  // If task done and report was acknowledged, auto-resolve
+  if (body.status === "done" && task.status !== "done") {
     const report = await prisma.safetyReport.findUnique({ where: { id: task.reportId } });
     if (report && report.status === "acknowledged") {
       // Check if all tasks for this report are completed
       const openTasks = await prisma.task.count({
-        where: { reportId: task.reportId, status: { not: "completed" }, id: { not: id } },
+        where: { reportId: task.reportId, status: { not: "done" }, id: { not: id } },
       });
       if (openTasks === 0) {
         await prisma.safetyReport.update({
