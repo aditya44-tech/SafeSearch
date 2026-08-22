@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeSignal — Complete Project Report</title>
+<style>
+  :root {
+    --bg: #fafaf8; --surface: #fff; --sunken: #f3f2ef; --ink: #1a1a1a;
+    --muted: #6b6b6b; --faint: #9e9e9e; --border: #e5e3df;
+    --accent: #0f766e; --accent-light: #ccfbf1; --danger: #dc2626;
+    --danger-light: #fef2f2; --warning: #d97706; --warning-light: #fffbeb;
+    --safe: #16a34a; --safe-light: #f0fdf4;
+    --code-bg: #1e1e2e; --code-text: #cdd6f4; --code-green: #a6e3a1;
+    --code-red: #f38ba8; --code-yellow: #f9e2af; --code-blue: #89b4fa;
+    --code-purple: #cba6f7;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .container{max-width:1100px;margin:0 auto;padding:0 24px}
+  .hero{padding:48px 0 32px;border-bottom:1px solid var(--border);margin-bottom:40px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--accent-light);color:var(--accent);border-radius:999px;font-size:12px;font-weight:600;margin-bottom:16px}
+  .hero h1{font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-0.02em;line-height:1.15;margin-bottom:12px}
+  .hero p{font-size:16px;color:var(--muted);max-width:640px}
+  section{margin-bottom:48px}
+  section>h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  section>h2 .num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--accent);color:white;border-radius:8px;font-size:14px;font-weight:700;flex-shrink:0}
+  section>h3{font-size:17px;font-weight:600;margin:20px 0 10px;color:var(--ink)}
+  section>.desc{color:var(--muted);font-size:14px;margin-bottom:20px;max-width:700px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:12px 0}
+  .code{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:16px 20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;line-height:1.7;overflow-x:auto;margin:12px 0;white-space:pre}
+  .code .kw{color:var(--code-purple)}.code .st{color:var(--code-green)}.code .cm{color:var(--code-blue);font-style:italic}.code .fn{color:var(--code-yellow)}.code .op{color:var(--code-red)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+  th{text-align:left;padding:10px 12px;background:var(--sunken);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:2px solid var(--border)}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+  .tag-high{background:var(--danger-light);color:var(--danger)}.tag-med{background:var(--warning-light);color:var(--warning)}.tag-low{background:var(--safe-light);color:var(--safe)}.tag-accent{background:var(--accent-light);color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+  .stat-val{font-size:28px;font-weight:700;letter-spacing:-0.02em;color:var(--accent)}
+  .stat-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-top:4px}
+  .note{border-left:3px solid var(--accent);background:var(--accent-light);padding:14px 18px;border-radius:0 8px 8px 0;font-size:13px;margin:12px 0;color:var(--ink)}
+  .note strong{color:var(--accent)}
+  .warn{border-left-color:var(--warning);background:var(--warning-light)}.warn strong{color:var(--warning)}
+  .err{border-left-color:var(--danger);background:var(--danger-light)}.err strong{color:var(--danger)}
+  .flow{display:flex;align-items:center;gap:0;padding:16px;overflow-x:auto;justify-content:center;flex-wrap:wrap}
+  .flow-step{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 12px;min-width:80px}
+  .flow-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:6px}
+  .flow-lbl{font-size:11px;font-weight:600}.flow-sub{font-size:10px;color:var(--muted);margin-top:2px}
+  .flow-arrow{font-size:18px;color:var(--faint);flex-shrink:0;padding:0 2px}
+  hr{border:none;border-top:1px solid var(--border);margin:32px 0}
+  ul,ol{padding-left:20px;margin:8px 0}li{margin:4px 0;font-size:14px}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--sunken);padding:1px 5px;border-radius:4px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  section{animation:fadeUp .35s ease-out both}
+  @media(prefers-reduced-motion:reduce){section{animation:none}}
+  @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:0 0 40px}
+  .toc h3{font-size:15px;font-weight:700;margin-bottom:12px}
+  .toc ol{columns:2;column-gap:32px;padding-left:18px}
+  .toc li{font-size:13px;margin:3px 0}
+  .toc a{color:var(--accent);text-decoration:none;font-weight:500}
+  .toc a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="badge">📋 COMPLETE PROJECT REPORT</div>
+  <h1>SafeSignal</h1>
+  <p>Workplace Safety Early Warning System — AI-powered analysis of safety reports to detect precursors of serious injury and fatality (SIF) incidents. Built for SIH hackathon demo.</p>
+</header>
+
+<nav class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#s1">System Overview</a></li>
+    <li><a href="#s2">Tech Stack &amp; Infrastructure</a></li>
+    <li><a href="#s3">Data Model</a></li>
+    <li><a href="#s4">API Routes</a></li>
+    <li><a href="#s5">AI Analysis Pipeline</a></li>
+    <li><a href="#s6">Auto-Task Generation</a></li>
+    <li><a href="#s7">Pages &amp; Features</a></li>
+    <li><a href="#s8">Clustering Algorithm</a></li>
+    <li><a href="#s9">Anomaly Detection</a></li>
+    <li><a href="#s10">Natural Language Query</a></li>
+    <li><a href="#s11">Photo Cross-Check</a></li>
+    <li><a href="#s12">SLA &amp; Scoring</a></li>
+    <li><a href="#s13">Admin &amp; Task Management</a></li>
+    <li><a href="#s14">PDF Export</a></li>
+    <li><a href="#s15">Audit Logging</a></li>
+    <li><a href="#s16">Deployment &amp; Configuration</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s1">
+<h2><span class="num">1</span> System Overview</h2>
+<p class="desc">SafeSignal collects workplace safety reports, uses AI to classify their risk level, auto-generates corrective tasks, and provides dashboards for safety officers to track and resolve hazards.</p>
+
+<div class="flow">
+  <div class="flow-step"><div class="flow-icon" style="background:var(--accent-light);color:var(--accent)">📝</div><div class="flow-lbl">Report</div><div class="flow-sub">Worker submits</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon" style="background:#e0e7ff;color:#4f46e5">🤖</div><div class="flow-lbl">Analyze</div><div class="flow-sub">Gemini classifies</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon" style="background:var(--warning-light);color:var(--warning)">📋</div><div class="flow-lbl">Tasks</div><div class="flow-sub">Auto-generated</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon" style="background:var(--safe-light);color:var(--safe)">✅</div><div class="flow-lbl">Resolve</div><div class="flow-sub">Dept completes</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon" style="background:var(--danger-light);color:var(--danger)">📊</div><div class="flow-lbl">Dashboard</div><div class="flow-sub">Analytics &amp; alerts</div></div>
+</div>
+
+<h3>What happens when you click "Run AI analysis"</h3>
+<div class="card">
+<ol>
+  <li><strong>Gemini classifies</strong> the report → risk level (high/medium/low), hazard category, one-sentence justification</li>
+  <li><strong>SLA deadline</strong> is calculated: high=24h, medium=72h, low=7 days</li>
+  <li><strong>Audit log entry</strong> is created: "report_analyzed"</li>
+  <li><strong>Site score</strong> is recalculated (high-risk reports cost 15 points each)</li>
+  <li><strong>Clustering</strong> groups this report with semantically similar ones via text similarity</li>
+  <li><strong>Task extraction</strong> (second Gemini call for medium/high): generates 1-3 corrective tasks with department assignment</li>
+  <li>Tasks are <strong>auto-created</strong> in the database with correct department, priority, and due date</li>
+  <li>If risk is <strong>high</strong>, a toast notification fires: "Alert sent to Safety Officer"</li>
+</ol>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s2">
+<h2><span class="num">2</span> Tech Stack &amp; Infrastructure</h2>
+<table>
+<tr><th>Component</th><th>Technology</th><th>Details</th></tr>
+<tr><td>Framework</td><td>Next.js 16</td><td>App Router, React 19, Turbopack, server components</td></tr>
+<tr><td>Database</td><td>Neon PostgreSQL</td><td>Serverless, free tier, hosted at aws.neon.tech. Connection via Prisma driver adapter</td></tr>
+<tr><td>ORM</td><td>Prisma 7.9</td><td>Schema-first, generates TypeScript client. Uses <code>@prisma/adapter-neon</code></td></tr>
+<tr><td>AI</td><td>Google Gemini</td><td>5-model fallback chain: gemini-3.6-flash → 3.5-flash → flash-latest → 2.5-flash-lite → 2.5-flash</td></tr>
+<tr><td>Charts</td><td>Recharts 3</td><td>Bar charts, line charts, responsive containers</td></tr>
+<tr><td>Styling</td><td>Tailwind CSS v4</td><td>Custom design tokens via <code>@theme</code>, Space Grotesk + DM Sans fonts</td></tr>
+<tr><td>Language</td><td>TypeScript 5</td><td>Strict mode, path aliases (<code>@/*</code> → <code>src/*</code>)</td></tr>
+<tr><td>Hosting</td><td>Vercel</td><td>Auto-deploys from GitHub main branch</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s3">
+<h2><span class="num">3</span> Data Model</h2>
+<p class="desc">4 models, all with auto-increment integer IDs and proper indexes.</p>
+
+<h3>SafetyReport</h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+<tr><td><code>id</code></td><td>Int (auto-increment)</td><td>Primary key — numeric, sequential</td></tr>
+<tr><td><code>reportText</code></td><td>String</td><td>Raw free-text report from the worker</td></tr>
+<tr><td><code>site</code></td><td>String</td><td>Location name (e.g. "Metro Industrial Park")</td></tr>
+<tr><td><code>reporterRole</code></td><td>String</td><td>Job title of reporter (e.g. "Supervisor", "Field Worker")</td></tr>
+<tr><td><code>reportedAt</code></td><td>DateTime</td><td>When the report was submitted</td></tr>
+<tr><td><code>status</code></td><td>Enum</td><td><code>pending</code> → <code>analyzed</code> → <code>acknowledged</code> → <code>resolved</code></td></tr>
+<tr><td><code>riskLevel</code></td><td>RiskLevel?</td><td><code>high</code> / <code>medium</code> / <code>low</code> — null until analyzed</td></tr>
+<tr><td><code>hazardCategory</code></td><td>String?</td><td>AI-classified category (e.g. "Fall Hazard", "Electrical")</td></tr>
+<tr><td><code>justification</code></td><td>String?</td><td>AI's one-sentence explanation</td></tr>
+<tr><td><code>analyzedAt</code></td><td>DateTime?</td><td>When AI analysis was performed</td></tr>
+<tr><td><code>slaDeadline</code></td><td>DateTime?</td><td>Calculated from risk level (high=+24h, medium=+72h, low=+7d)</td></tr>
+<tr><td><code>clusterId</code></td><td>String?</td><td>Groups semantically similar reports</td></tr>
+<tr><td><code>humanOverrideRiskLevel</code></td><td>RiskLevel?</td><td>Human reviewer's override of AI assessment</td></tr>
+<tr><td><code>overrideReason</code></td><td>String?</td><td>Why the override was made</td></tr>
+<tr><td><code>overriddenBy</code></td><td>String?</td><td>Who made the override</td></tr>
+<tr><td><code>photoUrl</code></td><td>String?</td><td>Attached evidence photo (base64 reference)</td></tr>
+<tr><td><code>originalLanguage</code></td><td>String?</td><td>Language the report was submitted in</td></tr>
+</table>
+
+<h3>AuditLog</h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+<tr><td><code>id</code></td><td>Int</td><td>Primary key</td></tr>
+<tr><td><code>reportId</code></td><td>Int (FK → SafetyReport)</td><td>Which report this log entry is about</td></tr>
+<tr><td><code>action</code></td><td>String</td><td>Event type (see audit actions below)</td></tr>
+<tr><td><code>performedBy</code></td><td>String</td><td>Who did it ("Gemini AI", "Current User", "System")</td></tr>
+<tr><td><code>timestamp</code></td><td>DateTime</td><td>When it happened</td></tr>
+<tr><td><code>details</code></td><td>String?</td><td>Human-readable description of the change</td></tr>
+</table>
+
+<h3>SiteScore</h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+<tr><td><code>site</code></td><td>String (unique)</td><td>Site name</td></tr>
+<tr><td><code>totalReports</code></td><td>Int</td><td>Total reports for this site</td></tr>
+<tr><td><code>highRiskCount</code></td><td>Int</td><td>Number of high-risk reports</td></tr>
+<tr><td><code>avgResolutionHours</code></td><td>Float</td><td>Average time to resolve reports</td></tr>
+<tr><td><code>scoreValue</code></td><td>Float</td><td>0-100 safety score</td></tr>
+</table>
+
+<h3>Task</h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+<tr><td><code>id</code></td><td>Int</td><td>Primary key</td></tr>
+<tr><td><code>reportId</code></td><td>Int (FK → SafetyReport)</td><td>Linked report</td></tr>
+<tr><td><code>title</code></td><td>String</td><td>Task title (max 80 chars)</td></tr>
+<tr><td><code>description</code></td><td>String?</td><td>Detailed description</td></tr>
+<tr><td><code>assignedTo</code></td><td>String</td><td>Department name</td></tr>
+<tr><td><code>status</code></td><td>TaskStatus</td><td><code>open</code> → <code>in_progress</code> → <code>done</code> | <code>cancelled</code></td></tr>
+<tr><td><code>priority</code></td><td>TaskPriority</td><td><code>urgent</code> / <code>high</code> / <code>normal</code> / <code>low</code></td></tr>
+<tr><td><code>dueDate</code></td><td>DateTime?</td><td>Set from report's SLA deadline</td></tr>
+</table>
+
+<h3>Relationships</h3>
+<div class="card">
+<pre style="font-family:monospace;font-size:13px;line-height:1.8">
+SafetyReport ──┬── AuditLog[]     (1:N, cascade delete)
+               ├── Task[]         (1:N, cascade delete)
+               └── SiteScore      (1:1 via site name)
+
+Task ──────────── SafetyReport    (N:1, cascade delete)
+</pre>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s4">
+<h2><span class="num">4</span> API Routes</h2>
+<table>
+<tr><th>Method</th><th>Route</th><th>Purpose</th></tr>
+<tr><td><span class="tag tag-accent">GET</span></td><td><code>/api/reports</code></td><td>List all reports (newest first)</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/reports</code></td><td>Create a new report (body: reportText, site, reporterRole)</td></tr>
+<tr><td><span class="tag tag-accent">GET</span></td><td><code>/api/reports/[id]</code></td><td>Get single report by ID</td></tr>
+<tr><td><span class="tag tag-accent">PATCH</span></td><td><code>/api/reports/[id]</code></td><td>Update report status, logs audit entry, recalculates site score</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/reports/[id]/analyze</code></td><td>Run AI analysis — the core pipeline (see §5)</td></tr>
+<tr><td><span class="tag tag-accent">PATCH</span></td><td><code>/api/reports/[id]/override</code></td><td>Human override of AI risk assessment (body: riskLevel, reason)</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/reports/[id]/photo</code></td><td>Upload photo + cross-check with Gemini Vision</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/reports/cluster</code></td><td>Cluster a report with similar ones (text similarity)</td></tr>
+<tr><td><span class="tag tag-accent">GET</span></td><td><code>/api/reports/cluster</code></td><td>Get all clusters grouped by clusterId</td></tr>
+<tr><td><span class="tag tag-accent">GET</span></td><td><code>/api/reports/anomaly-check</code></td><td>Detect sites with sudden spike in reports</td></tr>
+<tr><td><span class="tag tag-accent">GET</span></td><td><code>/api/tasks</code></td><td>List tasks (filterable by status, assignee, reportId)</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/tasks</code></td><td>Create a task (body: reportId, title, assignedTo, priority)</td></tr>
+<tr><td><span class="tag tag-accent">PATCH</span></td><td><code>/api/tasks/[id]</code></td><td>Update task status/fields, auto-resolves report if all tasks done</td></tr>
+<tr><td><span class="tag tag-accent">DELETE</span></td><td><code>/api/tasks/[id]</code></td><td>Delete a task</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/query</code></td><td>Natural language query — Gemini answers from report data</td></tr>
+<tr><td><span class="tag tag-accent">POST</span></td><td><code>/api/pdf</code></td><td>Generate HTML/PDF report summary</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s5">
+<h2><span class="num">5</span> AI Analysis Pipeline</h2>
+<p class="desc">The most critical feature. When "Run AI analysis" is clicked on a report, this pipeline executes in sequence.</p>
+
+<h3>Step 1: Classification (Gemini call #1)</h3>
+<div class="card">
+<p><strong>Prompt sent to Gemini:</strong></p>
+<div class="code"><span class="cm">You are a workplace safety analyst reviewing near-miss and unsafe-condition
+reports to detect early warning signs of a potential serious injury or fatality (SIF).
+
+Given the report below, respond with ONLY valid JSON:
+
+{
+  "risk_level": "high" | "medium" | "low",
+  "hazard_category": "&lt;short category&gt;",
+  "justification": "&lt;one sentence explaining why&gt;"
+}
+
+Guidance:
+- "high" = credible path to serious injury or death if unaddressed
+- "medium" = real hazard but lower severity or already partially mitigated
+- "low" = minor/procedural issue unlikely to cause serious harm
+
+Report:
+Site: {{site}}
+Reporter role: {{reporterRole}}
+Report text: "{{reportText}}"</span></div>
+<p style="margin-top:12px"><strong>Config:</strong> temperature=0.1, maxOutputTokens=500, responseMimeType="application/json"</p>
+<p><strong>Fallback:</strong> If no Gemini API key or all 5 models fail → keyword-based classifier in <code>fallbackAnalysis()</code> scans report text for danger words (fall, unguarded, exposed wiring, confined space, etc.)</p>
+</div>
+
+<h3>Step 2: Update Database</h3>
+<div class="code"><span class="kw">await</span> prisma.safetyReport.update({
+  where: { id },
+  data: {
+    riskLevel: analysis.risk_level,      <span class="cm">// "high" | "medium" | "low"</span>
+    hazardCategory: analysis.hazard_category,  <span class="cm">// "Fall Hazard"</span>
+    justification: analysis.justification,    <span class="cm">// "Unguarded scaffold..."</span>
+    status: <span class="st">"analyzed"</span>,                   <span class="cm">// pending → analyzed</span>
+    analyzedAt: <span class="kw">new</span> Date(),
+    slaDeadline,                           <span class="cm">// calculated in step 3</span>
+  },
+});</div>
+
+<h3>Step 3: Side Effects (parallel)</h3>
+<div class="grid2">
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:6px">SLA Calculation</h4>
+<div class="code"><span class="kw">function</span> <span class="fn">getSLADeadline</span>(riskLevel) {
+  <span class="kw">if</span> (riskLevel === <span class="st">"high"</span>)   = now + 24<span class="op">h</span>;
+  <span class="kw">if</span> (riskLevel === <span class="st">"medium"</span>) = now + 72<span class="op">h</span>;
+  <span class="kw">return</span> now + 7<span class="op"> days</span>;
+}</div>
+</div>
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:6px">Site Score Recalculation</h4>
+<div class="code">score = 100 - (high_count × 15) + speed_bonus
+speed_bonus = max(0, 30 - avg_resolution_hours / 2)
+clamped to [0, 100]</div>
+</div>
+</div>
+
+<h3>Step 4: Clustering</h3>
+<div class="card">
+<p>Compares the new report against all other analyzed reports using a two-stage process:</p>
+<ol>
+<li><strong>Semantic hash</strong> — maps report text to a topic bucket (fall_heights, electrical, chemical, vehicle, equipment, confined_space, general) based on keyword detection</li>
+<li><strong>Text similarity</strong> — Jaccard similarity on word tokens (words > 2 chars, lowercase, stripped of punctuation). Threshold: ≥ 0.25</li>
+</ol>
+<p>If both match → same <code>clusterId</code>. Otherwise, new cluster created.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s6">
+<h2><span class="num">6</span> Auto-Task Generation</h2>
+<p class="desc">After classification, a second Gemini call extracts 1–3 corrective tasks for medium/high risk reports.</p>
+
+<h3>Task Extraction Prompt</h3>
+<div class="card">
+<div class="code"><span class="cm">You are a workplace safety operations manager. Given a safety report and its
+risk classification, extract specific corrective actions.
+
+Respond with ONLY valid JSON — an array of 1-3 tasks:
+[
+  {
+    "title": "&lt;short action verb phrase, max 80 chars&gt;",
+    "description": "&lt;1-2 sentence explanation&gt;",
+    "priority": "urgent" | "high" | "normal" | "low"
+  }
+]
+
+Rules:
+- Each task must be a concrete, actionable step
+- Use action verbs: Install, Repair, Replace, Inspect, etc.
+- For high-risk: include immediate safety action AND root-cause fix
+- Keep titles under 80 characters</span></div>
+</div>
+
+<h3>Task Auto-Assignment Logic</h3>
+<table>
+<tr><th>Hazard Category</th><th>Department</th><th>Icon</th></tr>
+<tr><td>Electrical</td><td>Electrical</td><td>⚡</td></tr>
+<tr><td>Structural, Fall Hazard</td><td>Structural</td><td>🏗️</td></tr>
+<tr><td>Chemical Exposure</td><td>Chemical Safety</td><td>☢️</td></tr>
+<tr><td>Equipment Failure</td><td>Mechanical</td><td>⚙️</td></tr>
+<tr><td>Vehicle/Traffic</td><td>Traffic &amp; Vehicles</td><td>🚗</td></tr>
+<tr><td>Procedural Gap, Confined Space</td><td>General Maintenance</td><td>🔧</td></tr>
+<tr><td>(fallback)</td><td>Safety Compliance</td><td>🛡️</td></tr>
+</table>
+
+<h3>Fallback Task Generator</h3>
+<div class="note">If Gemini is unavailable, <code>fallbackTaskExtraction()</code> generates tasks based on keyword matching in the report text. E.g., "scaffold" → "Install temporary fall protection barriers", "electrical" → "De-energize and lockout affected electrical system". High-risk reports always get 3 tasks: immediate action, root-cause fix, and follow-up inspection.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s7">
+<h2><span class="num">7</span> Pages &amp; Features</h2>
+
+<table>
+<tr><th>Page</th><th>URL</th><th>Description</th></tr>
+<tr><td><strong>Reports</strong></td><td><code>/reports</code></td><td>Table of all 18+ reports, sorted high-first. Color-coded badges (🔴 High, 🟡 Medium, 🟢 Low). Click to expand full text + justification. Buttons: Upload CSV, + New report, Clusters toggle. Horizontal scroll on mobile.</td></tr>
+<tr><td><strong>Report Detail</strong></td><td><code>/reports/[id]</code></td><td>Full report view with: status dropdown (pending→acknowledged→resolved), AI analysis button, Override risk button, photo upload + cross-check, task list with create/manage, audit log timeline.</td></tr>
+<tr><td><strong>Dashboard</strong></td><td><code>/dashboard</code></td><td>Analytics: anomaly detection banner, 3 stat cards, bar chart (hazard categories), line chart (high-risk over 30 days), recurring sites list, PDF export button.</td></tr>
+<tr><td><strong>Map</strong></td><td><code>/map</code></td><td>Grid-based site risk heatmap. Each site is a box sized/colored by risk concentration. Click to expand and see recent reports.</td></tr>
+<tr><td><strong>Scoreboard</strong></td><td><code>/scoreboard</code></td><td>Leaderboard ranking sites by safety score (0-100). Shows medals for top 3. Score formula: fewer high-risk + faster resolution = higher score.</td></tr>
+<tr><td><strong>Query</strong></td><td><code>/query</code></td><td>Natural language search. User types question → Gemini answers using only report data. Includes 5 example queries.</td></tr>
+<tr><td><strong>Admin</strong></td><td><code>/admin</code></td><td>Task board (Kanban: Open → In Progress → Done) + Reports tab with assign task forms. Department filter buttons. Stats cards.</td></tr>
+<tr><td><strong>Alerts</strong></td><td><code>/alerts</code></td><td>High-risk reports still in pending/acknowledged status for 48+ hours. Styled as urgent action cards with red left border.</td></tr>
+</table>
+
+<h3>Seeded Data</h3>
+<div class="card">
+<p>18 realistic safety reports across 5 sites:</p>
+<table>
+<tr><th>Site</th><th>Reports</th><th>Risk Mix</th><th>Categories</th></tr>
+<tr><td>Metro Industrial Park</td><td>5</td><td>4 high, 1 medium</td><td>Chemical, Electrical, Fall Hazard, Vehicle</td></tr>
+<tr><td>Riverfront Tower</td><td>4</td><td>3 high, 1 low</td><td>Structural, Equipment Failure, Procedural Gap</td></tr>
+<tr><td>Harbor View Medical Center</td><td>4</td><td>2 high, 1 medium, 1 low</td><td>Confined Space, Chemical, Structural</td></tr>
+<tr><td>Westfield Construction</td><td>3</td><td>1 high, 1 medium, 1 low</td><td>Structural, Equipment Failure</td></tr>
+<tr><td>Logistics Hub East</td><td>2</td><td>1 high, 1 low</td><td>Vehicle/Traffic, Structural</td></tr>
+</table>
+<p style="margin-top:8px">Dates spread over 30 days (Aug 2–22, 2026). Mix of analyzed, pending, acknowledged, and resolved statuses.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s8">
+<h2><span class="num">8</span> Clustering Algorithm</h2>
+<p class="desc">Groups semantically similar reports together so patterns like recurring hazards at a site become visible.</p>
+
+<h3>How it works</h3>
+<div class="card">
+<ol>
+<li><strong>Keyword hash:</strong> Map report text to one of 7 topic buckets:
+  <code>fall_heights</code>, <code>electrical</code>, <code>chemical</code>, <code>vehicle</code>, <code>equipment</code>, <code>confined_space</code>, <code>general</code></li>
+<li><strong>Tokenize:</strong> Lowercase, strip punctuation, split on whitespace, filter words ≤ 2 chars</li>
+<li><strong>Jaccard similarity:</strong> <code>|intersection| / max(|A|, |B|)</code></li>
+<li><strong>Threshold:</strong> ≥ 0.25 similarity AND same semantic hash → same cluster</li>
+<li><strong>Cluster ID format:</strong> <code>cluster_{hash}_{timestamp}</code></li>
+</ol>
+</div>
+
+<div class="note"><strong>Example:</strong> Report A says "Scaffolding missing guardrails at 25 feet" and Report B says "Scaffold platform planks not secured at height". Both hash to <code>fall_heights</code>. Token intersection includes {scaffold, height, missing, guardrails, platform, planks, secured} → Jaccard ≈ 0.35 → clustered together.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s9">
+<h2><span class="num">9</span> Anomaly Detection</h2>
+<p class="desc">Detects sites where this week's report count or high-risk count suddenly spikes above the historical average.</p>
+
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Algorithm</h4>
+<ol>
+<li>Get all reports from last 4 weeks</li>
+<li>Split into: this week vs. previous 3 weeks</li>
+<li>For each site, calculate:
+  <ul>
+    <li><code>thisWeekCount</code> — reports this week</li>
+    <li><code>historicalAvg</code> — total in previous 3 weeks / 3</li>
+    <li><code>thisWeekHigh</code> — high-risk reports this week</li>
+    <li><code>historicalHighAvg</code> — high-risk in previous 3 weeks / 3</li>
+  </ul>
+</li>
+<li><strong>Anomaly if:</strong> <code>thisWeekCount ≥ max(historicalAvg × 2, 3)</code> OR <code>thisWeekHigh ≥ max(historicalHighAvg × 2, 2)</code></li>
+</ol>
+<p style="margin-top:8px">The minimum thresholds (3 total, 2 high-risk) prevent false positives when historical data is sparse.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s10">
+<h2><span class="num">10</span> Natural Language Query</h2>
+<p class="desc">Users type questions in plain English. Gemini answers using only the report data.</p>
+
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:8px">How it works</h4>
+<ol>
+<li>Fetch up to 200 reports from database</li>
+<li>Serialize as JSON: <code>{site, date, risk, category, status, role}</code></li>
+<li>Send to Gemini with system prompt: "Answer using ONLY the data provided"</li>
+<li>Display answer as plain text</li>
+</ol>
+<p style="margin-top:12px"><strong>Fallback:</strong> If no Gemini key → keyword-based answers (e.g., "electrical" → count electrical hazard reports, "high risk" → count unresolved high-risk reports)</p>
+</div>
+
+<h3>Example queries</h3>
+<ul>
+<li>"Which sites had electrical hazards this month?"</li>
+<li>"How many high-risk reports are still unresolved?"</li>
+<li>"What are the most common hazard categories at Metro Industrial Park?"</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s11">
+<h2><span class="num">11</span> Photo Cross-Check</h2>
+<p class="desc">Upload a photo with a report → Gemini Vision checks if the image matches the described hazard.</p>
+
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Flow</h4>
+<ol>
+<li>User selects a photo file on the report detail page</li>
+<li>File is converted to base64</li>
+<li>Sent to Gemini with text prompt + inline image data</li>
+<li>Gemini responds: <code>{consistent: true/false, note: "..."}</code></li>
+<li>Result displayed as green (consistent) or red (inconsistent) banner</li>
+<li>Audit log entry created: "photo_crosschecked"</li>
+</ol>
+<p style="margin-top:8px"><strong>Technical detail:</strong> Uses <code>gemini-3.6-flash</code> directly (not the fallback chain) because it requires vision/multimodal support. The <code>inlineData</code> field carries the base64-encoded image with its MIME type.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s12">
+<h2><span class="num">12</span> SLA &amp; Scoring</h2>
+
+<div class="grid2">
+<div>
+<h3>SLA Deadlines</h3>
+<table>
+<tr><th>Risk Level</th><th>Deadline</th></tr>
+<tr><td><span class="tag tag-high">HIGH</span></td><td>24 hours from analysis</td></tr>
+<tr><td><span class="tag tag-med">MEDIUM</span></td><td>72 hours from analysis</td></tr>
+<tr><td><span class="tag tag-low">LOW</span></td><td>7 days from analysis</td></tr>
+</table>
+<p style="font-size:13px;color:var(--muted);margin-top:8px">Reports past their SLA show "OVERDUE" in red. The /alerts page filters for high-risk reports overdue by 48+ hours.</p>
+</div>
+<div>
+<h3>Site Score Formula</h3>
+<div class="code">score = 100 - (highRiskCount × 15) + speedBonus
+
+speedBonus = max(0, 30 - avgResolutionHours / 2)
+
+score = clamp(score, 0, 100)</div>
+<p style="font-size:13px;color:var(--muted);margin-top:8px">Every high-risk report costs 15 points. Faster resolution earns bonus points (max 30). The score is recalculated after every status change or risk override.</p>
+</div>
+</div>
+
+<h3>Worked Example</h3>
+<table>
+<tr><th>Site</th><th>Total</th><th>High</th><th>High Penalty</th><th>Speed Bonus</th><th>Score</th></tr>
+<tr><td>Metro Industrial Park</td><td>5</td><td>4</td><td>-60</td><td>+0</td><td><strong>40</strong></td></tr>
+<tr><td>Westfield Construction</td><td>3</td><td>1</td><td>-15</td><td>+25</td><td><strong>100</strong></td></tr>
+<tr><td>Harbor View Medical</td><td>4</td><td>2</td><td>-30</td><td>+0</td><td><strong>70</strong></td></tr>
+<tr><td>Riverfront Tower</td><td>4</td><td>3</td><td>-45</td><td>+0</td><td><strong>55</strong></td></tr>
+<tr><td>Logistics Hub East</td><td>2</td><td>1</td><td>-15</td><td>+30</td><td><strong>100</strong></td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s13">
+<h2><span class="num">13</span> Admin &amp; Task Management</h2>
+
+<h3>Task Board (Kanban)</h3>
+<div class="grid3">
+<div class="card" style="text-align:center"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--warning);margin-bottom:4px">Open</div><div style="font-size:24px;font-weight:700">11</div><p style="font-size:12px;color:var(--muted);margin-top:4px">Ready to start</p></div>
+<div class="card" style="text-align:center"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--accent);margin-bottom:4px">In Progress</div><div style="font-size:24px;font-weight:700">4</div><p style="font-size:12px;color:var(--muted);margin-top:4px">Being worked on</p></div>
+<div class="card" style="text-align:center"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--safe);margin-bottom:4px">Done</div><div style="font-size:24px;font-weight:700">3</div><p style="font-size:12px;color:var(--muted);margin-top:4px">Completed</p></div>
+</div>
+
+<h3>Task Lifecycle</h3>
+<div class="card">
+<ol>
+<li><strong>Auto-generation:</strong> When a medium/high report is analyzed, Gemini extracts 1-3 tasks → auto-created in DB with department, priority, due date</li>
+<li><strong>Manual creation:</strong> Admin clicks "+ Assign" on a report → fills in title, details, picks department and priority</li>
+<li><strong>Start work:</strong> Department clicks "Start work" → status changes to <code>in_progress</code></li>
+<li><strong>Mark done:</strong> Click "Mark done" → status changes to <code>done</code></li>
+<li><strong>Auto-resolve:</strong> When ALL tasks for a report are <code>done</code> AND the report status is <code>acknowledged</code>, the report is automatically set to <code>resolved</code></li>
+</ol>
+</div>
+
+<h3>Department Filter</h3>
+<p>Click any department button on the task board to filter tasks by that department. Tasks show the department icon + name, linked report site, hazard category, and due date.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s14">
+<h2><span class="num">14</span> PDF Export</h2>
+<p class="desc">The "Export PDF" button on the dashboard generates a downloadable HTML file that browsers can print to PDF.</p>
+
+<div class="card">
+<h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Contents</h4>
+<ul>
+<li><strong>Summary stats:</strong> Total reports, High risk count, Unresolved high-risk, Pending action</li>
+<li><strong>Unresolved high-risk table:</strong> Site, Category, Reporter, Date, Status, Justification</li>
+<li><strong>Top 5 riskiest sites:</strong> Site name, Total/High/Medium/Low counts</li>
+<li><strong>Risk breakdown:</strong> Percentage distribution across risk levels</li>
+</ul>
+<p style="margin-top:8px"><strong>Technical:</strong> The API route returns raw HTML with <code>Content-Disposition: attachment</code>. The browser renders it and users can print to PDF. No server-side PDF library needed.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s15">
+<h2><span class="num">15</span> Audit Logging</h2>
+<p class="desc">Every significant state change creates an AuditLog entry. This creates a complete timeline of what happened to each report.</p>
+
+<table>
+<tr><th>Action</th><th>Triggered By</th><th>Details Example</th></tr>
+<tr><td><code>report_analyzed</code></td><td>AI analysis (Gemini or fallback)</td><td>"Classified as high risk (Fall Hazard). SLA: 2026-08-23..."</td></tr>
+<tr><td><code>status_changed</code></td><td>Status dropdown on report detail</td><td>"Status changed from pending to acknowledged"</td></tr>
+<tr><td><code>risk_overridden</code></td><td>Override risk button</td><td>"Overrode AI assessment from high to medium. Reason: ..."</td></tr>
+<tr><td><code>tasks_auto_generated</code></td><td>Task extraction after analysis</td><td>"Auto-generated 2 task(s) for Structural: Install..."</td></tr>
+<tr><td><code>task_created</code></td><td>Manual task assignment</td><td>"Task "Repair guardrail" assigned to Structural (urgent)"</td></tr>
+<tr><td><code>task_status_changed</code></td><td>Start work / Mark done buttons</td><td>"Task "Repair guardrail" status: open → in_progress"</td></tr>
+<tr><td><code>auto_resolved</code></td><td>All tasks completed</td><td>"All tasks completed — report auto-resolved"</td></tr>
+<tr><td><code>photo_crosschecked</code></td><td>Photo upload</td><td>"Photo consistent with report: Image shows scaffolding..."</td></tr>
+<tr><td><code>task_deleted</code></td><td>Task deletion</td><td>"Task "Repair guardrail" deleted"</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section id="s16">
+<h2><span class="num">16</span> Deployment &amp; Configuration</h2>
+
+<h3>Environment Variables</h3>
+<div class="code"><span class="cm"># .env</span>
+DATABASE_URL=<span class="st">"postgresql://neondb_owner:xxx@ep-xxx.pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"</span>
+GEMINI_API_KEY=<span class="st">"AQ.Ab8RN6IkWoci3Bh19a-..."</span></div>
+
+<h3>Build Configuration</h3>
+<div class="code"><span class="cm">// package.json</span>
+<span class="st">"build"</span>: <span class="st">"prisma generate && next build"</span>,   <span class="cm">// generates Prisma client before build</span>
+<span class="st">"postinstall"</span>: <span class="st">"prisma generate"</span>,           <span class="cm">// generates after npm install</span></div>
+
+<h3>Database Setup</h3>
+<div class="code"><span class="cm"># Push schema to Neon</span>
+npx prisma db push
+
+<span class="cm"># Generate Prisma client</span>
+npx prisma generate
+
+<span class="cm"># Seed 18 reports</span>
+npx tsx prisma/seed.ts</div>
+
+<h3>Vercel Deployment Checklist</h3>
+<div class="note">
+<ol>
+<li><strong>Code pushed to GitHub main</strong> — Vercel auto-deploys</li>
+<li><strong>Env vars set in Vercel dashboard</strong> — DATABASE_URL and GEMINI_API_KEY under Settings → Environment Variables</li>
+<li><strong>Build script</strong> includes <code>prisma generate</code> before <code>next build</code></li>
+<li><strong>prisma.config.ts</strong> simplified — no DATABASE_URL needed at build time (only at runtime)</li>
+</ol>
+</div>
+
+<h3>Tailwind v4 Configuration</h3>
+<div class="note"><strong>Important:</strong> <code>@source</code> directives in <code>globals.css</code> are required for responsive classes to work when the project is in a subdirectory:<br><code>@source "../components"; @source "../app"; @source "../lib";</code></div>
+
+<h3>Design Tokens</h3>
+<div class="grid2">
+<div class="card">
+<h4 style="font-size:13px;font-weight:600;margin-bottom:6px">Colors</h4>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<div style="width:28px;height:28px;border-radius:6px;background:#0f766e" title="Accent"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#dc2626" title="Danger"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#d97706" title="Warning"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#16a34a" title="Safe"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#1a1a1a" title="Ink"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#6b6b6b" title="Muted"></div>
+<div style="width:28px;height:28px;border-radius:6px;background:#f8f7f4;border:1px solid #e5e3df" title="Surface"></div>
+</div>
+</div>
+<div class="card">
+<h4 style="font-size:13px;font-weight:600;margin-bottom:6px">Typography</h4>
+<p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px">Heading: Space Grotesk</p>
+<p style="font-family:'DM Sans',sans-serif;font-size:14px">Body: DM Sans</p>
+<p style="font-family:monospace;font-size:12px">Code: JetBrains Mono</p>
+</div>
+</div>
+</section>
+
+<hr>
+<footer style="padding:32px 0;text-align:center">
+<p style="font-size:12px;color:var(--faint)">SafeSignal — Complete Project Report · Generated August 22, 2026 · Neon PostgreSQL + Gemini AI + Next.js 16 + Tailwind v4</p>
+</footer>
+
+</div>
+</body>
+</html>
