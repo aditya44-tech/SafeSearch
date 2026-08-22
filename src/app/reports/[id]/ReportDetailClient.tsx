@@ -12,6 +12,7 @@ interface Report {
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
   auditLogs?: { id: string; action: string; performedBy: string; timestamp: string; details: string | null }[];
+  tasks?: { id: string; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
 
 export default function ReportDetailClient({ report }: { report: Report }) {
@@ -26,6 +27,10 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [photoResult, setPhotoResult] = useState<{ consistent: boolean; note: string } | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [toast, setToast] = useState("");
+  const [tasks, setTasks] = useState(report.tasks || []);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskForm, setTaskForm] = useState({ title: "", description: "", assignedTo: "Mike Chen", priority: "high" });
+  const [creatingTask, setCreatingTask] = useState(false);
   const router = useRouter();
 
   const handleStatusChange = async (newStatus: string) => {
@@ -86,6 +91,39 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   };
 
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
+
+  const TEAM = ["Mike Chen", "Sarah Park", "James Wilson", "Lisa Rodriguez", "Tom Bradley"];
+
+  const handleCreateTask = async () => {
+    if (!taskForm.title.trim()) return;
+    setCreatingTask(true);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId: report.id, ...taskForm }),
+      });
+      if (res.ok) {
+        const task = await res.json();
+        setTasks([task, ...tasks]);
+        setShowTaskForm(false);
+        setTaskForm({ title: "", description: "", assignedTo: "Mike Chen", priority: "high" });
+        setToast("Task assigned to " + task.assignedTo);
+        setTimeout(() => setToast(""), 3000);
+      }
+    } finally { setCreatingTask(false); }
+  };
+
+  const handleTaskStatus = async (taskId: string, newStatus: string) => {
+    const res = await fetch("/api/tasks/" + taskId, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus, performedBy: "Admin" }),
+    });
+    if (res.ok) {
+      setTasks(tasks.map((t) => t.id === taskId ? { ...t, status: newStatus } : t));
+    }
+  };
 
   return (
     <div>
@@ -312,6 +350,121 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             </div>
           </div>
         )}
+
+        {/* Tasks Section */}
+        <div className="mt-6 pt-6" style={{ borderTop: "1px solid var(--color-border)" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-muted)" }}>
+              Corrective tasks ({tasks.length})
+            </h3>
+            {status !== "resolved" && (
+              <button onClick={() => setShowTaskForm(!showTaskForm)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:opacity-80"
+                style={{ background: "var(--color-accent)", color: "white" }}>
+                + Assign task
+              </button>
+            )}
+          </div>
+
+          {/* Task creation form */}
+          {showTaskForm && (
+            <div className="mb-4 p-4 rounded-lg space-y-2" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+              <input value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                placeholder="Task title (e.g. Repair guardrail, Install gas detector)"
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }} />
+              <input value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                placeholder="Description (optional)"
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }} />
+              <div className="flex gap-2">
+                <select value={taskForm.assignedTo} onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
+                  className="flex-1 px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>
+                  {TEAM.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
+                  className="px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="normal">Normal</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreateTask} disabled={creatingTask || !taskForm.title.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                  style={{ background: "var(--color-accent)" }}>
+                  {creatingTask ? "Creating..." : "Assign task"}
+                </button>
+                <button onClick={() => setShowTaskForm(false)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[var(--color-surface-sunken)]"
+                  style={{ color: "var(--color-ink-muted)" }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Task list */}
+          {tasks.length === 0 ? (
+            <p className="text-xs text-[var(--color-ink-faint)] py-3">No tasks assigned yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map((task) => {
+                const priorityColors: Record<string, { bg: string; text: string }> = {
+                  urgent: { bg: "var(--color-danger-light)", text: "var(--color-danger)" },
+                  high: { bg: "#fff7ed", text: "#ea580c" },
+                  normal: { bg: "#f0f9ff", text: "#0284c7" },
+                  low: { bg: "var(--color-safe-light)", text: "var(--color-safe)" },
+                };
+                const pc = priorityColors[task.priority] || priorityColors.normal;
+                const isComplete = task.status === "completed";
+                return (
+                  <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg transition-all duration-200"
+                    style={{ background: isComplete ? "var(--color-surface-sunken)" : "var(--color-surface-raised)", border: "1px solid var(--color-border)", opacity: isComplete ? 0.7 : 1 }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-xs font-semibold ${isComplete ? "line-through" : ""}`} style={{ color: "var(--color-ink)" }}>
+                          {task.title}
+                        </span>
+                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded" style={{ background: pc.bg, color: pc.text }}>
+                          {task.priority}
+                        </span>
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{
+                          background: isComplete ? "var(--color-safe-light)" : task.status === "in_progress" ? "var(--color-warning-light)" : "var(--color-surface-sunken)",
+                          color: isComplete ? "var(--color-safe)" : task.status === "in_progress" ? "var(--color-warning)" : "var(--color-ink-faint)",
+                        }}>
+                          {task.status === "in_progress" ? "In Progress" : task.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[var(--color-ink-faint)]">
+                        Assigned to <strong>{task.assignedTo}</strong>
+                        {task.dueDate && <> • Due {new Date(task.dueDate).toLocaleDateString()}</>}
+                      </div>
+                      {task.description && <p className="text-xs text-[var(--color-ink-muted)] mt-1">{task.description}</p>}
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      {task.status === "assigned" && (
+                        <button onClick={() => handleTaskStatus(task.id, "in_progress")}
+                          className="px-3 py-1 text-[11px] font-medium rounded-md text-white" style={{ background: "var(--color-accent)" }}>
+                          Start
+                        </button>
+                      )}
+                      {task.status === "in_progress" && (
+                        <button onClick={() => handleTaskStatus(task.id, "completed")}
+                          className="px-3 py-1 text-[11px] font-medium rounded-md text-white" style={{ background: "var(--color-safe)" }}>
+                          Complete
+                        </button>
+                      )}
+                      {!isComplete && (
+                        <button onClick={() => handleTaskStatus(task.id, "cancelled")}
+                          className="px-3 py-1 text-[11px] font-medium rounded-md" style={{ color: "var(--color-ink-faint)", border: "1px solid var(--color-border)" }}>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

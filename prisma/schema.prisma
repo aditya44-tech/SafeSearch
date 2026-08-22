@@ -44,6 +44,7 @@ model SafetyReport {
   slaDeadline            DateTime?
 
   auditLogs              AuditLog[]
+  tasks                  Task[]
 
   @@index([status])
   @@index([riskLevel])
@@ -76,4 +77,37 @@ model SiteScore {
 
   @@index([site])
   @@index([scoreValue])
+}
+
+enum TaskStatus {
+  assigned
+  in_progress
+  completed
+  cancelled
+}
+
+enum TaskPriority {
+  urgent
+  high
+  normal
+  low
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  reportId    String
+  report      SafetyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  assignedTo  String
+  status      TaskStatus   @default(assigned)
+  priority    TaskPriority @default(normal)
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([reportId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([priority])
 }

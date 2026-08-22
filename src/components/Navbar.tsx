@@ -8,6 +8,7 @@ const links = [
   { href: "/map", label: "Map" },
   { href: "/scoreboard", label: "Scoreboard" },
   { href: "/query", label: "Query" },
+  { href: "/admin", label: "Admin" },
   { href: "/alerts", label: "Alerts" },
 ];
 
