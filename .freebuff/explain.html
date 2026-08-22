@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIF Watch — System Explanation</title>
+<style>
+  :root {
+    --ink: #1a1a1a; --ink-muted: #6b6b6b; --ink-faint: #9e9e9e;
+    --surface: #f8f7f4; --surface-raised: #ffffff; --surface-sunken: #f0eeeb;
+    --border: #e5e3df; --accent: #0f766e; --accent-light: #ccfbf1;
+    --danger: #dc2626; --danger-light: #fef2f2;
+    --warning: #d97706; --warning-light: #fffbeb;
+    --safe: #16a34a; --safe-light: #f0fdf4;
+    --radius: 12px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--surface); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Hero */
+  .hero { text-align: center; padding: 60px 0 40px; }
+  .hero h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { font-size: 17px; color: var(--ink-muted); max-width: 600px; margin: 0 auto; }
+
+  /* Section */
+  .section { margin-top: 56px; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; }
+  .section h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 16px; }
+  .section p.desc { color: var(--ink-muted); max-width: 680px; margin-bottom: 24px; font-size: 15px; }
+
+  /* Cards */
+  .card { background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .card-grid { display: grid; gap: 16px; }
+  .card-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .card p { font-size: 13px; color: var(--ink-muted); }
+
+  /* Architecture diagram */
+  .arch-diagram { background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; overflow-x: auto; }
+  .arch-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .arch-box { padding: 12px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; min-width: 120px; position: relative; }
+  .arch-box.client { background: var(--accent-light); color: var(--accent); border: 1.5px solid var(--accent); }
+  .arch-box.server { background: #ede9fe; color: #6d28d9; border: 1.5px solid #6d28d9; }
+  .arch-box.api { background: #fef3c7; color: #b45309; border: 1.5px solid #b45309; }
+  .arch-box.db { background: #dbeafe; color: #1d4ed8; border: 1.5px solid #1d4ed8; }
+  .arch-box.external { background: #fce7f3; color: #be185d; border: 1.5px solid #be185d; }
+  .arch-box small { display: block; font-weight: 400; font-size: 10px; opacity: 0.8; margin-top: 2px; }
+  .arch-arrow { text-align: center; color: var(--ink-faint); font-size: 18px; margin: -4px 0; user-select: none; }
+  .arch-label { font-size: 10px; color: var(--ink-faint); text-align: center; margin: -12px 0 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 16px 0; }
+  .flow-step { flex: 1; min-width: 140px; text-align: center; position: relative; padding: 16px 12px; }
+  .flow-step::after { content: ''; position: absolute; right: -1px; top: 50%; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-left: 10px solid var(--border); transform: translateY(-50%); }
+  .flow-step:last-child::after { display: none; }
+  .flow-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+  .flow-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .flow-desc { font-size: 11px; color: var(--ink-muted); }
+
+  /* Data model */
+  .model-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .model-table th { text-align: left; padding: 10px 14px; background: var(--surface-sunken); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); border-bottom: 2px solid var(--border); }
+  .model-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .model-table tr:last-child td { border-bottom: none; }
+  .model-table code { font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; background: var(--surface-sunken); padding: 2px 6px; border-radius: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge.high { background: var(--danger-light); color: var(--danger); }
+  .badge.medium { background: var(--warning-light); color: var(--warning); }
+  .badge.low { background: var(--safe-light); color: var(--safe); }
+  .badge.new { background: #ede9fe; color: #6d28d9; }
+  .badge.enum { background: #dbeafe; color: #1d4ed8; }
+
+  /* Page map */
+  .page-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .page-card { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; transition: transform 0.15s, box-shadow 0.15s; cursor: default; }
+  .page-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .page-icon { font-size: 28px; margin-bottom: 8px; }
+  .page-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .page-card p { font-size: 11px; color: var(--ink-muted); }
+
+  /* State machine */
+  .state-machine { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 20px; }
+  .state { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 2px solid; }
+  .state.pending { background: var(--warning-light); color: var(--warning); border-color: var(--warning); }
+  .state.analyzed { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .state.acknowledged { background: #faf5ff; color: #7c3aed; border-color: #7c3aed; }
+  .state.resolved { background: var(--surface-sunken); color: var(--ink-muted); border-color: var(--border); }
+  .state-arrow { font-size: 18px; color: var(--ink-faint); }
+  .state-label { font-size: 10px; color: var(--ink-faint); text-align: center; }
+
+  /* SLA timeline */
+  .sla-bar { position: relative; height: 40px; border-radius: 8px; overflow: hidden; margin: 8px 0; }
+  .sla-segment { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: white; }
+  .sla-high { left: 0; width: 14.3%; background: var(--danger); }
+  .sla-medium { left: 14.3%; width: 42.9%; background: var(--warning); }
+  .sla-low { left: 57.1%; width: 42.9%; background: var(--safe); }
+
+  /* Tooltip callouts */
+  .callout { background: var(--accent-light); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 13px; }
+  .callout strong { color: var(--accent); }
+  .callout.warn { background: var(--warning-light); border-color: var(--warning); }
+  .callout.warn strong { color: var(--warning); }
+
+  /* API table */
+  .api-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .api-table th { text-align: left; padding: 10px 14px; background: var(--surface-sunken); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
+  .api-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .api-method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: monospace; }
+  .api-method.get { background: #dbeafe; color: #1d4ed8; }
+  .api-method.post { background: var(--safe-light); color: var(--safe); }
+  .api-method.patch { background: var(--warning-light); color: var(--warning); }
+
+  /* Animate on scroll */
+  .fade-in { opacity: 0; transform: translateY(16px); transition: opacity 0.4s, transform 0.4s; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 24px 16px 60px; }
+    .hero { padding: 32px 0 24px; }
+    .arch-row { flex-direction: column; align-items: center; }
+    .arch-arrow { transform: rotate(90deg); margin: 4px 0; }
+    .flow { flex-direction: column; }
+    .flow-step::after { display: none; }
+    .state-machine { flex-direction: column; }
+    .state-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Hero -->
+<div class="hero fade-in">
+  <h1><span>SIF Watch</span> — System Architecture</h1>
+  <p>An AI-powered early-warning system that analyzes workplace safety reports to detect precursors of serious injury and fatality incidents.</p>
+</div>
+
+<!-- 1. What It Does -->
+<div class="section fade-in">
+  <div class="section-label">Overview</div>
+  <h2>What SIF Watch does</h2>
+  <p class="desc">Workers submit free-text safety reports. An LLM classifies each report's risk level, hazard category, and justification. The system then tracks SLAs, clusters similar incidents, detects anomalies, and surfaces urgent items to safety officers.</p>
+
+  <div class="card-grid cols-3">
+    <div class="card">
+      <h3>🔍 Classify</h3>
+      <p>Gemini LLM reads each report and outputs risk level (high/medium/low), hazard category, and a one-sentence justification.</p>
+    </div>
+    <div class="card">
+      <h3>📊 Aggregate</h3>
+      <p>Dashboard charts show hazard frequency, high-risk trends, and recurring problem sites. Anomaly detection flags sudden spikes.</p>
+    </div>
+    <div class="card">
+      <h3>🚨 Act</h3>
+      <p>SLA deadlines trigger alerts. Human overrides let experts disagree with AI. Audit logs track every change for accountability.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Architecture -->
+<div class="section fade-in">
+  <div class="section-label">Architecture</div>
+  <h2>System architecture</h2>
+  <p class="desc">Next.js App Router handles both server-rendered pages and API routes. Prisma 7 with SQLite (via libsql adapter) manages persistence. Gemini 2.0 Flash provides AI classification via REST API.</p>
+
+  <div class="arch-diagram">
+    <div class="arch-label">Client Layer</div>
+    <div class="arch-row">
+      <div class="arch-box client">Browser<small>React + Tailwind CSS</small></div>
+    </div>
+    <div class="arch-arrow">↕ HTTP</div>
+
+    <div class="arch-label">Next.js Server (App Router)</div>
+    <div class="arch-row">
+      <div class="arch-box server">/reports<small>Table + expandable rows</small></div>
+      <div class="arch-box server">/dashboard<small>Charts + anomaly banner</small></div>
+      <div class="arch-box server">/map<small>Risk heatmap grid</small></div>
+      <div class="arch-box server">/query<small>NL search box</small></div>
+      <div class="arch-box server">/scoreboard<small>Site leaderboard</small></div>
+      <div class="arch-box server">/alerts<small>Stale high-risk list</small></div>
+    </div>
+    <div class="arch-arrow">↕ fetch()</div>
+
+    <div class="arch-label">API Routes</div>
+    <div class="arch-row">
+      <div class="arch-box api">/api/reports<small>CRUD</small></div>
+      <div class="arch-box api">/api/reports/[id]/analyze<small>Gemini classification</small></div>
+      <div class="arch-box api">/api/reports/[id]/override<small>Human override</small></div>
+      <div class="arch-box api">/api/reports/[id]/photo<small>Vision cross-check</small></div>
+      <div class="arch-box api">/api/reports/cluster<small>Semantic grouping</small></div>
+      <div class="arch-box api">/api/reports/anomaly-check<small>Spike detection</small></div>
+      <div class="arch-box api">/api/query<small>NL Q&A</small></div>
+      <div class="arch-box api">/api/pdf<small>Report export</small></div>
+    </div>
+    <div class="arch-arrow">↕ Prisma Client</div>
+
+    <div class="arch-label">Data Layer</div>
+    <div class="arch-row">
+      <div class="arch-box db">SQLite<small>via @prisma/adapter-libsql</small></div>
+    </div>
+    <div style="height: 12px"></div>
+    <div class="arch-arrow">↕ fetch()</div>
+    <div class="arch-label">External Services</div>
+    <div class="arch-row">
+      <div class="arch-box external">Gemini API<small>gemini-3.6-flash → fallback chain</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Data Model -->
+<div class="section fade-in">
+  <div class="section-label">Data Model</div>
+  <h2>Three database tables</h2>
+  <p class="desc">SafetyReport is the core entity. AuditLog tracks every mutation. SiteScore caches per-site safety metrics.</p>
+
+  <div class="card" style="overflow-x: auto; margin-bottom: 16px;">
+    <h3>SafetyReport <span class="badge new">Core</span></h3>
+    <table class="model-table">
+      <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>id</code></td><td>String (cuid)</td><td>Primary key</td></tr>
+      <tr><td><code>reportText</code></td><td>String</td><td>Raw free-text safety report from worker</td></tr>
+      <tr><td><code>site</code></td><td>String</td><td>Location name (e.g. "Metro Industrial Park")</td></tr>
+      <tr><td><code>reporterRole</code></td><td>String</td><td>Job title of reporter</td></tr>
+      <tr><td><code>status</code></td><td><span class="badge enum">Enum</span></td><td><code>pending → analyzed → acknowledged → resolved</code></td></tr>
+      <tr><td><code>riskLevel</code></td><td><span class="badge enum">Enum?</span></td><td><span class="badge high">high</span> <span class="badge medium">medium</span> <span class="badge low">low</span> — nullable until analyzed</td></tr>
+      <tr><td><code>hazardCategory</code></td><td>String?</td><td>e.g. "Fall Hazard", "Electrical", "Chemical Exposure"</td></tr>
+      <tr><td><code>justification</code></td><td>String?</td><td>AI's one-sentence explanation</td></tr>
+      <tr><td><code>slaDeadline</code></td><td>DateTime?</td><td>Calculated at analysis time: <strong>high=24h, medium=72h, low=7d</strong></td></tr>
+      <tr><td><code>humanOverrideRiskLevel</code></td><td><span class="badge enum">Enum?</span></td><td>Expert's override of AI assessment</td></tr>
+      <tr><td><code>overrideReason</code></td><td>String?</td><td>Why the human disagreed with AI</td></tr>
+      <tr><td><code>overriddenBy</code></td><td>String?</td><td>Name of the safety officer who overrode</td></tr>
+      <tr><td><code>clusterId</code></td><td>String?</td><td>Groups semantically similar reports together</td></tr>
+      <tr><td><code>photoUrl</code></td><td>String?</td><td>Attached evidence photo</td></tr>
+    </table>
+  </div>
+
+  <div class="card-grid cols-2">
+    <div class="card">
+      <h3>AuditLog <span class="badge new">New</span></h3>
+      <table class="model-table">
+        <tr><th>Field</th><th>Type</th></tr>
+        <tr><td><code>reportId</code></td><td>FK → SafetyReport</td></tr>
+        <tr><td><code>action</code></td><td>String (e.g. "status_changed")</td></tr>
+        <tr><td><code>performedBy</code></td><td>String</td></tr>
+        <tr><td><code>timestamp</code></td><td>DateTime</td></tr>
+        <tr><td><code>details</code></td><td>String?</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>SiteScore <span class="badge new">New</span></h3>
+      <table class="model-table">
+        <tr><th>Field</th><th>Type</th></tr>
+        <tr><td><code>site</code></td><td>String (unique)</td></tr>
+        <tr><td><code>totalReports</code></td><td>Int</td></tr>
+        <tr><td><code>highRiskCount</code></td><td>Int</td></tr>
+        <tr><td><code>avgResolutionHours</code></td><td>Float</td></tr>
+        <tr><td><code>scoreValue</code></td><td>Float (0–100)</td></tr>
+      </table>
+      <p style="margin-top: 8px; font-size: 12px; color: var(--ink-faint);">
+        Score = 100 − (highRisk × 15) + speedBonus. Recalculated on every status/risk change.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Report Lifecycle -->
+<div class="section fade-in">
+  <div class="section-label">Lifecycle</div>
+  <h2>Report lifecycle — from submission to resolution</h2>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-title">Submit</div>
+      <div class="flow-desc">Worker creates report via form or CSV upload</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-title">Analyze</div>
+      <div class="flow-desc">LLM classifies risk, category, justification. SLA set.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-title">Cluster</div>
+      <div class="flow-desc">Semantic similarity groups related reports</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-title">Review</div>
+      <div class="flow-desc">Safety officer reviews, can override AI assessment</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <div class="flow-title">Acknowledge</div>
+      <div class="flow-desc">Officer confirms they've seen and considered the report</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">6</div>
+      <div class="flow-title">Resolve</div>
+      <div class="flow-desc">Hazard addressed. SiteScore recalculated.</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <h3 style="font-size: 14px; margin-bottom: 12px;">Status state machine</h3>
+    <div class="state-machine">
+      <div class="state pending">pending</div>
+      <div class="state-arrow">→</div>
+      <div style="text-align: center">
+        <div class="state analyzed">analyzed</div>
+        <div class="state-label">after AI classification</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div style="text-align: center">
+        <div class="state acknowledged">acknowledged</div>
+        <div class="state-label">officer reviews</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div style="text-align: center">
+        <div class="state resolved">resolved</div>
+        <div class="state-label">hazard fixed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. SLA System -->
+<div class="section fade-in">
+  <div class="section-label">SLA System</div>
+  <h2>SLA deadlines by risk level</h2>
+  <p class="desc">Calculated at analysis time. High-risk must be resolved within 24 hours. Overdue items appear red on the reports table and trigger alerts.</p>
+
+  <div class="card">
+    <div style="display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge high">high</span>
+        <span style="font-size: 14px; font-weight: 600;">24 hours</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge medium">medium</span>
+        <span style="font-size: 14px; font-weight: 600;">72 hours</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge low">low</span>
+        <span style="font-size: 14px; font-weight: 600;">7 days</span>
+      </div>
+    </div>
+    <div class="sla-bar">
+      <div class="sla-segment sla-high">24h</div>
+      <div class="sla-segment sla-medium">72h</div>
+      <div class="sla-segment sla-low">7d</div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-faint); margin-top: 4px;">
+      <span>0h</span><span>24h</span><span>96h</span><span>168h (7d)</span>
+    </div>
+
+    <div class="callout" style="margin-top: 16px;">
+      <strong>SLA Overdue indicator:</strong> When current time passes the deadline and status ≠ resolved, the reports table shows a red "SLA OVERDUE" badge and the detail page displays the deadline in red.
+    </div>
+  </div>
+</div>
+
+<!-- 6. AI Analysis Pipeline -->
+<div class="section fade-in">
+  <div class="section-label">AI Pipeline</div>
+  <h2>LLM classification pipeline</h2>
+  <p class="desc">The /analyze endpoint tries multiple Gemini models in order, with JSON response mode. If all models fail, a rule-based fallback classifier kicks in.</p>
+
+  <div class="card">
+    <div class="flow" style="flex-wrap: wrap; justify-content: center;">
+      <div class="flow-step" style="min-width: 180px;">
+        <div class="flow-num">1</div>
+        <div class="flow-title">Build prompt</div>
+        <div class="flow-desc">Insert site, role, report text into classification template</div>
+      </div>
+      <div class="flow-step" style="min-width: 180px;">
+        <div class="flow-num">2</div>
+        <div class="flow-title">Try models</div>
+        <div class="flow-desc">gemini-3.6-flash → 3.5 → flash-latest → 2.5-lite → 2.5</div>
+      </div>
+      <div class="flow-step" style="min-width: 180px;">
+        <div class="flow-num">3</div>
+        <div class="flow-title">Parse JSON</div>
+        <div class="flow-desc">Strip markdown fences, extract {risk_level, hazard_category, justification}</div>
+      </div>
+      <div class="flow-step" style="min-width: 180px;">
+        <div class="flow-num">4</div>
+        <div class="flow-title">Fallback</div>
+        <div class="flow-desc">If all models fail, keyword-based classifier provides estimate</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top: 16px;">
+      <strong>Photo cross-check:</strong> When a photo is uploaded, the system sends both the image and report text to Gemini Vision, asking if the visual evidence is consistent with the described hazard.
+    </div>
+  </div>
+</div>
+
+<!-- 7. Page Map -->
+<div class="section fade-in">
+  <div class="section-label">Pages</div>
+  <h2>6 user-facing pages</h2>
+
+  <div class="page-grid">
+    <div class="page-card">
+      <div class="page-icon">📋</div>
+      <h4>/reports</h4>
+      <p>Sortable table, expandable rows, CSV upload, cluster view, SLA column</p>
+    </div>
+    <div class="page-card">
+      <div class="page-icon">📊</div>
+      <h4>/dashboard</h4>
+      <p>Charts, stats, anomaly banner, PDF export</p>
+    </div>
+    <div class="page-card">
+      <div class="page-icon">🗺️</div>
+      <h4>/map</h4>
+      <p>Risk heatmap — site tiles sized/colored by risk concentration</p>
+    </div>
+    <div class="page-card">
+      <div class="page-icon">🏆</div>
+      <h4>/scoreboard</h4>
+      <p>Site leaderboard ranked by safety score with medals and progress bars</p>
+    </div>
+    <div class="page-card">
+      <div class="page-icon">💬</div>
+      <h4>/query</h4>
+      <p>Natural language Q&A — ask questions about your safety data</p>
+    </div>
+    <div class="page-card">
+      <div class="page-icon">🚨</div>
+      <h4>/alerts</h4>
+      <p>High-risk reports past 48h SLA, styled as urgent action items</p>
+    </div>
+  </div>
+</div>
+
+<!-- 8. API Routes -->
+<div class="section fade-in">
+  <div class="section-label">API Surface</div>
+  <h2>10 API routes</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table class="api-table">
+      <tr><th>Method</th><th>Route</th><th>What it does</th></tr>
+      <tr><td><span class="api-method get">GET</span></td><td><code>/api/reports</code></td><td>List all reports</td></tr>
+      <tr><td><span class="api-method post">POST</span></td><td><code>/api/reports</code></td><td>Create new report</td></tr>
+      <tr><td><span class="api-method get">GET</span></td><td><code>/api/reports/[id]</code></td><td>Get single report</td></tr>
+      <tr><td><span class="api-method patch">PATCH</span></td><td><code>/api/reports/[id]</code></td><td>Update status (logs to AuditLog, recalculates SiteScore)</td></tr>
+      <tr><td><span class="api-method post">POST</span></td><td><code>/api/reports/[id]/analyze</code></td><td>Run LLM classification (sets SLA, cluster, audit log, site score)</td></tr>
+      <tr><td><span class="api-method patch">PATCH</span></td><td><code>/api/reports/[id]/override</code></td><td>Human override of risk level (logs to AuditLog)</td></tr>
+      <tr><td><span class="api-method post">POST</span></td><td><code>/api/reports/[id]/photo</code></td><td>Upload photo + Gemini Vision cross-check</td></tr>
+      <tr><td><span class="api-method get">GET</span></td><td><code>/api/reports/cluster</code></td><td>Get all report clusters</td></tr>
+      <tr><td><span class="api-method get">GET</span></td><td><code>/api/reports/anomaly-check</code></td><td>Compare this week vs historical averages per site</td></tr>
+      <tr><td><span class="api-method post">POST</span></td><td><code>/api/query</code></td><td>Natural language question → Gemini answer based on report data</td></tr>
+      <tr><td><span class="api-method post">POST</span></td><td><code>/api/pdf</code></td><td>Generate downloadable HTML report summary</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 9. Clustering -->
+<div class="section fade-in">
+  <div class="section-label">Clustering</div>
+  <h2>Semantic report clustering</h2>
+  <p class="desc">After each analysis, the system checks if the new report is similar to existing ones. Similar reports share a cluster ID, shown as "clustered" badges on the reports table.</p>
+
+  <div class="card-grid cols-2">
+    <div class="card">
+      <h3>How similarity is measured</h3>
+      <p><strong>Step 1 — Semantic hash:</strong> Keywords map reports to categories (fall_heights, electrical, chemical, vehicle, equipment, general).</p>
+      <p style="margin-top: 8px;"><strong>Step 2 — Text overlap:</strong> Tokenize both texts, compute Jaccard similarity. Threshold: ≥0.25.</p>
+      <p style="margin-top: 8px;"><strong>Step 3 — Assign cluster:</strong> If similar reports exist, reuse their clusterId. Otherwise create a new one.</p>
+    </div>
+    <div class="card">
+      <h3>Cluster API example</h3>
+      <pre style="background: var(--surface-sunken); padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; line-height: 1.5;">GET /api/reports/cluster
+→ {
+  "cluster_fall_heights_1787...": [
+    { site: "Riverfront Tower", risk: "high", category: "Structural" },
+    { site: "Westfield", risk: "high", category: "Fall Hazard" }
+  ],
+  "cluster_electrical_1787...": [
+    { site: "Metro Industrial", risk: "high", category: "Electrical" }
+  ]
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 10. Anomaly Detection -->
+<div class="section fade-in">
+  <div class="section-label">Anomaly Detection</div>
+  <h2>Weekly spike detection</h2>
+  <p class="desc">Compares each site's report count and high-risk count this week against its 3-week historical average. Sites with 2×+ spike are flagged.</p>
+
+  <div class="card">
+    <div class="callout warn">
+      <strong>Example output:</strong> "Metro Industrial Park: 4 reports this week (avg: 1.3/week). 4 high-risk this week (avg: 0.3/week)" — flagged as anomaly because both counts exceed 2× the historical average.
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+      <div>
+        <h4 style="font-size: 13px; margin-bottom: 8px;">Triggers anomaly when:</h4>
+        <ul style="font-size: 13px; color: var(--ink-muted); list-style: none; padding: 0;">
+          <li style="padding: 4px 0;">• This week's reports ≥ 2× historical weekly avg</li>
+          <li style="padding: 4px 0;">• This week's high-risk ≥ 2× historical weekly avg</li>
+          <li style="padding: 4px 0;">• Minimum threshold: ≥3 total or ≥2 high-risk</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="font-size: 13px; margin-bottom: 8px;">Where it appears:</h4>
+        <ul style="font-size: 13px; color: var(--ink-muted); list-style: none; padding: 0;">
+          <li style="padding: 4px 0;">• Red banner at top of /dashboard</li>
+          <li style="padding: 4px 0;">• Lists each flagged site with counts</li>
+          <li style="padding: 4px 0;">• Auto-fetches on page load via GET /api/reports/anomaly-check</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11. Score Formula -->
+<div class="section fade-in">
+  <div class="section-label">Scoring</div>
+  <h2>Site safety score formula</h2>
+
+  <div class="card" style="text-align: center; padding: 32px;">
+    <div style="font-size: 20px; font-weight: 700; font-family: monospace; margin-bottom: 20px; letter-spacing: -0.01em;">
+      score = clamp(0, 100, <span style="color: var(--safe)">100</span> − (<span style="color: var(--danger)">highRiskCount × 15</span>) + <span style="color: var(--accent)">speedBonus</span>)
+    </div>
+    <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; text-align: left;">
+      <div>
+        <div style="font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Penalty</div>
+        <div style="font-size: 14px;">Each high-risk report costs <strong>15 points</strong></div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Bonus</div>
+        <div style="font-size: 14px;">Faster resolution earns up to <strong>30 bonus points</strong></div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Recalculation</div>
+        <div style="font-size: 14px;">Triggered on every <strong>status or risk change</strong></div>
+      </div>
+    </div>
+    <div style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+      <div style="padding: 8px 16px; border-radius: 8px; background: var(--safe-light); font-size: 13px; font-weight: 600; color: var(--safe);">Score ≥ 80 = Safe</div>
+      <div style="padding: 8px 16px; border-radius: 8px; background: var(--warning-light); font-size: 13px; font-weight: 600; color: var(--warning);">Score 50–79 = Watch</div>
+      <div style="padding: 8px 16px; border-radius: 8px; background: var(--danger-light); font-size: 13px; font-weight: 600; color: var(--danger);">Score &lt; 50 = At Risk</div>
+    </div>
+  </div>
+</div>
+
+<!-- 12. Key Interactions -->
+<div class="section fade-in">
+  <div class="section-label">Interactions</div>
+  <h2>Human-AI collaboration flow</h2>
+
+  <div class="card" style="overflow: hidden;">
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start;">
+      <div>
+        <h3 style="margin-bottom: 12px;">AI Assessment</h3>
+        <div style="padding: 16px; border-radius: 8px; background: var(--accent-light); border: 1px solid rgba(15,118,110,0.15);">
+          <div style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 4px;">Gemini Output</div>
+          <div style="font-size: 14px; margin-bottom: 8px;">
+            <span class="badge high">high</span>
+            <span style="margin-left: 4px;">Electrical</span>
+          </div>
+          <div style="font-size: 12px; color: var(--ink-muted); font-style: italic;">
+            "Exposed live electrical wiring near water pipe presents credible risk of electrocution."
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--ink-faint);">
+          <strong>SLA set:</strong> 24 hours from analysis<br>
+          <strong>Cluster assigned:</strong> electrical_*<br>
+          <strong>Audit logged:</strong> report_analyzed
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; padding-top: 60px;">
+        <div style="font-size: 24px;">⇄</div>
+        <div style="font-size: 11px; color: var(--ink-faint); text-align: center; max-width: 80px;">
+          Human reviews and optionally overrides
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom: 12px;">Human Override</h3>
+        <div style="padding: 16px; border-radius: 8px; background: var(--warning-light); border: 1px solid rgba(217,119,6,0.15);">
+          <div style="font-size: 13px; font-weight: 600; color: var(--warning); margin-bottom: 4px;">Safety Officer Override</div>
+          <div style="font-size: 14px; margin-bottom: 8px;">
+            <span class="badge medium">medium</span>
+            <span style="margin-left: 4px; text-decoration: line-through; color: var(--ink-faint);">high</span>
+          </div>
+          <div style="font-size: 12px; color: var(--ink-muted);">
+            "Panel confirmed de-energized and locked out. Reduced to medium."
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--ink-faint);">
+          <strong>Both shown:</strong> Side-by-side on detail page<br>
+          <strong>Audit logged:</strong> risk_overridden<br>
+          <strong>SiteScore recalculated</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--ink-faint);">
+  SIF Watch — SIF Early Warning System — Built for hackathon demo
+</div>
+
+</div>
+
+<script>
+// Scroll-triggered fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
