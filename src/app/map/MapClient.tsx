@@ -44,9 +44,9 @@ export default function MapClient({ siteData }: { siteData: SiteData[] }) {
       {/* Legend */}
       <div className="flex items-center gap-4 mb-6 text-xs text-[var(--color-ink-muted)]">
         <span className="font-medium">Risk level:</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)]" /> High</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" /> Medium</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[var(--color-safe)]" /> Low</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--color-danger)" }} /> High</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--color-warning)" }} /> Medium</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--color-safe)" }} /> Low</span>
         <span className="ml-2 text-[var(--color-ink-faint)]">Size = risk concentration</span>
       </div>
 
@@ -56,15 +56,17 @@ export default function MapClient({ siteData }: { siteData: SiteData[] }) {
           {siteData.map((s) => {
             const color = getRiskColor(s.riskScore);
             const size = getRiskSize(s.riskScore);
+            const isSelected = selected?.site === s.site;
             return (
               <button
                 key={s.site}
-                onClick={() => setSelected(selected?.site === s.site ? null : s)}
-                className={`${size} rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 ${selected?.site === s.site ? "ring-2 ring-offset-2" : ""}`}
+                onClick={() => setSelected(isSelected ? null : s)}
+                className={`${size} rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95`}
                 style={{
                   background: color.bg,
                   border: `2px solid ${color.border}`,
-                  ringColor: selected?.site === s.site ? color.border : undefined,
+                  outline: isSelected ? `2px solid ${color.border}` : "none",
+                  outlineOffset: "4px",
                 }}
               >
                 <span className="text-[11px] font-semibold leading-tight text-center px-2" style={{ color: color.text }}>

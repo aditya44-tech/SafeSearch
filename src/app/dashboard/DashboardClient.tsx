@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
 interface Props {
@@ -8,17 +9,79 @@ interface Props {
   stats: { totalReports: number; highCount: number; pendingHigh: number };
 }
 
+interface Anomaly {
+  site: string; thisWeekCount: number; historicalAvg: number;
+  thisWeekHigh: number; historicalHighAvg: number;
+  status: string; message: string;
+}
+
 export default function DashboardClient({ categoryData, timeData, recurringSites, stats }: Props) {
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/reports/anomaly-check")
+      .then((r) => r.json())
+      .then((d) => setAnomalies(d.anomalies || []))
+      .catch(() => {});
+  }, []);
+
+  const flaggedSites = anomalies.filter((a) => a.status === "anomaly_detected");
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/pdf", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sif-watch-report.pdf";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } finally { setExporting(false); }
+  };
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
-          Dashboard
-        </h1>
-        <p className="text-sm text-[var(--color-ink-muted)] mt-1">
-          Safety report analytics across all sites
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
+            Dashboard
+          </h1>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+            Safety report analytics across all sites
+          </p>
+        </div>
+        <button
+          onClick={handleExportPDF}
+          disabled={exporting}
+          className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
+          style={{ background: "var(--color-accent)" }}
+        >
+          {exporting ? "Generating..." : "Export PDF"}
+        </button>
       </div>
+
+      {/* Anomaly Detection Banner */}
+      {flaggedSites.length > 0 && (
+        <div className="mb-6 rounded-xl p-4" style={{ background: "var(--color-danger-light)", border: "1px solid rgba(220,38,38,0.15)" }}>
+          <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--color-danger)" }}>
+            Anomaly Detected
+          </h3>
+          <div className="space-y-1.5">
+            {flaggedSites.map((a) => (
+              <div key={a.site} className="flex items-center gap-2 text-xs">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-danger)" }} />
+                <span className="font-medium" style={{ color: "var(--color-danger)" }}>{a.site}:</span>
+                <span style={{ color: "var(--color-ink)" }}>{a.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-8">

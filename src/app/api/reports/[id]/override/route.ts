@@ -1,52 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const report = await prisma.safetyReport.findUnique({ where: { id } });
-  if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(report);
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const body = await request.json();
+  const { riskLevel, reason, performedBy } = body;
+
+  if (!riskLevel || !reason) {
+    return NextResponse.json({ error: "riskLevel and reason required" }, { status: 400 });
+  }
 
   const report = await prisma.safetyReport.findUnique({ where: { id } });
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const updateData: Record<string, any> = {};
+  const updated = await prisma.safetyReport.update({
+    where: { id },
+    data: {
+      humanOverrideRiskLevel: riskLevel,
+      overrideReason: reason,
+      overriddenBy: performedBy || "Unknown",
+    },
+  });
 
-  if (body.status && body.status !== report.status) {
-    updateData.status = body.status;
-  }
+  // Log to audit
+  await prisma.auditLog.create({
+    data: {
+      reportId: id,
+      action: "risk_overridden",
+      performedBy: performedBy || "Unknown",
+      details: `Overrode AI assessment from "${report.riskLevel}" to "${riskLevel}". Reason: ${reason}`,
+    },
+  });
 
-  if (Object.keys(updateData).length === 0) {
-    return NextResponse.json(report);
-  }
-
-  const updated = await prisma.safetyReport.update({ where: { id }, data: updateData });
-
-  // Log status change to audit
-  if (updateData.status) {
-    await prisma.auditLog.create({
-      data: {
-        reportId: id,
-        action: "status_changed",
-        performedBy: body.performedBy || "Current User",
-        details: `Status changed from "${report.status}" to "${updateData.status}"`,
-      },
-    });
-
-    // Recalculate site score
-    await recalculateSiteScore(report.site);
-  }
+  // Recalculate site score
+  await recalculateSiteScore(report.site);
 
   return NextResponse.json(updated);
 }
@@ -58,7 +48,10 @@ async function recalculateSiteScore(site: string) {
   });
 
   const total = reports.length;
-  const high = reports.filter((r) => r.riskLevel === "high").length;
+  const high = reports.filter((r) => {
+    const effective = r.riskLevel;
+    return effective === "high";
+  }).length;
 
   const resolved = reports.filter((r) => r.status === "resolved");
   const resolutionTimes = resolved.map(

@@ -9,6 +9,8 @@ interface Report {
   id: string; reportText: string; site: string; reporterRole: string;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null;
+  clusterId: string | null; slaDeadline: string | null;
+  humanOverrideRiskLevel: string | null;
 }
 
 export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
@@ -19,6 +21,7 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
   const [sortField, setSortField] = useState<"riskLevel" | "reportedAt">("riskLevel");
   const [creating, setCreating] = useState(false);
   const [newReport, setNewReport] = useState({ reportText: "", site: "", reporterRole: "" });
+  const [showClusters, setShowClusters] = useState(false);
 
   const sorted = [...reports].sort((a, b) => {
     const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -29,6 +32,16 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
     }
     return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
   });
+
+  // Group by cluster for display
+  const clusterMap: Record<string, Report[]> = {};
+  for (const r of sorted) {
+    if (r.clusterId) {
+      if (!clusterMap[r.clusterId]) clusterMap[r.clusterId] = [];
+      clusterMap[r.clusterId].push(r);
+    }
+  }
+  const clusteredIds = new Set(Object.values(clusterMap).flat().map((r) => r.id));
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setCreating(true);
@@ -86,6 +99,15 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
           </p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowClusters(!showClusters)}
+            className="px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97]"
+            style={{
+              color: showClusters ? "white" : "var(--color-ink-muted)",
+              background: showClusters ? "var(--color-accent)" : "var(--color-surface-raised)",
+              border: "1px solid " + (showClusters ? "var(--color-accent)" : "var(--color-border)")
+            }}>
+            Clusters
+          </button>
           <button onClick={() => setShowCSVUpload(!showCSVUpload)}
             className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 active:scale-[0.97]"
             style={{ color: "var(--color-ink-muted)", background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
@@ -98,12 +120,14 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
           </button>
         </div>
       </div>
+
       {showCSVUpload && (
         <div className="mb-4 p-4 rounded-xl" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
           <p className="text-sm text-[var(--color-ink-muted)] mb-2">Upload CSV: reportText, site, reporterRole</p>
           <input type="file" accept=".csv" onChange={handleCSV} className="block text-sm" />
         </div>
       )}
+
       {showNewForm && (
         <form onSubmit={handleCreate} className="mb-4 p-5 rounded-xl space-y-3" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
           <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Site</label>
@@ -132,6 +156,7 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
           </div>
         </form>
       )}
+
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
         <table className="min-w-full">
           <thead>
@@ -144,46 +169,81 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
               <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Role</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Date</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((r) => (
-              <React.Fragment key={r.id}>
-                <tr onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                  className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
-                  style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <td className="px-4 py-3"><RiskBadge level={r.riskLevel} /></td>
-                  <td className="px-4 py-3 text-sm font-medium text-[var(--color-ink)]">{r.site}</td>
-                  <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
-                  <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3 text-sm text-[var(--color-ink-faint)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {new Date(r.reportedAt).toLocaleDateString()}
-                  </td>
-                </tr>
-                {expandedId === r.id && (
-                  <tr key={r.id + "-exp"}><td colSpan={6} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
-                    <div className="max-w-3xl">
-                      <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
-                        <span className="font-semibold">Report:</span> {r.reportText}
-                      </p>
-                      {r.justification && (
-                        <p className="text-sm text-[var(--color-ink-muted)] italic mb-2">
-                          <span className="font-semibold not-italic">AI assessment:</span> {r.justification}
-                        </p>
+            {sorted.map((r) => {
+              const isOverdue = r.slaDeadline && new Date(r.slaDeadline) < new Date() && r.status !== "resolved";
+              return (
+                <React.Fragment key={r.id}>
+                  <tr onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                    className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
+                    style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <RiskBadge level={r.humanOverrideRiskLevel || r.riskLevel} />
+                        {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
+                          <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-[var(--color-ink)]">
+                      {r.site}
+                      {r.clusterId && showClusters && (
+                        <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium"
+                          style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                          clustered
+                        </span>
                       )}
-                      <Link href={"/reports/" + r.id}
-                        className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
-                        style={{ color: "var(--color-accent)" }}>
-                        View full details
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                      </Link>
-                    </div>
-                  </td></tr>
-                )}
-              </React.Fragment>
-            ))}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
+                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3 text-xs" style={{
+                      color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
+                      fontWeight: isOverdue ? 600 : 400,
+                      fontVariantNumeric: "tabular-nums",
+                    }}>
+                      {r.slaDeadline
+                        ? isOverdue
+                          ? "OVERDUE"
+                          : `Due ${new Date(r.slaDeadline).toLocaleDateString()}`
+                        : "\u2014"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[var(--color-ink-faint)]" style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {new Date(r.reportedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                  {expandedId === r.id && (
+                    <tr key={r.id + "-exp"}><td colSpan={7} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
+                      <div className="max-w-3xl">
+                        <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
+                          <span className="font-semibold">Report:</span> {r.reportText}
+                        </p>
+                        {r.justification && (
+                          <p className="text-sm text-[var(--color-ink-muted)] italic mb-2">
+                            <span className="font-semibold not-italic">AI assessment:</span> {r.justification}
+                          </p>
+                        )}
+                        {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
+                          <p className="text-sm mb-2" style={{ color: "var(--color-warning)" }}>
+                            <span className="font-semibold">Override:</span> Risk changed to {r.humanOverrideRiskLevel} by human reviewer
+                          </p>
+                        )}
+                        <Link href={"/reports/" + r.id}
+                          className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
+                          style={{ color: "var(--color-accent)" }}>
+                          View full details
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </Link>
+                      </div>
+                    </td></tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

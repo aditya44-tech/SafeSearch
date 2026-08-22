@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="noise-overlay">
         <a href="#main-content" className="skip-link">Skip to content</a>
         <Navbar />
-        <main id="main-content" className="max-w-[1200px] mx-auto px-5 sm:px-8 py-8">
+        <main id="main-content" className="max-w-[1400px] mx-auto px-5 sm:px-8 py-8">
           {children}
         </main>
       </body>

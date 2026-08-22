@@ -36,6 +36,11 @@ export default async function MapPage() {
     site,
     ...data,
     riskScore: data.high * 3 + data.medium * 1.5 + data.low * 0.5,
+    reports: data.reports.map((r) => ({
+      ...r,
+      reportedAt: r.reportedAt.toISOString(),
+      status: r.status as string,
+    })),
   })).sort((a, b) => b.riskScore - a.riskScore);
 
   return <MapClient siteData={siteData} />;
