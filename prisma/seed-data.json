@@ -1,0 +1,211 @@
+[
+  {
+    "reportText": "The guard rail on the north side of the 4th floor platform has been removed for maintenance access and nobody replaced it. Workers are walking within 2 feet of the unprotected edge with no fall protection.",
+    "site": "Riverfront Tower",
+    "reporterRole": "Site Supervisor",
+    "reportedAt": "2026-08-21T09:19:00.000Z",
+    "status": "pending",
+    "riskLevel": "high",
+    "hazardCategory": "Fall Hazard",
+    "justification": "Unguarded edge at height with workers actively exposed creates an immediate credible path to a fatal fall.",
+    "analyzedAt": "2026-08-21T10:09:00.000Z"
+  },
+  {
+    "reportText": "Electrical panel in Building C has a cracked door and exposed wiring visible inside. I saw sparks yesterday when it was raining. Multiple workers pass by this panel daily.",
+    "site": "Metro Industrial Park",
+    "reporterRole": "Electrician",
+    "reportedAt": "2026-08-20T05:44:00.000Z",
+    "status": "acknowledged",
+    "riskLevel": "high",
+    "hazardCategory": "Electrical",
+    "justification": "Exposed live wiring with visible arcing near a wet environment poses a serious electrocution and fire risk.",
+    "analyzedAt": "2026-08-20T10:37:00.000Z"
+  },
+  {
+    "reportText": "The overhead crane in Bay 3 has been making loud grinding noises and the hoist chain shows visible wear. The operator mentioned it almost dropped a load last week but it was not reported.",
+    "site": "Riverfront Tower",
+    "reporterRole": "Crane Operator",
+    "reportedAt": "2026-08-17T06:42:00.000Z",
+    "status": "pending",
+    "riskLevel": "high",
+    "hazardCategory": "Equipment Failure",
+    "justification": "Near-miss with visible chain wear on an overhead crane indicates imminent risk of a dropped load fatality.",
+    "analyzedAt": "2026-08-17T03:57:00.000Z"
+  },
+  {
+    "reportText": "Scaffolding on the east side of the building is missing tie-ins above the third level. The crew is still working up there. I told the foreman but nothing has been done in two days.",
+    "site": "Harbor View Medical Center",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-08-19T09:30:00.000Z",
+    "status": "acknowledged",
+    "riskLevel": "high",
+    "hazardCategory": "Structural",
+    "justification": "Untied scaffolding at height with active workers creates high probability of collapse and fatalities.",
+    "analyzedAt": "2026-08-19T02:39:00.000Z"
+  },
+  {
+    "reportText": "Confined space entry in Tank 7 was performed without a gas monitor. The crew said the monitor was broken but continued the work anyway. At least four people were inside the tank.",
+    "site": "Metro Industrial Park",
+    "reporterRole": "Safety Coordinator",
+    "reportedAt": "2026-08-15T10:21:00.000Z",
+    "status": "resolved",
+    "riskLevel": "high",
+    "hazardCategory": "Chemical Exposure",
+    "justification": "Confined space entry without atmospheric monitoring is a leading cause of workplace fatalities from toxic gas or oxygen deficiency.",
+    "analyzedAt": "2026-08-15T02:10:00.000Z"
+  },
+  {
+    "reportText": "A forklift operator has been driving at high speed through the pedestrian corridor between warehouses. Almost hit two people yesterday. This is the third time this month.",
+    "site": "Logistics Hub East",
+    "reporterRole": "Warehouse Manager",
+    "reportedAt": "2026-08-18T10:44:00.000Z",
+    "status": "pending",
+    "riskLevel": "high",
+    "hazardCategory": "Vehicle/Traffic",
+    "justification": "Repeated high-speed forklift operation in pedestrian zones with near-misses indicates a pattern leading to a likely fatality.",
+    "analyzedAt": "2026-08-18T10:48:00.000Z"
+  },
+  {
+    "reportText": "The trench shoring on the utility installation at Grid F was removed prematurely by the excavation crew. The trench is 8 feet deep with workers still inside doing pipe fitting.",
+    "site": "Westfield Construction Site",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-08-16T06:40:00.000Z",
+    "status": "acknowledged",
+    "riskLevel": "high",
+    "hazardCategory": "Structural",
+    "justification": "Unshored 8-foot trench with workers inside creates immediate risk of catastrophic trench collapse and burial death.",
+    "analyzedAt": "2026-08-16T02:04:00.000Z"
+  },
+  {
+    "reportText": "Workers on the 2nd floor renovation are not wearing hard hats consistently. The area overhead has exposed ductwork and some loose material that could fall.",
+    "site": "Harbor View Medical Center",
+    "reporterRole": "Safety Coordinator",
+    "reportedAt": "2026-08-14T04:30:00.000Z",
+    "status": "analyzed",
+    "riskLevel": "medium",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Inconsistent PPE use under overhead hazards creates a real but partially mitigated risk of head injury.",
+    "analyzedAt": "2026-08-14T04:46:00.000Z"
+  },
+  {
+    "reportText": "The spill kit near chemical storage is empty and has not been restocked. We had a minor acid drip yesterday and had to use rags from the janitor closet.",
+    "site": "Metro Industrial Park",
+    "reporterRole": "Lab Technician",
+    "reportedAt": "2026-08-12T09:04:00.000Z",
+    "status": "acknowledged",
+    "riskLevel": "medium",
+    "hazardCategory": "Chemical Exposure",
+    "justification": "Depleted emergency spill response equipment near chemical storage reduces capacity to contain larger incidents.",
+    "analyzedAt": "2026-08-12T02:45:00.000Z"
+  },
+  {
+    "reportText": "The fire exit on the east side of Building A is being used for storage of pallets. It would take at least 10 minutes to clear a path in an emergency.",
+    "site": "Logistics Hub East",
+    "reporterRole": "Facilities Manager",
+    "reportedAt": "2026-08-10T07:37:00.000Z",
+    "status": "resolved",
+    "riskLevel": "medium",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Blocked emergency egress path could delay evacuation and increase severity during a fire or other emergency.",
+    "analyzedAt": "2026-08-10T01:11:00.000Z"
+  },
+  {
+    "reportText": "Several ladders on site have bent rungs or damaged feet. I have been trying to get them replaced for two weeks. People keep using them anyway.",
+    "site": "Westfield Construction Site",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-08-08T05:11:00.000Z",
+    "status": "pending",
+    "riskLevel": "medium",
+    "hazardCategory": "Equipment Failure",
+    "justification": "Damaged ladders still in active use present a fall risk, though height and environment partially mitigate severity.",
+    "analyzedAt": "2026-08-08T05:53:00.000Z"
+  },
+  {
+    "reportText": "The ventilation system in the painting booth has been running at reduced capacity. There is a noticeable increase in fume levels during spray operations.",
+    "site": "Metro Industrial Park",
+    "reporterRole": "Paint Shop Lead",
+    "reportedAt": "2026-08-07T05:57:00.000Z",
+    "status": "analyzed",
+    "riskLevel": "medium",
+    "hazardCategory": "Chemical Exposure",
+    "justification": "Reduced ventilation in a spray booth increases worker exposure to toxic fumes, creating a health hazard that could become serious over time.",
+    "analyzedAt": "2026-08-07T02:35:00.000Z"
+  },
+  {
+    "reportText": "Parking lot lighting on the south side has been out for a week. Workers doing night shifts have to walk through a very dark area to reach the site entrance.",
+    "site": "Riverfront Tower",
+    "reporterRole": "Security Guard",
+    "reportedAt": "2026-08-13T09:38:00.000Z",
+    "status": "pending",
+    "riskLevel": "medium",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Poor lighting in high-traffic pedestrian areas increases risk of trips, falls, and security incidents during night shifts.",
+    "analyzedAt": "2026-08-13T01:09:00.000Z"
+  },
+  {
+    "reportText": "The weekly safety toolbox talk sign-in sheet was incomplete for the last two sessions. Only about half the crew signed in.",
+    "site": "Harbor View Medical Center",
+    "reporterRole": "Site Supervisor",
+    "reportedAt": "2026-08-11T03:07:00.000Z",
+    "status": "analyzed",
+    "riskLevel": "low",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Incomplete documentation of safety meetings is a compliance issue unlikely to cause direct physical harm.",
+    "analyzedAt": "2026-08-11T05:23:00.000Z"
+  },
+  {
+    "reportText": "The first aid kit in Trailer B is missing a few items - no tweezers and the burn cream is expired. Otherwise fully stocked.",
+    "site": "Westfield Construction Site",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-08-06T11:08:00.000Z",
+    "status": "resolved",
+    "riskLevel": "low",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Minor gap in first aid supplies is a maintenance issue with no immediate path to serious injury.",
+    "analyzedAt": "2026-08-06T01:30:00.000Z"
+  },
+  {
+    "reportText": "Some floor tiles in the main office hallway are slightly loose. Not a trip hazard yet but could become one over time.",
+    "site": "Logistics Hub East",
+    "reporterRole": "Office Administrator",
+    "reportedAt": "2026-08-02T06:15:00.000Z",
+    "status": "analyzed",
+    "riskLevel": "low",
+    "hazardCategory": "Structural",
+    "justification": "Minor floor condition issue with no immediate safety impact, flagged for preventive maintenance.",
+    "analyzedAt": "2026-08-02T03:01:00.000Z"
+  },
+  {
+    "reportText": "The break room microwave is making a weird noise and the turntable does not spin properly. Might need to be replaced.",
+    "site": "Metro Industrial Park",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-08-04T06:09:00.000Z",
+    "status": "resolved",
+    "riskLevel": "low",
+    "hazardCategory": "Equipment Failure",
+    "justification": "Malfunctioning kitchen appliance is a comfort issue with negligible safety risk.",
+    "analyzedAt": "2026-08-04T05:32:00.000Z"
+  },
+  {
+    "reportText": "Suggestion: we should add more hand sanitizer dispensers near the site entrance. There is only one and there is usually a line.",
+    "site": "Riverfront Tower",
+    "reporterRole": "Field Worker",
+    "reportedAt": "2026-07-31T02:17:00.000Z",
+    "status": "analyzed",
+    "riskLevel": "low",
+    "hazardCategory": "Procedural Gap",
+    "justification": "Convenience suggestion with no connection to physical safety hazards.",
+    "analyzedAt": "2026-07-31T08:34:00.000Z"
+  },
+  {
+    "reportText": "I noticed the guardrail along the elevated walkway between Buildings A and B is loose and wobbles when you lean on it. Several people use this walkway every day.",
+    "site": "Harbor View Medical Center",
+    "reporterRole": "Maintenance Worker",
+    "reportedAt": "2026-08-22T04:26:00.000Z",
+    "status": "pending",
+    "riskLevel": null,
+    "hazardCategory": null,
+    "justification": null,
+    "analyzedAt": null
+  }
+]

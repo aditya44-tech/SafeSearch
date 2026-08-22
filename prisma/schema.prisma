@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum ReportStatus {
+  pending
+  analyzed
+  acknowledged
+  resolved
+}
+
+enum RiskLevel {
+  high
+  medium
+  low
+}
+
+model SafetyReport {
+  id              String       @id @default(cuid())
+  reportText      String
+  site            String
+  reporterRole    String
+  reportedAt      DateTime     @default(now())
+  status          ReportStatus @default(pending)
+  riskLevel       RiskLevel?
+  hazardCategory  String?
+  justification   String?
+  analyzedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([status])
+  @@index([riskLevel])
+  @@index([site])
+  @@index([reportedAt])
+}
