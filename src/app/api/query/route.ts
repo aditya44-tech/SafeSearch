@@ -1,39 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { callGemini } from "@/lib/helpers";
 
 const QUERY_PROMPT = `You are a safety data assistant. You will be given a user's question and a JSON summary of safety reports (site, date, risk level, hazard category, status). Answer the question using ONLY the data provided — do not make up information. If the data doesn't contain enough information to answer, say so clearly. Keep your answer to 2-3 sentences, plain language, no jargon.
 
 User question: {{userQuestion}}
 Report data: {{reportDataSummary}}`;
 
-const GEMINI_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"];
-
-async function callGemini(prompt: string, apiKey: string): Promise<string> {
-  for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 500 },
-        }),
-      });
-      const data = await response.json();
-      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return data.candidates[0].content.parts[0].text.trim();
-      }
-    } catch { /* try next model */ }
-  }
-  throw new Error("All models failed");
-}
-
 export async function POST(request: NextRequest) {
   const { question } = await request.json();
   if (!question) return NextResponse.json({ error: "No question provided" }, { status: 400 });
 
-  // Fetch report data for context
   const reports = await prisma.safetyReport.findMany({
     orderBy: { reportedAt: "desc" },
     take: 200,
@@ -64,7 +41,10 @@ export async function POST(request: NextRequest) {
 
   if (apiKey) {
     try {
-      const answer = await callGemini(prompt, apiKey);
+      const answer = await callGemini(prompt, apiKey, {
+        temperature: 0.3,
+        maxOutputTokens: 500,
+      });
       return NextResponse.json({ answer });
     } catch {
       // Fall through to basic answer
@@ -89,7 +69,9 @@ export async function POST(request: NextRequest) {
     answer += `${high.length} total high-risk reports. ${unresolved.length} still require action.`;
   } else if (q.includes("common") || q.includes("most")) {
     const catMap: Record<string, number> = {};
-    reports.forEach((r) => { if (r.hazardCategory) catMap[r.hazardCategory] = (catMap[r.hazardCategory] || 0) + 1; });
+    reports.forEach((r) => {
+      if (r.hazardCategory) catMap[r.hazardCategory] = (catMap[r.hazardCategory] || 0) + 1;
+    });
     const top = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
     answer += `Most common categories: ${top.map(([k, v]) => `${k} (${v})`).join(", ")}.`;
   } else {

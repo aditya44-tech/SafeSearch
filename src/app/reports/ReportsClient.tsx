@@ -13,6 +13,16 @@ interface Report {
   humanOverrideRiskLevel: string | null;
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return `${formatDate(iso)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
   const [reports, setReports] = useState(initial);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -32,16 +42,6 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
     }
     return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
   });
-
-  // Group by cluster for display
-  const clusterMap: Record<string, Report[]> = {};
-  for (const r of sorted) {
-    if (r.clusterId) {
-      if (!clusterMap[r.clusterId]) clusterMap[r.clusterId] = [];
-      clusterMap[r.clusterId].push(r);
-    }
-  }
-  const clusteredIds = new Set(Object.values(clusterMap).flat().map((r) => r.id));
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setCreating(true);
@@ -201,19 +201,20 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
                     <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
                     <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-xs" style={{
-                      color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
-                      fontWeight: isOverdue ? 600 : 400,
-                      fontVariantNumeric: "tabular-nums",
-                    }}>
+                    <td className="px-4 py-3 text-xs" suppressHydrationWarning
+                      style={{
+                        color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
+                        fontWeight: isOverdue ? 600 : 400,
+                        fontVariantNumeric: "tabular-nums",
+                      }}>
                       {r.slaDeadline
                         ? isOverdue
                           ? "OVERDUE"
-                          : `Due ${new Date(r.slaDeadline).toLocaleDateString()}`
+                          : `Due ${formatDate(r.slaDeadline)}`
                         : "\u2014"}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-ink-faint)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {new Date(r.reportedAt).toLocaleDateString()}
+                    <td className="px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {formatDate(r.reportedAt)}
                     </td>
                   </tr>
                   {expandedId === r.id && (

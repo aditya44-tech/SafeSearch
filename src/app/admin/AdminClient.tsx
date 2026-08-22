@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
 
 interface Report {
   id: string; site: string; reporterRole: string; reportText: string;
@@ -15,32 +16,12 @@ interface Task {
   report: { id: string; site: string; riskLevel: string | null; hazardCategory: string | null; reportText: string };
 }
 
-const DEPARTMENTS = [
-  { name: "Electrical", icon: "\u26A1", categories: ["Electrical"] },
-  { name: "Structural", icon: "\uD83C\uDFD7\uFE0F", categories: ["Structural", "Fall Hazard"] },
-  { name: "Chemical Safety", icon: "\u2622\uFE0F", categories: ["Chemical Exposure"] },
-  { name: "Mechanical", icon: "\u2699\uFE0F", categories: ["Equipment Failure"] },
-  { name: "Traffic & Vehicles", icon: "\uD83D\uDE97", categories: ["Vehicle/Traffic"] },
-  { name: "General Maintenance", icon: "\uD83D\uDD27", categories: ["Procedural Gap", "Confined Space"] },
-  { name: "Safety Compliance", icon: "\uD83D\uDEE1\uFE0F", categories: [] },
-];
-
 const PRIORITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   urgent: { bg: "#fef2f2", text: "#dc2626", border: "rgba(220,38,38,0.2)" },
   high: { bg: "#fff7ed", text: "#ea580c", border: "rgba(234,88,12,0.2)" },
   normal: { bg: "#f0f9ff", text: "#0284c7", border: "rgba(2,132,199,0.2)" },
   low: { bg: "#f0fdf4", text: "#16a34a", border: "rgba(22,163,74,0.2)" },
 };
-
-function autoAssignDept(category: string | null): string {
-  if (!category) return "Safety Compliance";
-  const match = DEPARTMENTS.find((d) => d.categories.includes(category));
-  return match ? match.name : "Safety Compliance";
-}
-
-function getDeptIcon(dept: string): string {
-  return DEPARTMENTS.find((d) => d.name === dept)?.icon || "\uD83D\uDCCB";
-}
 
 export default function AdminClient({ reports, tasks, stats }: { reports: Report[]; tasks: Task[]; stats: { total: number; pending: number; overdueTasks: number } }) {
   const [tab, setTab] = useState<"board" | "reports">("board");
@@ -55,20 +36,17 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
   const sites = [...new Set(reports.map((r) => r.site))];
   const depts = [...new Set(taskList.map((t) => t.assignedTo))];
 
-  // Filter reports
   const filteredReports = reports.filter((r) => {
     if (filterSite !== "all" && r.site !== filterSite) return false;
     if (filterRisk !== "all" && r.riskLevel !== filterRisk) return false;
     return true;
   });
 
-  // Task board columns — simplified workflow
   const boardColumns = ["open", "in_progress", "done"] as const;
   const columnLabels: Record<string, string> = { open: "Open", in_progress: "In Progress", done: "Done" };
   const columnColors: Record<string, string> = { open: "var(--color-warning)", in_progress: "var(--color-accent)", done: "var(--color-safe)" };
   const tasksByStatus = (status: string) => taskList.filter((t) => t.status === status);
 
-  // Filter tasks on board
   const filteredBoardTasks = (status: string) => {
     const list = tasksByStatus(status);
     if (filterDept === "all") return list;
@@ -106,7 +84,6 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
 
   const openTasks = tasksByStatus("open");
   const inProgressTasks = tasksByStatus("in_progress");
-  const doneTasks = tasksByStatus("done");
 
   return (
     <div>
@@ -153,7 +130,6 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
       {/* Task Board */}
       {tab === "board" && (
         <div>
-          {/* Department filter */}
           <div className="flex gap-2 mb-4 flex-wrap">
             <button onClick={() => setFilterDept("all")}
               className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all"

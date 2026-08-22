@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recalculateSiteScore } from "@/lib/helpers";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -12,28 +13,25 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await request.json();
+  const body = await _request.json();
 
   const report = await prisma.safetyReport.findUnique({ where: { id } });
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const updateData: Record<string, any> = {};
-
   if (body.status && body.status !== report.status) {
     updateData.status = body.status;
   }
-
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json(report);
   }
 
   const updated = await prisma.safetyReport.update({ where: { id }, data: updateData });
 
-  // Log status change to audit
   if (updateData.status) {
     await prisma.auditLog.create({
       data: {
@@ -43,49 +41,8 @@ export async function PATCH(
         details: `Status changed from "${report.status}" to "${updateData.status}"`,
       },
     });
-
-    // Recalculate site score
-    await recalculateSiteScore(report.site);
+    await recalculateSiteScore(prisma, report.site);
   }
 
   return NextResponse.json(updated);
-}
-
-async function recalculateSiteScore(site: string) {
-  const reports = await prisma.safetyReport.findMany({
-    where: { site },
-    select: { riskLevel: true, status: true, reportedAt: true, updatedAt: true },
-  });
-
-  const total = reports.length;
-  const high = reports.filter((r) => r.riskLevel === "high").length;
-
-  const resolved = reports.filter((r) => r.status === "resolved");
-  const resolutionTimes = resolved.map(
-    (r) => (new Date(r.updatedAt).getTime() - new Date(r.reportedAt).getTime()) / (1000 * 60 * 60)
-  );
-  const avgResolution = resolutionTimes.length > 0
-    ? resolutionTimes.reduce((a, b) => a + b, 0) / resolutionTimes.length
-    : 0;
-
-  const highPenalty = high * 15;
-  const speedBonus = avgResolution > 0 ? Math.max(0, 30 - avgResolution / 2) : 0;
-  const score = Math.max(0, Math.min(100, 100 - highPenalty + speedBonus));
-
-  await prisma.siteScore.upsert({
-    where: { site },
-    update: {
-      totalReports: total,
-      highRiskCount: high,
-      avgResolutionHours: Math.round(avgResolution * 10) / 10,
-      scoreValue: Math.round(score),
-    },
-    create: {
-      site,
-      totalReports: total,
-      highRiskCount: high,
-      avgResolutionHours: Math.round(avgResolution * 10) / 10,
-      scoreValue: Math.round(score),
-    },
-  });
 }

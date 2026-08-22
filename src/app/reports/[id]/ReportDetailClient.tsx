@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
+import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
 
 interface Report {
   id: string; reportText: string; site: string; reporterRole: string;
@@ -29,7 +30,11 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [toast, setToast] = useState("");
   const [tasks, setTasks] = useState(report.tasks || []);
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [taskForm, setTaskForm] = useState({ title: "", description: "", assignedTo: "Mike Chen", priority: "high" });
+  const [taskForm, setTaskForm] = useState({
+    title: "", description: "",
+    assignedTo: autoAssignDept(report.hazardCategory),
+    priority: "high",
+  });
   const [creatingTask, setCreatingTask] = useState(false);
   const router = useRouter();
 
@@ -92,16 +97,6 @@ export default function ReportDetailClient({ report }: { report: Report }) {
 
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
 
-  const DEPARTMENTS = [
-    { name: "Electrical", icon: "\u26A1" },
-    { name: "Structural", icon: "\uD83C\uDFD7\uFE0F" },
-    { name: "Chemical Safety", icon: "\u2622\uFE0F" },
-    { name: "Mechanical", icon: "\u2699\uFE0F" },
-    { name: "Traffic & Vehicles", icon: "\uD83D\uDE97" },
-    { name: "General Maintenance", icon: "\uD83D\uDD27" },
-    { name: "Safety Compliance", icon: "\uD83D\uDEE1\uFE0F" },
-  ];
-
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) return;
     setCreatingTask(true);
@@ -115,7 +110,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         const task = await res.json();
         setTasks([task, ...tasks]);
         setShowTaskForm(false);
-        setTaskForm({ title: "", description: "", assignedTo: "Mike Chen", priority: "high" });
+        setTaskForm({ title: "", description: "", assignedTo: autoAssignDept(report.hazardCategory), priority: "high" });
         setToast("Task assigned to " + task.assignedTo);
         setTimeout(() => setToast(""), 3000);
       }
@@ -268,8 +263,8 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           {[
             { label: "Site", value: report.site },
             { label: "Reporter role", value: report.reporterRole },
-            { label: "Reported at", value: new Date(report.reportedAt).toLocaleString() },
-            { label: "SLA deadline", value: report.slaDeadline ? new Date(report.slaDeadline).toLocaleString() : "—" },
+            { label: "Reported at", value: report.reportedAt.replace("T", " ").slice(0, 16) },
+            { label: "SLA deadline", value: report.slaDeadline ? report.slaDeadline.replace("T", " ").slice(0, 16) : "\u2014" },
           ].map((field) => (
             <div key={field.label}>
               <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--color-ink-muted)" }}>{field.label}</h3>
@@ -349,7 +344,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{
                     background: log.action === "risk_overridden" ? "var(--color-warning)" : "var(--color-accent)"
                   }} />
-                  <span className="text-[var(--color-ink-muted)]">{new Date(log.timestamp).toLocaleString()}</span>
+                  <span className="text-[var(--color-ink-muted)]" suppressHydrationWarning>{log.timestamp.replace("T", " ").slice(0, 16)}</span>
                   <span className="text-[var(--color-ink)] font-medium">{log.action.replace(/_/g, " ")}</span>
                   <span className="text-[var(--color-ink-faint)]">by {log.performedBy}</span>
                   {log.details && <span className="text-[var(--color-ink-faint)] ml-auto truncate max-w-[200px]">{log.details}</span>}
@@ -386,7 +381,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               <div className="flex gap-2">
                 <select value={taskForm.assignedTo} onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
                   className="flex-1 px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>
-                  {DEPARTMENTS.map((d) => <option key={d.name} value={d.name}>{d.icon} {d.name}</option>)}
+                  {DEPARTMENTS.map((d) => <option key={d.name} value={d.name}>{getDeptIcon(d.name)} {d.name}</option>)}
                 </select>
                 <select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
                   className="px-3 py-2 text-sm rounded-lg outline-none" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface-raised)" }}>

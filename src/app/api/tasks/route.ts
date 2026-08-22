@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       },
     },
     orderBy: [
-      { priority: "asc" },
+      { priority: "desc" },
       { createdAt: "desc" },
     ],
   });

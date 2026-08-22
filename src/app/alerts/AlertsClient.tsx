@@ -7,6 +7,11 @@ interface Report {
   hazardCategory: string | null; justification: string | null;
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function AlertsClient({ reports }: { reports: Report[] }) {
   return (
     <div>
@@ -74,8 +79,8 @@ export default function AlertsClient({ reports }: { reports: Report[] }) {
                     {r.justification && (
                       <p className="text-sm text-[var(--color-ink-faint)] italic mt-1.5">{r.justification}</p>
                     )}
-                    <p className="text-xs text-[var(--color-ink-faint)] mt-2.5">
-                      Reported by {r.reporterRole} on {new Date(r.reportedAt).toLocaleString()}
+                    <p className="text-xs text-[var(--color-ink-faint)] mt-2.5" suppressHydrationWarning>
+                      Reported by {r.reporterRole} on {formatDate(r.reportedAt)}
                     </p>
                   </div>
                   <Link
