@@ -1,10 +1,18 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
+
+interface ComplianceRef {
+  id: number;
+  hazardCategory: string;
+  regulationName: string;
+  sectionReference: string;
+  description: string;
+}
 
 interface Report {
   id: number; reportText: string; site: string; reporterRole: string;
@@ -12,6 +20,7 @@ interface Report {
   hazardCategory: string | null; justification: string | null; analyzedAt: string | null;
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
+  keyPhrases?: string | null;
   auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
   tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
@@ -30,6 +39,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [toast, setToast] = useState("");
   const [tasks, setTasks] = useState(report.tasks || []);
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [complianceRefs, setComplianceRefs] = useState<ComplianceRef[]>([]);
   const [taskForm, setTaskForm] = useState({
     title: "", description: "",
     assignedTo: autoAssignDept(report.hazardCategory),
@@ -37,6 +47,15 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   });
   const [creatingTask, setCreatingTask] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const params = new URLSearchParams({ text: report.reportText });
+    if (report.hazardCategory) params.set("category", report.hazardCategory);
+    fetch("/api/compliance?" + params.toString())
+      .then((r) => r.json())
+      .then((d) => setComplianceRefs(d))
+      .catch(() => {});
+  }, [report.reportText, report.hazardCategory]);
 
   const handleStatusChange = async (newStatus: string) => {
     const res = await fetch("/api/reports/" + report.id, {
@@ -94,6 +113,42 @@ export default function ReportDetailClient({ report }: { report: Report }) {
       }
     } finally { setUploadingPhoto(false); }
   };
+
+  // Parse key phrases from JSON string
+  const parsedKeyPhrases: string[] = (() => {
+    try {
+      if (report.keyPhrases) {
+        const parsed = JSON.parse(report.keyPhrases);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch {}
+    return [];
+  })();
+
+  // Highlight key phrases in report text with case-insensitive matching
+  const highlightedText = (() => {
+    if (parsedKeyPhrases.length === 0) return null;
+    const text = report.reportText;
+    // Sort phrases by length descending so longer matches replace first
+    const sorted = [...parsedKeyPhrases].sort((a, b) => b.length - a.length);
+    // Build a single regex for all phrases
+    const escaped = sorted.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
+    const parts: { text: string; highlight: boolean }[] = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ text: text.slice(lastIndex, match.index), highlight: false });
+      }
+      parts.push({ text: match[0], highlight: true });
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      parts.push({ text: text.slice(lastIndex), highlight: false });
+    }
+    return parts;
+  })();
 
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
 
@@ -286,8 +341,31 @@ export default function ReportDetailClient({ report }: { report: Report }) {
 
         {/* Report Text */}
         <div className="mb-5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>Report text</h3>
-          <p className="text-sm text-[var(--color-ink)] leading-relaxed rounded-lg p-4" style={{ background: "var(--color-surface-sunken)" }}>{report.reportText}</p>
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>
+            Report text
+            {parsedKeyPhrases.length > 0 && (
+              <span className="ml-2 text-[9px] font-normal normal-case tracking-normal" style={{ color: "var(--color-warning)" }}>
+                ({parsedKeyPhrases.length} key phrase{parsedKeyPhrases.length !== 1 ? "s" : ""} highlighted)
+              </span>
+            )}
+          </h3>
+          <div className="text-sm text-[var(--color-ink)] leading-relaxed rounded-lg p-4" style={{ background: "var(--color-surface-sunken)" }}>
+            {highlightedText ? (
+              <>
+                {highlightedText.map((part, i) =>
+                  part.highlight ? (
+                    <mark key={i} className="px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)", fontWeight: 500 }}>
+                      {part.text}
+                    </mark>
+                  ) : (
+                    <span key={i}>{part.text}</span>
+                  )
+                )}
+              </>
+            ) : (
+              report.reportText
+            )}
+          </div>
         </div>
 
         {/* Photo Evidence */}
@@ -331,6 +409,34 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           <div className="mb-5">
             <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>AI justification</h3>
             <p className="text-sm italic leading-relaxed rounded-lg p-4" style={{ background: "var(--color-warning-light)", color: "var(--color-ink)" }}>{report.justification}</p>
+          </div>
+        )}
+
+        {/* Regulatory Compliance Reference */}
+        {complianceRefs.length > 0 && (
+          <div className="mb-5">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>
+              Regulatory compliance
+              <span className="ml-2 text-[9px] font-normal normal-case tracking-normal" style={{ color: "var(--color-ink-faint)" }}>
+                ({complianceRefs.length} regulation{complianceRefs.length !== 1 ? "s" : ""} matched from report text)
+              </span>
+            </h3>
+            <div className="space-y-2">
+              {complianceRefs.map((ref: any) => (
+                <div key={ref.id} className="p-3 rounded-lg" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-semibold text-[var(--color-ink)]">{ref.regulationName}</span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                      {ref.sectionReference}
+                    </span>
+                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-faint)", border: "1px solid var(--color-border)" }}>
+                      {ref.hazardCategory}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed">{ref.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

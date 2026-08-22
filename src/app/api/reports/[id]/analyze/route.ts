@@ -9,6 +9,7 @@ import {
   textSimilarity,
   autoAssignDept,
   fallbackTaskExtraction,
+  extractKeyPhrases,
   TASK_EXTRACTION_PROMPT,
   type AnalysisResult,
   type ExtractedTask,
@@ -21,8 +22,15 @@ Given the report below, respond with ONLY valid JSON in this exact format, no ex
 {
   "risk_level": "high" | "medium" | "low",
   "hazard_category": "<short category, e.g. Fall Hazard, Electrical, Equipment Failure, Chemical Exposure, Vehicle/Traffic, Structural, Procedural Gap>",
-  "justification": "<one sentence explaining why this risk level was assigned>"
+  "justification": "<one sentence explaining why this risk level was assigned>",
+  "key_phrases": ["<exact substring from the report text that influenced the risk rating>", ...]
 }
+
+Rules for key_phrases:
+- List 2-5 exact substrings that appear verbatim in the original report text
+- These are the specific words/phrases that directly drove the risk classification
+- Use the exact wording from the report, preserving original capitalization
+- Do not paraphrase or invent phrases that are not in the text
 
 Guidance:
 - "high" = credible path to serious injury or death if unaddressed
@@ -222,6 +230,12 @@ export async function POST(
 
   const slaDeadline = getSLADeadline(analysis.risk_level);
 
+  // Save key phrases as JSON string — use Gemini output or fallback extraction
+  const rawPhrases = analysis.key_phrases && Array.isArray(analysis.key_phrases) && analysis.key_phrases.length > 0
+    ? analysis.key_phrases.slice(0, 5)
+    : extractKeyPhrases(report.reportText);
+  const keyPhrases = JSON.stringify(rawPhrases);
+
   const updated = await prisma.safetyReport.update({
     where: { id },
     data: {
@@ -231,6 +245,7 @@ export async function POST(
       status: "analyzed",
       analyzedAt: new Date(),
       slaDeadline,
+      keyPhrases,
     },
   });
 

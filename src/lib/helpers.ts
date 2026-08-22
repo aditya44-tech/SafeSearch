@@ -14,6 +14,7 @@ export interface AnalysisResult {
   risk_level: string;
   hazard_category: string;
   justification: string;
+  key_phrases?: string[];
 }
 
 export interface ExtractedTask {
@@ -150,6 +151,115 @@ export async function recalculateSiteScore(prisma: PrismaClient, site: string) {
       scoreValue: Math.round(score),
     },
   });
+}
+
+// ── Key Phrase Extraction (fallback when Gemini unavailable) ──────────────────
+
+const KEY_PHRASE_PATTERNS: Record<string, RegExp[]> = {
+  high: [
+    /(?:unguarded|exposed|live)\s+(?:wire|electrical|edge|height|crane)/gi,
+    /(?:no\s+(?:guard|rail|barrier|harness|protection))/gi,
+    /(?:confined\s+space)/gi,
+    /(?:collapse|collapsed|collapsing)/gi,
+    /(?:near[- ]?miss|almost\s+(?:hit|fell|dropped))/gi,
+    /(?:leaking|spill(?:ing)?|toxic|poison)/gi,
+    /(?:serious\s+(?:injury|risk|danger|hazard))/gi,
+    /(?:death|fatal|fatality)/gi,
+  ],
+  medium: [
+    /(?:not\s+wearing|missing\s+(?:helmet|hardhat|safety))/gi,
+    /(?:damaged|broken|malfunction)/gi,
+    /(?:headache|nausea|dizziness)/gi,
+    /(?:blocked\s+(?:exit|aisle|fire))/gi,
+    /(?:worn[- ]?(?:out|damaged))/gi,
+  ],
+  low: [
+    /(?:minor|small|slight)/gi,
+    /(?:procedure|policy|documentation)/gi,
+    /(?:signage|labeling|housekeeping)/gi,
+  ],
+};
+
+export function extractKeyPhrases(reportText: string): string[] {
+  const phrases: string[] = [];
+  const seen = new Set<string>();
+
+  // Try high-risk patterns first (they indicate the most important signals)
+  for (const [level, patterns] of Object.entries(KEY_PHRASE_PATTERNS)) {
+    for (const pattern of patterns) {
+      const matches = reportText.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          const trimmed = match.trim();
+          const key = trimmed.toLowerCase();
+          if (!seen.has(key) && trimmed.length > 3) {
+            seen.add(key);
+            phrases.push(trimmed);
+          }
+        }
+      }
+    }
+    // Stop at 5 phrases
+    if (phrases.length >= 5) break;
+  }
+
+  // If no patterns matched, extract the longest sentences as fallback
+  if (phrases.length === 0) {
+    const sentences = reportText.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+    for (const s of sentences.slice(0, 3)) {
+      phrases.push(s.trim());
+    }
+  }
+
+  return phrases.slice(0, 5);
+}
+
+// ── Heinrich's Law Escalation Score ─────────────────────────────────────────
+
+export interface EscalationScore {
+  site: string;
+  score: number;
+  classification: "Critical" | "Elevated" | "Normal";
+  highRiskCount: number;
+  mediumRiskCount: number;
+  lowRiskCount: number;
+  totalReports: number;
+  explanation: string;
+}
+
+export function calculateEscalationScores(
+  reports: { site: string; riskLevel: string | null; reportedAt: Date }[]
+): EscalationScore[] {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const recent = reports.filter((r) => r.reportedAt >= thirtyDaysAgo);
+
+  const siteMap: Record<string, { high: number; medium: number; low: number }> = {};
+  for (const r of recent) {
+    if (!r.riskLevel) continue;
+    if (!siteMap[r.site]) siteMap[r.site] = { high: 0, medium: 0, low: 0 };
+    if (r.riskLevel === "high") siteMap[r.site].high++;
+    else if (r.riskLevel === "medium") siteMap[r.site].medium++;
+    else siteMap[r.site].low++;
+  }
+
+  return Object.entries(siteMap)
+    .map(([site, counts]) => {
+      const score = counts.high * 10 + counts.medium * 3 + counts.low * 1;
+      const total = counts.high + counts.medium + counts.low;
+      let classification: "Critical" | "Elevated" | "Normal";
+      if (score > 40) classification = "Critical";
+      else if (score >= 20) classification = "Elevated";
+      else classification = "Normal";
+
+      const parts: string[] = [];
+      if (counts.high) parts.push(`${counts.high} high-risk`);
+      if (counts.medium) parts.push(`${counts.medium} medium-risk`);
+      if (counts.low) parts.push(`${counts.low} low-risk`);
+      const explanation = `${parts.join(" and ")} report${total !== 1 ? "s" : ""} in the last 30 days`;
+
+      return { site, score, classification, highRiskCount: counts.high, mediumRiskCount: counts.medium, lowRiskCount: counts.low, totalReports: total, explanation };
+    })
+    .sort((a, b) => b.score - a.score);
 }
 
 // ── Text Similarity & Clustering ───────────────────────────────────────────

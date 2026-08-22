@@ -2,6 +2,17 @@
 import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
+interface EscalationSite {
+  site: string;
+  score: number;
+  classification: "Critical" | "Elevated" | "Normal";
+  highRiskCount: number;
+  mediumRiskCount: number;
+  lowRiskCount: number;
+  totalReports: number;
+  explanation: string;
+}
+
 interface Props {
   categoryData: { name: string; count: number }[];
   timeData: { date: string; count: number }[];
@@ -15,14 +26,36 @@ interface Anomaly {
   status: string; message: string;
 }
 
+interface ComplianceSummary {
+  category: string;
+  count: number;
+  regulations: string[];
+}
+
+const CLASSIFICATION_STYLE: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  Critical: { bg: "var(--color-danger-light)", text: "var(--color-danger)", border: "rgba(220,38,38,0.15)", label: "Critical" },
+  Elevated: { bg: "var(--color-warning-light)", text: "var(--color-warning)", border: "rgba(217,119,6,0.15)", label: "Elevated" },
+  Normal: { bg: "var(--color-safe-light)", text: "var(--color-safe)", border: "rgba(22,163,74,0.15)", label: "Normal" },
+};
+
 export default function DashboardClient({ categoryData, timeData, recurringSites, stats }: Props) {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [escalation, setEscalation] = useState<EscalationSite[]>([]);
+  const [complianceSummary, setComplianceSummary] = useState<ComplianceSummary[]>([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetch("/api/reports/anomaly-check")
       .then((r) => r.json())
       .then((d) => setAnomalies(d.anomalies || []))
+      .catch(() => {});
+    fetch("/api/sites/escalation-scores")
+      .then((r) => r.json())
+      .then((d) => setEscalation(d || []))
+      .catch(() => {});
+    fetch("/api/compliance/summary")
+      .then((r) => r.json())
+      .then((d) => setComplianceSummary(d || []))
       .catch(() => {});
   }, []);
 
@@ -104,6 +137,85 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
           </div>
         ))}
       </div>
+
+      {/* Escalation Risk by Site (Heinrich's Law) */}
+      {escalation.length > 0 && (
+        <div className="mb-6 sm:mb-8 rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)]">
+              Escalation risk by site
+            </h2>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-muted)" }}>
+              Heinrich&apos;s Law
+            </span>
+          </div>
+          <p className="text-xs text-[var(--color-ink-muted)] mb-4">
+            Many small hazards precede serious injuries. Higher scores signal greater escalation risk.
+          </p>
+          <div className="space-y-2">
+            {escalation.map((s) => {
+              const style = CLASSIFICATION_STYLE[s.classification];
+              return (
+                <div
+                  key={s.site}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 py-2.5 px-3.5 rounded-lg"
+                  style={{ background: "var(--color-surface-sunken)" }}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
+                      style={{ background: style.bg, color: style.text, border: `1px solid ${style.border}` }}
+                    >
+                      {style.label}
+                    </span>
+                    <span className="text-sm font-medium text-[var(--color-ink)] truncate">{s.site}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-[var(--color-ink-muted)]">
+                    <span>{s.highRiskCount > 0 && <span style={{ color: "var(--color-danger)" }}>{s.highRiskCount} high</span>}{s.mediumRiskCount > 0 && <span> {s.mediumRiskCount} med</span>}{s.lowRiskCount > 0 && <span> {s.lowRiskCount} low</span>}</span>
+                    <span
+                      className="font-heading font-bold text-sm min-w-[36px] text-right"
+                      style={{ color: style.text, fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {s.score}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Compliance Summary */}
+      {complianceSummary.length > 0 && (
+        <div className="mb-6 sm:mb-8 rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+          <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)] mb-1">
+            Regulatory compliance flags
+          </h2>
+          <p className="text-xs text-[var(--color-ink-muted)] mb-4">
+            Active hazard categories and their applicable regulations
+          </p>
+          <div className="space-y-2">
+            {complianceSummary.map((item) => (
+              <div key={item.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-2 px-3.5 rounded-lg" style={{ background: "var(--color-surface-sunken)" }}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-sm font-medium text-[var(--color-ink)]">{item.category}</span>
+                  <span className="text-xs text-[var(--color-ink-muted)]" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {item.count} report{item.count !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.regulations.map((reg) => (
+                    <span key={reg} className="text-[10px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                      {reg}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">

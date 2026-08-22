@@ -41,6 +41,7 @@ model SafetyReport {
   overrideReason         String?
   overriddenBy           String?
   slaDeadline            DateTime?
+  keyPhrases             String?  // JSON array of key phrases that drove the risk assessment
 
   auditLogs              AuditLog[]
   tasks                  Task[]
@@ -109,4 +110,14 @@ model Task {
   @@index([assignedTo])
   @@index([status])
   @@index([priority])
+}
+
+model ComplianceReference {
+  id              Int    @id @default(autoincrement())
+  hazardCategory  String
+  regulationName  String
+  sectionReference String
+  description     String
+
+  @@index([hazardCategory])
 }
