@@ -42,7 +42,7 @@ export default function MapClient({ siteData }: { siteData: SiteData[] }) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-6 text-xs text-[var(--color-ink-muted)]">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 text-xs text-[var(--color-ink-muted)]">
         <span className="font-medium">Risk level:</span>
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: "#dc2626" }} /> High</span>
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: "#d97706" }} /> Medium</span>

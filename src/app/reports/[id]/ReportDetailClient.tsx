@@ -146,7 +146,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
       </Link>
 
       <div className="rounded-xl p-6" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)] mb-2">
               Report details
@@ -168,7 +168,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {report.status === "pending" && !report.riskLevel && (
               <button onClick={handleAnalyze} disabled={analyzing}
                 className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
@@ -196,7 +196,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
 
         {/* AI vs Human Override Comparison */}
         {report.humanOverrideRiskLevel && report.riskLevel && (
-          <div className="mb-6 grid grid-cols-2 gap-4">
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-lg" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
               <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>
                 AI Assessment
@@ -259,7 +259,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         )}
 
         {/* Fields Grid */}
-        <div className="grid grid-cols-2 gap-5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
           {[
             { label: "Site", value: report.site },
             { label: "Reporter role", value: report.reporterRole },

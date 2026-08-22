@@ -46,7 +46,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
             Dashboard
@@ -84,7 +84,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: "Total reports", value: stats.totalReports, color: "var(--color-ink)" },
           { label: "High risk", value: stats.highCount, color: "var(--color-danger)" },
@@ -106,7 +106,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
         <div className="rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
           <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)] mb-4">
             Hazard category frequency

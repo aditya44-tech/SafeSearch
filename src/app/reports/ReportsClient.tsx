@@ -18,11 +18,6 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return `${formatDate(iso)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
 export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
   const [reports, setReports] = useState(initial);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -89,16 +84,17 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      {/* Header — stacks on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
+          <h1 className="text-2xl sm:text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
             Safety reports
           </h1>
           <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">
             {reports.length} reports across all sites
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => setShowClusters(!showClusters)}
             className="px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97]"
             style={{
@@ -157,96 +153,99 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
         </form>
       )}
 
+      {/* Table — horizontal scroll on mobile */}
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
-        <table className="min-w-full">
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <th onClick={() => setSortField(sortField === "riskLevel" ? "reportedAt" : "riskLevel")}
-                className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase cursor-pointer hover:opacity-70 transition-opacity"
-                style={{ color: "var(--color-ink-muted)" }}>
-                Risk {arrow}</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Site</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Role</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((r) => {
-              const isOverdue = r.slaDeadline && new Date(r.slaDeadline) < new Date() && r.status !== "resolved";
-              return (
-                <React.Fragment key={r.id}>
-                  <tr onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                    className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
-                    style={{ borderBottom: "1px solid var(--color-border)" }}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <RiskBadge level={r.humanOverrideRiskLevel || r.riskLevel} />
-                        {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
-                          <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+        <div className="overflow-x-auto">
+          <table className="min-w-[700px] w-full">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                <th onClick={() => setSortField(sortField === "riskLevel" ? "reportedAt" : "riskLevel")}
+                  className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase cursor-pointer hover:opacity-70 transition-opacity"
+                  style={{ color: "var(--color-ink-muted)" }}>
+                  Risk {arrow}</th>
+                <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Site</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Role</th>
+                <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
+                <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
+                <th className="hidden md:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((r) => {
+                const isOverdue = r.slaDeadline && new Date(r.slaDeadline) < new Date() && r.status !== "resolved";
+                return (
+                  <React.Fragment key={r.id}>
+                    <tr onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                      className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
+                      style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <RiskBadge level={r.humanOverrideRiskLevel || r.riskLevel} />
+                          {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
+                            <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-[var(--color-ink)]">
+                        {r.site}
+                        {r.clusterId && showClusters && (
+                          <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium"
+                            style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                            clustered
+                          </span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-[var(--color-ink)]">
-                      {r.site}
-                      {r.clusterId && showClusters && (
-                        <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium"
-                          style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
-                          clustered
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
-                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-xs" suppressHydrationWarning
-                      style={{
-                        color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
-                        fontWeight: isOverdue ? 600 : 400,
-                        fontVariantNumeric: "tabular-nums",
-                      }}>
-                      {r.slaDeadline
-                        ? isOverdue
-                          ? "OVERDUE"
-                          : `Due ${formatDate(r.slaDeadline)}`
-                        : "\u2014"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {formatDate(r.reportedAt)}
-                    </td>
-                  </tr>
-                  {expandedId === r.id && (
-                    <tr key={r.id + "-exp"}><td colSpan={7} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
-                      <div className="max-w-3xl">
-                        <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
-                          <span className="font-semibold">Report:</span> {r.reportText}
-                        </p>
-                        {r.justification && (
-                          <p className="text-sm text-[var(--color-ink-muted)] italic mb-2">
-                            <span className="font-semibold not-italic">AI assessment:</span> {r.justification}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
+                      <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                      <td className="hidden md:table-cell px-4 py-3 text-xs" suppressHydrationWarning
+                        style={{
+                          color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
+                          fontWeight: isOverdue ? 600 : 400,
+                          fontVariantNumeric: "tabular-nums",
+                        }}>
+                        {r.slaDeadline
+                          ? isOverdue
+                            ? "OVERDUE"
+                            : `Due ${formatDate(r.slaDeadline)}`
+                          : "\u2014"}
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {formatDate(r.reportedAt)}
+                      </td>
+                    </tr>
+                    {expandedId === r.id && (
+                      <tr key={r.id + "-exp"}><td colSpan={7} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
+                        <div className="max-w-3xl">
+                          <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
+                            <span className="font-semibold">Report:</span> {r.reportText}
                           </p>
-                        )}
-                        {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
-                          <p className="text-sm mb-2" style={{ color: "var(--color-warning)" }}>
-                            <span className="font-semibold">Override:</span> Risk changed to {r.humanOverrideRiskLevel} by human reviewer
-                          </p>
-                        )}
-                        <Link href={"/reports/" + r.id}
-                          className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
-                          style={{ color: "var(--color-accent)" }}>
-                          View full details
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </Link>
-                      </div>
-                    </td></tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                          {r.justification && (
+                            <p className="text-sm text-[var(--color-ink-muted)] italic mb-2">
+                              <span className="font-semibold not-italic">AI assessment:</span> {r.justification}
+                            </p>
+                          )}
+                          {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
+                            <p className="text-sm mb-2" style={{ color: "var(--color-warning)" }}>
+                              <span className="font-semibold">Override:</span> Risk changed to {r.humanOverrideRiskLevel} by human reviewer
+                            </p>
+                          )}
+                          <Link href={"/reports/" + r.id}
+                            className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
+                            style={{ color: "var(--color-accent)" }}>
+                            View full details
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                          </Link>
+                        </div>
+                      </td></tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

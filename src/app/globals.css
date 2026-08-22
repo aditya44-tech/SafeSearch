@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source "../components";
+@source "../app";
+@source "../lib";
 
 @theme {
   --font-heading: "Space Grotesk", system-ui, sans-serif;

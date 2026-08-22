@@ -48,7 +48,7 @@ export default function ScoreboardClient({ sites }: { sites: Site[] }) {
             return (
               <div
                 key={s.site}
-                className="rounded-xl p-5 flex items-center gap-5 transition-all duration-200 hover:shadow-md"
+                className="rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-5 transition-all duration-200 hover:shadow-md"
                 style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
               >
                 {/* Rank */}
