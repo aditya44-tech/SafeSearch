@@ -21,21 +21,59 @@ enum RiskLevel {
 }
 
 model SafetyReport {
-  id              String       @id @default(cuid())
-  reportText      String
-  site            String
-  reporterRole    String
-  reportedAt      DateTime     @default(now())
-  status          ReportStatus @default(pending)
-  riskLevel       RiskLevel?
-  hazardCategory  String?
-  justification   String?
-  analyzedAt      DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                     String       @id @default(cuid())
+  reportText             String
+  site                   String
+  reporterRole           String
+  reportedAt             DateTime     @default(now())
+  status                 ReportStatus @default(pending)
+  riskLevel              RiskLevel?
+  hazardCategory         String?
+  justification          String?
+  analyzedAt             DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  // New fields
+  photoUrl               String?
+  originalLanguage       String?
+  clusterId              String?
+  humanOverrideRiskLevel RiskLevel?
+  overrideReason         String?
+  overriddenBy           String?
+  slaDeadline            DateTime?
+
+  auditLogs              AuditLog[]
 
   @@index([status])
   @@index([riskLevel])
   @@index([site])
   @@index([reportedAt])
+  @@index([clusterId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  reportId    String
+  report      SafetyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  action      String
+  performedBy String
+  timestamp   DateTime @default(now())
+  details     String?
+
+  @@index([reportId])
+  @@index([timestamp])
+}
+
+model SiteScore {
+  id                 String   @id @default(cuid())
+  site               String   @unique
+  totalReports       Int      @default(0)
+  highRiskCount      Int      @default(0)
+  avgResolutionHours Float    @default(0)
+  scoreValue         Float    @default(100)
+  updatedAt          DateTime @updatedAt
+
+  @@index([site])
+  @@index([scoreValue])
 }

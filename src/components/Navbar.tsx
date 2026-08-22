@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/reports", label: "Reports" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/map", label: "Map" },
+  { href: "/scoreboard", label: "Scoreboard" },
+  { href: "/query", label: "Query" },
   { href: "/alerts", label: "Alerts" },
 ];
 
@@ -13,7 +16,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--color-surface-overlay)] border-b border-[var(--color-border)]">
-      <div className="max-w-[1200px] mx-auto px-5 sm:px-8">
+      <div className="max-w-[1400px] mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)] flex items-center justify-center">
