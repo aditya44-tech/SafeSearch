@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 enum ReportStatus {
@@ -21,7 +21,7 @@ enum RiskLevel {
 }
 
 model SafetyReport {
-  id                     String       @id @default(cuid())
+  id                     Int          @id @default(autoincrement())
   reportText             String
   site                   String
   reporterRole           String
@@ -53,12 +53,12 @@ model SafetyReport {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  reportId    String
+  id          Int          @id @default(autoincrement())
+  reportId    Int
   report      SafetyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   action      String
   performedBy String
-  timestamp   DateTime @default(now())
+  timestamp   DateTime     @default(now())
   details     String?
 
   @@index([reportId])
@@ -66,7 +66,7 @@ model AuditLog {
 }
 
 model SiteScore {
-  id                 String   @id @default(cuid())
+  id                 Int      @id @default(autoincrement())
   site               String   @unique
   totalReports       Int      @default(0)
   highRiskCount      Int      @default(0)
@@ -93,8 +93,8 @@ enum TaskPriority {
 }
 
 model Task {
-  id          String       @id @default(cuid())
-  reportId    String
+  id          Int          @id @default(autoincrement())
+  reportId    Int
   report      SafetyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   title       String
   description String?

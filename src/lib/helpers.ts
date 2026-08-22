@@ -16,6 +16,37 @@ export interface AnalysisResult {
   justification: string;
 }
 
+export interface ExtractedTask {
+  title: string;
+  description: string;
+  priority: "urgent" | "high" | "normal" | "low";
+}
+
+export const TASK_EXTRACTION_PROMPT = `You are a workplace safety operations manager. Given a safety report and its risk classification, extract specific corrective actions that should be taken.
+
+Respond with ONLY valid JSON — an array of 1-3 tasks:
+[
+  {
+    "title": "<short action verb phrase, max 80 chars>",
+    "description": "<1-2 sentence explanation of what needs to be done>",
+    "priority": "urgent" | "high" | "normal" | "low"
+  }
+]
+
+Rules:
+- Each task must be a concrete, actionable step (not vague like "investigate" or "look into")
+- Use action verbs: Install, Repair, Replace, Remove, Inspect, Test, Post, Train, etc.
+- Priority should match the report's risk level: high-risk → urgent/high tasks, medium → high/normal, low → normal/low
+- For high-risk reports, include an immediate safety action AND a root-cause fix
+- Keep titles under 80 characters
+- Descriptions should be 1-2 sentences, specific to this report
+
+Report:
+Site: {{site}}
+Risk level: {{riskLevel}}
+Hazard category: {{hazardCategory}}
+Report text: "{{reportText}}"`;
+
 // ── Gemini API Call ────────────────────────────────────────────────────────
 
 export async function callGemini(
@@ -179,4 +210,48 @@ export function autoAssignDept(category: string | null): string {
 
 export function getDeptIcon(dept: string): string {
   return DEPARTMENTS.find((d) => d.name === dept)?.icon || "📋";
+}
+
+// ── Fallback Task Extraction ───────────────────────────────────────────────
+
+export function fallbackTaskExtraction(
+  reportText: string,
+  riskLevel: string,
+  hazardCategory: string
+): ExtractedTask[] {
+  const text = reportText.toLowerCase();
+  const tasks: ExtractedTask[] = [];
+
+  // Immediate safety action for high/medium risk
+  if (riskLevel === "high" || riskLevel === "medium") {
+    if (text.includes("electrical") || text.includes("wiring") || text.includes("circuit")) {
+      tasks.push({ title: "De-energize and lockout affected electrical system", description: "Immediately isolate the hazardous electrical area and apply lockout/tagout procedures until repairs are complete.", priority: "urgent" });
+    } else if (text.includes("fall") || text.includes("height") || text.includes("scaffold") || text.includes("guardrail")) {
+      tasks.push({ title: "Install temporary fall protection barriers", description: "Erect guardrails, safety nets, or personal fall arrest systems at the identified height hazard before any work resumes.", priority: "urgent" });
+    } else if (text.includes("chemical") || text.includes("fume") || text.includes("spill") || text.includes("toxic")) {
+      tasks.push({ title: "Evacuate area and deploy ventilation", description: "Clear the affected area, set up emergency ventilation, and post hazard signage until air quality tests confirm safe levels.", priority: "urgent" });
+    } else if (text.includes("vehicle") || text.includes("forklift") || text.includes("crane")) {
+      tasks.push({ title: "Restrict vehicle access to hazard zone", description: "Establish physical barriers and signage to prevent unauthorized vehicle entry near the reported hazard.", priority: "high" });
+    } else if (text.includes("confined") || text.includes("trench")) {
+      tasks.push({ title: "Post confined space signage and deploy gas monitor", description: "Lock out the confined space entry point and set up continuous atmospheric monitoring before any re-entry.", priority: "urgent" });
+    } else {
+      tasks.push({ title: "Secure the hazard area and post warning signs", description: "Cordon off the affected area and post appropriate warning signage to prevent worker exposure.", priority: riskLevel === "high" ? "urgent" : "high" });
+    }
+  }
+
+  // Root-cause fix task
+  if (text.includes("guard") || text.includes("missing") || text.includes("broken") || text.includes("damaged")) {
+    tasks.push({ title: "Repair or replace damaged safety equipment", description: "Inspect all related safety equipment in the area and replace any damaged or missing components.", priority: riskLevel === "high" ? "high" : "normal" });
+  } else if (text.includes("training") || text.includes("not wearing") || text.includes("procedure")) {
+    tasks.push({ title: "Conduct safety refresher training for affected crew", description: "Schedule and deliver targeted safety training addressing the specific hazard identified in this report.", priority: "normal" });
+  } else {
+    tasks.push({ title: "Inspect and remediate root cause", description: "Conduct a thorough inspection of the reported hazard area and implement permanent corrective measures.", priority: riskLevel === "high" ? "high" : "normal" });
+  }
+
+  // Follow-up task for high risk
+  if (riskLevel === "high") {
+    tasks.push({ title: "Schedule follow-up inspection within 24 hours", description: "Verify corrective actions are in place and effective. Document findings and update report status.", priority: "normal" });
+  }
+
+  return tasks;
 }

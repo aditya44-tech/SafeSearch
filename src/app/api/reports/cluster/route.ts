@@ -5,7 +5,8 @@ import { semanticHash, textSimilarity } from "@/lib/helpers";
 const SIMILARITY_THRESHOLD = 0.25;
 
 export async function POST(request: NextRequest) {
-  const { reportId } = await request.json();
+  const { reportId: rawReportId } = await request.json();
+  const reportId = parseInt(rawReportId, 10);
   if (!reportId) return NextResponse.json({ error: "reportId required" }, { status: 400 });
 
   const report = await prisma.safetyReport.findUnique({ where: { id: reportId } });

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const where: Record<string, any> = {};
   if (status) where.status = status;
   if (assignee) where.assignedTo = assignee;
-  if (reportId) where.reportId = reportId;
+  if (reportId) where.reportId = parseInt(reportId, 10);
 
   const tasks = await prisma.task.findMany({
     where,
@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { reportId, title, description, assignedTo, priority, dueDate } = body;
+  const { reportId: rawReportId, title, description, assignedTo, priority, dueDate } = body;
+  const reportId = parseInt(rawReportId, 10);
 
   if (!reportId || !title || !assignedTo) {
     return NextResponse.json({ error: "reportId, title, and assignedTo required" }, { status: 400 });

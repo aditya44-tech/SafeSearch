@@ -7,13 +7,13 @@ import StatusBadge from "@/components/StatusBadge";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
 
 interface Report {
-  id: string; reportText: string; site: string; reporterRole: string;
+  id: number; reportText: string; site: string; reporterRole: string;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null; analyzedAt: string | null;
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
-  auditLogs?: { id: string; action: string; performedBy: string; timestamp: string; details: string | null }[];
-  tasks?: { id: string; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
+  auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
+  tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
 
 export default function ReportDetailClient({ report }: { report: Report }) {
@@ -82,7 +82,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
     try {
       const formData = new FormData();
       formData.append("photo", photoFile);
-      formData.append("reportId", report.id);
+      formData.append("reportId", String(report.id));
       const res = await fetch("/api/reports/" + report.id + "/photo", {
         method: "POST",
         body: formData,
@@ -117,7 +117,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
     } finally { setCreatingTask(false); }
   };
 
-  const handleTaskStatus = async (taskId: string, newStatus: string) => {
+  const handleTaskStatus = async (taskId: number, newStatus: string) => {
     const res = await fetch("/api/tasks/" + taskId, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

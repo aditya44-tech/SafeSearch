@@ -41,7 +41,7 @@ export default async function ScoreboardPage() {
         highRiskCount: data.high,
         avgResolutionHours: Math.round(avgResolution * 10) / 10,
         scoreValue: Math.round(score),
-        id: site,
+        id: 0, // placeholder, not a real DB id
         updatedAt: new Date(),
       };
     }).sort((a, b) => b.scoreValue - a.scoreValue);

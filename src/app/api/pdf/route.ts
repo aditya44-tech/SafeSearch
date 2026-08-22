@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   .low { color: #16a34a; font-weight: 600; }
   .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e3df; font-size: 11px; color: #9e9e9e; }
 </style></head><body>
-  <h1>SIF Watch Report</h1>
+  <h1>SafeSignal Report</h1>
   <p class="subtitle">Generated ${now} &mdash; Safety report summary</p>
 
   <div class="stats">
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     <tr><td class="low">Low</td><td>${reports.filter((r) => r.riskLevel === "low").length}</td><td>${Math.round((reports.filter((r) => r.riskLevel === "low").length / Math.max(reports.length, 1)) * 100)}%</td></tr>
   </table>
 
-  <div class="footer">SIF Watch &mdash; SIF Early Warning System &mdash; Generated ${now}</div>
+  <div class="footer">SafeSignal &mdash; Workplace Safety Early Warning System &mdash; Generated ${now}</div>
 </body></html>`;
 
   return new NextResponse(html, {

@@ -7,7 +7,11 @@ import {
   recalculateSiteScore,
   semanticHash,
   textSimilarity,
+  autoAssignDept,
+  fallbackTaskExtraction,
+  TASK_EXTRACTION_PROMPT,
   type AnalysisResult,
+  type ExtractedTask,
 } from "@/lib/helpers";
 
 const SAFETY_PROMPT = `You are a workplace safety analyst reviewing near-miss and unsafe-condition reports to detect early warning signs of a potential serious injury or fatality (SIF).
@@ -34,6 +38,16 @@ function buildPrompt(report: { site: string; reporterRole: string; reportText: s
   return SAFETY_PROMPT
     .replace("{{site}}", report.site)
     .replace("{{reporterRole}}", report.reporterRole)
+    .replace("{{reportText}}", report.reportText);
+}
+
+function buildTaskPrompt(report: {
+  site: string; reportText: string; riskLevel: string; hazardCategory: string;
+}) {
+  return TASK_EXTRACTION_PROMPT
+    .replace("{{site}}", report.site)
+    .replace("{{riskLevel}}", report.riskLevel)
+    .replace("{{hazardCategory}}", report.hazardCategory)
     .replace("{{reportText}}", report.reportText);
 }
 
@@ -81,7 +95,7 @@ function fallbackAnalysis(reportText: string): AnalysisResult {
   };
 }
 
-async function clusterReport(reportId: string, reportText: string): Promise<string | null> {
+async function clusterReport(reportId: number, reportText: string): Promise<string | null> {
   const hash = semanticHash(reportText);
   const allReports = await prisma.safetyReport.findMany({
     where: { id: { not: reportId }, riskLevel: { not: null } },
@@ -101,11 +115,87 @@ async function clusterReport(reportId: string, reportText: string): Promise<stri
   return cid;
 }
 
+async function extractAndCreateTasks(
+  reportId: number,
+  reportText: string,
+  site: string,
+  riskLevel: string,
+  hazardCategory: string,
+  apiKey: string | undefined,
+  slaDeadline: Date
+): Promise<ExtractedTask[]> {
+  // Skip task extraction for low-risk reports
+  if (riskLevel === "low") return [];
+
+  let extractedTasks: ExtractedTask[];
+  let usedFallback = false;
+
+  if (apiKey) {
+    try {
+      const text = await callGemini(
+        buildTaskPrompt({ site, reportText, riskLevel, hazardCategory }),
+        apiKey,
+        { temperature: 0.2, maxOutputTokens: 800, responseMimeType: "application/json" }
+      );
+      extractedTasks = extractJson<ExtractedTask[]>(text);
+      // Validate the array
+      if (!Array.isArray(extractedTasks) || extractedTasks.length === 0) {
+        throw new Error("Empty or invalid task array");
+      }
+    } catch {
+      extractedTasks = fallbackTaskExtraction(reportText, riskLevel, hazardCategory);
+      usedFallback = true;
+    }
+  } else {
+    extractedTasks = fallbackTaskExtraction(reportText, riskLevel, hazardCategory);
+    usedFallback = true;
+  }
+
+  // Create tasks in database
+  const department = autoAssignDept(hazardCategory);
+  const createdTasks: ExtractedTask[] = [];
+
+  for (const task of extractedTasks.slice(0, 3)) {
+    // Cap at 3 tasks
+    const title = task.title?.slice(0, 80) || "Investigate hazard";
+    const description = task.description || "";
+    const priority = task.priority || (riskLevel === "high" ? "high" : "normal");
+
+    await prisma.task.create({
+      data: {
+        reportId,
+        title,
+        description: description || null,
+        assignedTo: department,
+        priority,
+        dueDate: slaDeadline,
+      },
+    });
+
+    createdTasks.push({ title, description, priority });
+  }
+
+  // Log task creation
+  if (createdTasks.length > 0) {
+    await prisma.auditLog.create({
+      data: {
+        reportId,
+        action: "tasks_auto_generated",
+        performedBy: usedFallback ? "Fallback Task Generator" : "Gemini AI",
+        details: `Auto-generated ${createdTasks.length} task(s) for ${department}: ${createdTasks.map((t) => t.title).join("; ")}`,
+      },
+    });
+  }
+
+  return createdTasks;
+}
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const report = await prisma.safetyReport.findUnique({ where: { id } });
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -156,5 +246,22 @@ export async function POST(
   await recalculateSiteScore(prisma, report.site);
   const clusterId = await clusterReport(id, report.reportText);
 
-  return NextResponse.json({ ...updated, analysis, usedFallback, clusterId });
+  // Auto-generate tasks for medium/high risk
+  const generatedTasks = await extractAndCreateTasks(
+    id,
+    report.reportText,
+    report.site,
+    analysis.risk_level,
+    analysis.hazard_category,
+    apiKey,
+    slaDeadline
+  );
+
+  return NextResponse.json({
+    ...updated,
+    analysis,
+    usedFallback,
+    clusterId,
+    generatedTasks,
+  });
 }

@@ -13,7 +13,8 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const report = await prisma.safetyReport.findUnique({ where: { id } });
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

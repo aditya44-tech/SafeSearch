@@ -2,7 +2,7 @@
 import { useState } from "react";
 
 interface Report {
-  id: string; site: string; riskLevel: string | null; hazardCategory: string | null;
+  id: number; site: string; riskLevel: string | null; hazardCategory: string | null;
   status: string; reportedAt: string; reportText: string; justification: string | null;
   reporterRole: string; humanOverrideRiskLevel: string | null;
 }

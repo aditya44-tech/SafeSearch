@@ -6,7 +6,8 @@ export async function PATCH(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const body = await _request.json();
   const { riskLevel, reason, performedBy } = body;
 

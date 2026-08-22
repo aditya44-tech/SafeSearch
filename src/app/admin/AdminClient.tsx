@@ -4,16 +4,16 @@ import Link from "next/link";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
 
 interface Report {
-  id: string; site: string; reporterRole: string; reportText: string;
+  id: number; site: string; reporterRole: string; reportText: string;
   status: string; riskLevel: string | null; hazardCategory: string | null;
   justification: string | null; reportedAt: string; slaDeadline: string | null;
 }
 
 interface Task {
-  id: string; reportId: string; title: string; description: string | null;
+  id: number; reportId: number; title: string; description: string | null;
   assignedTo: string; status: string; priority: string; dueDate: string | null;
   createdAt: string;
-  report: { id: string; site: string; riskLevel: string | null; hazardCategory: string | null; reportText: string };
+  report: { id: number; site: string; riskLevel: string | null; hazardCategory: string | null; reportText: string };
 }
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -28,7 +28,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
   const [filterSite, setFilterSite] = useState<string>("all");
   const [filterRisk, setFilterRisk] = useState<string>("all");
   const [filterDept, setFilterDept] = useState<string>("all");
-  const [showCreateTask, setShowCreateTask] = useState<string | null>(null);
+  const [showCreateTask, setShowCreateTask] = useState<number | null>(null);
   const [taskForm, setTaskForm] = useState({ title: "", description: "", assignedTo: "", priority: "high" });
   const [creating, setCreating] = useState(false);
   const [taskList, setTaskList] = useState(tasks);
@@ -53,7 +53,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
     return list.filter((t) => t.assignedTo === filterDept);
   };
 
-  const handleCreateTask = async (reportId: string) => {
+  const handleCreateTask = async (reportId: number) => {
     if (!taskForm.title.trim()) return;
     setCreating(true);
     try {
@@ -71,7 +71,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
     } finally { setCreating(false); }
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: string) => {
+  const handleStatusChange = async (taskId: number, newStatus: string) => {
     const res = await fetch("/api/tasks/" + taskId, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

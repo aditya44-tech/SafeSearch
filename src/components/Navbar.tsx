@@ -23,7 +23,7 @@ export default function Navbar() {
             <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)] flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <span className="font-heading font-semibold text-[15px] tracking-tight text-[var(--color-ink)]">SIF Watch</span>
+            <span className="font-heading font-semibold text-[15px] tracking-tight text-[var(--color-ink)]">SafeSignal</span>
           </Link>
           <div className="flex items-center gap-0.5">
             {links.map((link) => {

@@ -5,7 +5,8 @@ import ReportDetailClient from "./ReportDetailClient";
 export const dynamic = "force-dynamic";
 
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const report = await prisma.safetyReport.findUnique({
     where: { id },
     include: {

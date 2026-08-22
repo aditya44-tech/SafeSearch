@@ -3,7 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "SIF Watch — SIF Early Warning System",
+  title: "SafeSignal — Workplace Safety Early Warning System",
   description: "Detect precursors of serious injury and fatality incidents through AI-powered safety report analysis",
 };
 

@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 interface Report {
-  id: string; reportText: string; site: string; reporterRole: string;
+  id: number; reportText: string; site: string; reporterRole: string;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null;
 }

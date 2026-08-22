@@ -6,7 +6,7 @@ import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
 
 interface Report {
-  id: string; reportText: string; site: string; reporterRole: string;
+  id: number; reportText: string; site: string; reporterRole: string;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null;
   clusterId: string | null; slaDeadline: string | null;
@@ -25,7 +25,7 @@ function formatDateTime(iso: string): string {
 
 export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
   const [reports, setReports] = useState(initial);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [sortField, setSortField] = useState<"riskLevel" | "reportedAt">("riskLevel");

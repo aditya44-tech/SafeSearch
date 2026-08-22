@@ -5,7 +5,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const body = await request.json();
 
   const task = await prisma.task.findUnique({ where: { id } });
@@ -71,7 +72,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
