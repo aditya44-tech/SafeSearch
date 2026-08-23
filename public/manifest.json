@@ -1,0 +1,16 @@
+{
+  "name": "SafeSignal — Workplace Safety Early Warning",
+  "short_name": "SafeSignal",
+  "description": "AI-powered workplace safety report analysis and early warning system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0f776e",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

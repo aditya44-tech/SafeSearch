@@ -2,12 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useOrg } from "@/lib/org-context";
 
 const links = [
   { href: "/reports", label: "Reports" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/map", label: "Map" },
   { href: "/scoreboard", label: "Scoreboard" },
+  { href: "/impact", label: "Impact" },
   { href: "/query", label: "Query" },
   { href: "/admin", label: "Admin" },
   { href: "/alerts", label: "Alerts" },
@@ -16,6 +18,7 @@ const links = [
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { orgs, selectedOrgId, setSelectedOrgId, loading } = useOrg();
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--color-surface-overlay)] border-b border-[var(--color-border)]">
@@ -47,6 +50,22 @@ export default function Navbar() {
               );
             })}
           </div>
+
+          {/* Org selector — desktop */}
+          {!loading && orgs.length > 0 && (
+            <div className="hidden md:flex items-center ml-3">
+              <select
+                value={selectedOrgId ?? ""}
+                onChange={(e) => setSelectedOrgId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink)] cursor-pointer hover:border-[var(--color-accent)] transition-colors"
+              >
+                <option value="">All Organizations</option>
+                {orgs.map((org) => (
+                  <option key={org.id} value={org.id}>{org.name} ({org.reportCount})</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -94,6 +113,21 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            {/* Mobile org selector */}
+            {!loading && orgs.length > 0 && (
+              <div className="pt-2 mt-2 border-t border-[var(--color-border)]">
+                <select
+                  value={selectedOrgId ?? ""}
+                  onChange={(e) => setSelectedOrgId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink)] cursor-pointer"
+                >
+                  <option value="">All Organizations</option>
+                  {orgs.map((org) => (
+                    <option key={org.id} value={org.id}>{org.name} ({org.reportCount})</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       )}

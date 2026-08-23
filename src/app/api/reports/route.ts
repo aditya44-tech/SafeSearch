@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
     data: {
       reportText: body.reportText,
       site: body.site,
-      reporterRole: body.reporterRole || "Field Worker",
+      reporterRole: body.isAnonymous ? null : (body.reporterRole || "Field Worker"),
+      isAnonymous: body.isAnonymous || false,
     },
   });
   return NextResponse.json(report, { status: 201 });

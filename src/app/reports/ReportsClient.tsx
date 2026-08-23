@@ -6,11 +6,11 @@ import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
 
 interface Report {
-  id: number; reportText: string; site: string; reporterRole: string;
+  id: number; reportText: string; site: string; reporterRole: string | null;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null;
   clusterId: string | null; slaDeadline: string | null;
-  humanOverrideRiskLevel: string | null;
+  humanOverrideRiskLevel: string | null; isAnonymous: boolean;
 }
 
 function formatDate(iso: string): string {
@@ -25,7 +25,7 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
   const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [sortField, setSortField] = useState<"riskLevel" | "reportedAt">("riskLevel");
   const [creating, setCreating] = useState(false);
-  const [newReport, setNewReport] = useState({ reportText: "", site: "", reporterRole: "" });
+  const [newReport, setNewReport] = useState({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
   const [showClusters, setShowClusters] = useState(false);
 
   const sorted = [...reports].sort((a, b) => {
@@ -38,17 +38,34 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
     return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
   });
 
+  const [offlineQueued, setOfflineQueued] = useState(false);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setCreating(true);
     try {
+      const payload = newReport.isAnonymous
+        ? { reportText: newReport.reportText, site: newReport.site, isAnonymous: true }
+        : newReport;
+
+      // If offline, queue to IndexedDB
+      if (!navigator.onLine) {
+        const { enqueueReport } = await import("@/lib/offline-queue");
+        await enqueueReport(payload);
+        setOfflineQueued(true);
+        setNewReport({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
+        setShowNewForm(false);
+        setTimeout(() => setOfflineQueued(false), 3000);
+        return;
+      }
+
       const res = await fetch("/api/reports", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newReport),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const report = await res.json();
         setReports([report, ...reports]);
-        setNewReport({ reportText: "", site: "", reporterRole: "" });
+        setNewReport({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
         setShowNewForm(false);
       }
     } finally { setCreating(false); }
@@ -130,10 +147,21 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
             <input required value={newReport.site} onChange={(e) => setNewReport({ ...newReport, site: e.target.value })}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2"
               style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} /></div>
-          <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Reporter Role</label>
-            <input required value={newReport.reporterRole} onChange={(e) => setNewReport({ ...newReport, reporterRole: e.target.value })}
-              className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2"
-              style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} /></div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1"><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Reporter Role</label>
+              <input required={!newReport.isAnonymous} disabled={newReport.isAnonymous} value={newReport.isAnonymous ? "" : newReport.reporterRole}
+                onChange={(e) => setNewReport({ ...newReport, reporterRole: e.target.value })} placeholder={newReport.isAnonymous ? "Hidden for anonymous" : "e.g. Field Worker"}
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2 disabled:opacity-50"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} /></div>
+            <div className="pt-5">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={newReport.isAnonymous}
+                  onChange={(e) => setNewReport({ ...newReport, isAnonymous: e.target.checked })}
+                  className="w-4 h-4 rounded accent-[var(--color-accent)]" />
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Anonymous</span>
+              </label>
+            </div>
+          </div>
           <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Report Text</label>
             <textarea required rows={3} value={newReport.reportText} onChange={(e) => setNewReport({ ...newReport, reportText: e.target.value })}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2 resize-none"
@@ -196,7 +224,14 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
                           </span>
                         )}
                       </td>
-                      <td className="hidden sm:table-cell px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.reporterRole}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-sm text-[var(--color-ink-muted)]">
+                        {r.isAnonymous ? (
+                          <span className="inline-flex items-center gap-1 text-[var(--color-ink-faint)]">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Anonymous
+                          </span>
+                        ) : r.reporterRole}
+                      </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
                       <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                       <td className="hidden md:table-cell px-4 py-3 text-xs" suppressHydrationWarning

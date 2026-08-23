@@ -42,10 +42,10 @@ Site: {{site}}
 Reporter role: {{reporterRole}}
 Report text: "{{reportText}}"`;
 
-function buildPrompt(report: { site: string; reporterRole: string; reportText: string }) {
+function buildPrompt(report: { site: string; reporterRole: string | null; reportText: string }) {
   return SAFETY_PROMPT
     .replace("{{site}}", report.site)
-    .replace("{{reporterRole}}", report.reporterRole)
+    .replace("{{reporterRole}}", report.reporterRole || "Anonymous")
     .replace("{{reportText}}", report.reportText);
 }
 

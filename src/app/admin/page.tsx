@@ -3,12 +3,17 @@ import AdminClient from "./AdminClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
+  const params = await searchParams;
+  const orgId = params.org ? parseInt(params.org, 10) : undefined;
+
   const reports = await prisma.safetyReport.findMany({
+    where: orgId ? { organizationId: orgId } : undefined,
     orderBy: { reportedAt: "desc" },
   });
 
   const tasks = await prisma.task.findMany({
+    ...(orgId ? { where: { report: { organizationId: orgId } } } : {}),
     include: {
       report: {
         select: { id: true, site: true, riskLevel: true, hazardCategory: true, reportText: true },

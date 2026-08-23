@@ -24,7 +24,8 @@ model SafetyReport {
   id                     Int          @id @default(autoincrement())
   reportText             String
   site                   String
-  reporterRole           String
+  reporterRole           String?
+  isAnonymous            Boolean     @default(false)
   reportedAt             DateTime     @default(now())
   status                 ReportStatus @default(pending)
   riskLevel              RiskLevel?
@@ -42,6 +43,9 @@ model SafetyReport {
   overriddenBy           String?
   slaDeadline            DateTime?
   keyPhrases             String?  // JSON array of key phrases that drove the risk assessment
+
+  organizationId         Int?
+  organization           Organization? @relation(fields: [organizationId], references: [id])
 
   auditLogs              AuditLog[]
   tasks                  Task[]
@@ -73,6 +77,8 @@ model SiteScore {
   highRiskCount      Int      @default(0)
   avgResolutionHours Float    @default(0)
   scoreValue         Float    @default(100)
+  organizationId     Int?
+  organization       Organization? @relation(fields: [organizationId], references: [id])
   updatedAt          DateTime @updatedAt
 
   @@index([site])
@@ -110,6 +116,14 @@ model Task {
   @@index([assignedTo])
   @@index([status])
   @@index([priority])
+}
+
+model Organization {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  createdAt DateTime         @default(now())
+  reports   SafetyReport[]
+  siteScores SiteScore[]
 }
 
 model ComplianceReference {

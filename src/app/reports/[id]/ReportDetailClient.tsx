@@ -15,12 +15,12 @@ interface ComplianceRef {
 }
 
 interface Report {
-  id: number; reportText: string; site: string; reporterRole: string;
+  id: number; reportText: string; site: string; reporterRole: string | null;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null; analyzedAt: string | null;
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
-  keyPhrases?: string | null;
+  keyPhrases?: string | null; isAnonymous?: boolean;
   auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
   tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
@@ -317,7 +317,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
           {[
             { label: "Site", value: report.site },
-            { label: "Reporter role", value: report.reporterRole },
+            { label: "Reporter role", value: report.isAnonymous ? "\u2728 Anonymous" : (report.reporterRole || "\u2014") },
             { label: "Reported at", value: report.reportedAt.replace("T", " ").slice(0, 16) },
             { label: "SLA deadline", value: report.slaDeadline ? report.slaDeadline.replace("T", " ").slice(0, 16) : "\u2014" },
           ].map((field) => (

@@ -3,9 +3,13 @@ import ScoreboardClient from "./ScoreboardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ScoreboardPage() {
+export default async function ScoreboardPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
+  const params = await searchParams;
+  const orgId = params.org ? parseInt(params.org, 10) : undefined;
+
   // Always compute from live report data to ensure ALL sites are shown
   const reports = await prisma.safetyReport.findMany({
+    where: orgId ? { organizationId: orgId } : undefined,
     select: {
       site: true,
       riskLevel: true,

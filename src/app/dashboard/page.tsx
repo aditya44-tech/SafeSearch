@@ -3,11 +3,15 @@ import DashboardClient from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
+  const params = await searchParams;
+  const orgId = params.org ? parseInt(params.org, 10) : undefined;
+  const where = orgId ? { organizationId: orgId } : {};
+
   const reports = await prisma.safetyReport.findMany({
-    where: { riskLevel: { not: null } },
+    where: { ...where, riskLevel: { not: null } },
   });
-  const allReports = await prisma.safetyReport.findMany();
+  const allReports = await prisma.safetyReport.findMany({ where });
 
   // Hazard category frequency
   const categoryMap: Record<string, number> = {};

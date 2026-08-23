@@ -251,6 +251,39 @@ const REPORTS = [
   },
 ];
 
+const ORGANIZATIONS = [
+  { name: "Metro Industrial Group" },
+  { name: "Harbor Health Systems" },
+  { name: "Riverfront Construction Co." },
+];
+
+const ORG_MAP: Record<string, number> = {
+  "Metro Industrial Park": 1,
+  "Logistics Hub East": 1,
+  "Riverfront Tower": 3,
+  "Harbor View Medical Center": 2,
+  "Westfield Construction": 3,
+};
+
+const COMPLIANCE_REFS = [
+  { hazardCategory: "Fall Hazard", regulationName: "Factories Act 1948", sectionReference: "Section 36", description: "Requires fencing of every dangerous part of machinery and safe means of access to elevated platforms." },
+  { hazardCategory: "Fall Hazard", regulationName: "BOCW Act 1996", sectionReference: "Section 41", description: "Mandates safety belts, nets, and guardrails for workers at heights on construction sites." },
+  { hazardCategory: "Electrical", regulationName: "Electricity Act 2003", sectionReference: "Section 14", description: "Regulations for safe electrical installations and maintenance to prevent electrocution." },
+  { hazardCategory: "Electrical", regulationName: "IS 10101:2021", sectionReference: "Part 1", description: "Indian Standard for safety of electrical equipment — insulation, earthing, and lockout/tagout requirements." },
+  { hazardCategory: "Chemical Exposure", regulationName: "Factories Act 1948", sectionReference: "Section 41A-41H", description: "Provisions relating to toxic substances, exposure limits, PPE, and health surveillance." },
+  { hazardCategory: "Chemical Exposure", regulationName: "GHS/CMSR Rules 2024", sectionReference: "Schedule 1", description: "Chemical Manufacture, Storage and Import Rules — labeling, SDS, and containment requirements." },
+  { hazardCategory: "Structural", regulationName: "Factories Act 1948", sectionReference: "Section 21", description: "Requires every building and structure to be maintained in a state of repair to prevent danger." },
+  { hazardCategory: "Structural", regulationName: "IS 4130:2008", sectionReference: "Clause 5", description: "Design and maintenance of structural steel — deformation limits and inspection protocols." },
+  { hazardCategory: "Equipment Failure", regulationName: "Factories Act 1948", sectionReference: "Section 22", description: "Fencing of machinery — all dangerous parts must be securely fenced or guarded." },
+  { hazardCategory: "Equipment Failure", regulationName: "IS 15489:2004", sectionReference: "Part 2", description: "Safe use of lifting equipment — load testing, inspection, and maintenance schedules." },
+  { hazardCategory: "Vehicle/Traffic", regulationName: "Factories Act 1948", sectionReference: "Section 28", description: "Safe means of access and safe passages — traffic management within factory premises." },
+  { hazardCategory: "Vehicle/Traffic", regulationName: "DGMS Circular 08/2022", sectionReference: "Para 3", description: "Traffic management and vehicle safety in mining and industrial areas — spotter requirements." },
+  { hazardCategory: "Confined Space", regulationName: "Factories Act 1948", sectionReference: "Section 36A-36D", description: "Confined spaces — permit systems, atmospheric testing, rescue standby, and training requirements." },
+  { hazardCategory: "Confined Space", regulationName: "DGMS Circular 04/2019", sectionReference: "Para 5", description: "Working in confined spaces — gas detection, ventilation, and emergency rescue protocols." },
+  { hazardCategory: "Procedural Gap", regulationName: "Factories Act 1948", sectionReference: "Section 7A", description: "General duty of the occupier to maintain a safe workplace and safe systems of work." },
+  { hazardCategory: "Procedural Gap", regulationName: "ISO 45001:2018", sectionReference: "Clause 6.1.2", description: "Hazard identification and risk assessment — systematic approach to identifying procedural gaps." },
+];
+
 async function main() {
   console.log("Seeding Neon PostgreSQL...");
 
@@ -258,7 +291,9 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.task.deleteMany();
   await prisma.siteScore.deleteMany();
+  await prisma.complianceReference.deleteMany();
   await prisma.safetyReport.deleteMany();
+  await prisma.organization.deleteMany();
 
   // Insert reports
   let count = 0;
@@ -278,6 +313,53 @@ async function main() {
   const sites = await prisma.safetyReport.groupBy({ by: ["site"], _count: true });
   console.log(`  ✓ ${sites.length} sites:`);
   sites.forEach((s) => console.log(`    - ${s.site}: ${s._count} reports`));
+
+  // Seed organizations
+  for (const org of ORGANIZATIONS) {
+    await prisma.organization.create({ data: org });
+  }
+  console.log(`  ✓ ${ORGANIZATIONS.length} organizations created`);
+
+  // Assign organizations to reports
+  const reports = await prisma.safetyReport.findMany();
+  for (const r of reports) {
+    const orgId = ORG_MAP[r.site] || 1;
+    await prisma.safetyReport.update({ where: { id: r.id }, data: { organizationId: orgId } });
+  }
+  console.log(`  ✓ Assigned organizations to ${reports.length} reports`);
+
+  // Seed compliance references
+  for (const ref of COMPLIANCE_REFS) {
+    await prisma.complianceReference.create({ data: ref });
+  }
+  console.log(`  ✓ ${COMPLIANCE_REFS.length} compliance references created`);
+
+  // Seed tasks for high-risk reports
+  const highRisk = reports.filter((r) => r.riskLevel === "high");
+  const deptMap: Record<string, string> = {
+    "Chemical Exposure": "Environmental Safety",
+    "Electrical": "Electrical Maintenance",
+    "Fall Hazard": "Structural",
+    "Structural": "Structural",
+    "Equipment Failure": "Equipment",
+    "Vehicle/Traffic": "Site Safety",
+    "Confined Space": "Environmental Safety",
+    "Procedural Gap": "Administration",
+  };
+  for (const r of highRisk) {
+    await prisma.task.create({
+      data: {
+        reportId: r.id,
+        title: `Fix ${r.hazardCategory} at ${r.site}`,
+        description: r.justification || "",
+        assignedTo: deptMap[r.hazardCategory || ""] || "Administration",
+        status: "open",
+        priority: r.riskLevel === "high" ? "urgent" : "high",
+        dueDate: r.slaDeadline,
+      },
+    });
+  }
+  console.log(`  ✓ ${highRisk.length} tasks created for high-risk reports`);
 
   await (prisma as any).$disconnect();
   console.log("\nDone!");

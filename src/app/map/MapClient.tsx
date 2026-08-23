@@ -4,7 +4,7 @@ import { useState } from "react";
 interface Report {
   id: number; site: string; riskLevel: string | null; hazardCategory: string | null;
   status: string; reportedAt: string; reportText: string; justification: string | null;
-  reporterRole: string; humanOverrideRiskLevel: string | null;
+  reporterRole: string | null; humanOverrideRiskLevel: string | null;
 }
 
 interface SiteData {

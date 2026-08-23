@@ -3,8 +3,16 @@ import ReportsClient from "./ReportsClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
-  const reports = await prisma.safetyReport.findMany();
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
+  const params = await searchParams;
+  const orgId = params.org ? parseInt(params.org, 10) : undefined;
+
+  const reports = await prisma.safetyReport.findMany({
+    where: orgId ? { organizationId: orgId } : undefined,
+    orderBy: [{ riskLevel: "asc" }, { reportedAt: "desc" }],
+  });
+
+  // Sort by risk level priority (high first)
   const sorted = [...reports].sort((a, b) => {
     const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
     const aVal = a.riskLevel ? (order[a.riskLevel] ?? 3) : 3;
