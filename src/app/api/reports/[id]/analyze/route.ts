@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
-  callGemini,
+  callGroq,
   extractJson,
   getSLADeadline,
   recalculateSiteScore,
@@ -140,10 +140,10 @@ async function extractAndCreateTasks(
 
   if (apiKey) {
     try {
-      const text = await callGemini(
+      const text = await callGroq(
         buildTaskPrompt({ site, reportText, riskLevel, hazardCategory }),
         apiKey,
-        { temperature: 0.2, maxOutputTokens: 800, responseMimeType: "application/json" }
+        { temperature: 0.2, maxOutputTokens: 800, responseFormat: { type: "json_object" } }
       );
       extractedTasks = extractJson<ExtractedTask[]>(text);
       // Validate the array
@@ -189,7 +189,7 @@ async function extractAndCreateTasks(
       data: {
         reportId,
         action: "tasks_auto_generated",
-        performedBy: usedFallback ? "Fallback Task Generator" : "Gemini AI",
+        performedBy: usedFallback ? "Fallback Task Generator" : "Groq AI",
         details: `Auto-generated ${createdTasks.length} task(s) for ${department}: ${createdTasks.map((t) => t.title).join("; ")}`,
       },
     });
@@ -209,14 +209,14 @@ export async function POST(
 
   let analysis: AnalysisResult;
   let usedFallback = false;
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (apiKey) {
     try {
-      const text = await callGemini(buildPrompt(report), apiKey, {
+      const text = await callGroq(buildPrompt(report), apiKey, {
         temperature: 0.1,
         maxOutputTokens: 500,
-        responseMimeType: "application/json",
+        responseFormat: { type: "json_object" },
       });
       analysis = extractJson<AnalysisResult>(text);
     } catch {
@@ -252,14 +252,67 @@ export async function POST(
   await prisma.auditLog.create({
     data: {
       reportId: id,
-      action: "report_analyzed",
-      performedBy: usedFallback ? "Fallback Classifier" : "Gemini AI",
+      action: "report_analyzed",        performedBy: usedFallback ? "Fallback Classifier" : "Groq AI",
       details: `Classified as ${analysis.risk_level} risk (${analysis.hazard_category}). SLA: ${slaDeadline.toISOString()}`,
     },
   });
 
   await recalculateSiteScore(prisma, report.site);
   const clusterId = await clusterReport(id, report.reportText);
+
+  // Send SMS alert for high-risk reports — category-based recipients, fallback to SAFETY_OFFICER_PHONE
+  let smsSent = false;
+  let smsRecipients: string[] = [];
+  if (analysis.risk_level === "high") {
+    const textbeeApiKey = process.env.TEXTBEE_API_KEY;
+    if (textbeeApiKey) {
+      const categoryRecipients = analysis.hazard_category
+        ? await prisma.smsRecipient.findMany({
+            where: { hazardCategory: analysis.hazard_category, isActive: true },
+          })
+        : [];
+      const phoneNumbers = categoryRecipients.map((r) => r.phone);
+      smsRecipients = categoryRecipients.map((r) => r.name || r.hazardCategory);
+      if (phoneNumbers.length === 0 && process.env.SAFETY_OFFICER_PHONE) {
+        phoneNumbers.push(process.env.SAFETY_OFFICER_PHONE);
+        smsRecipients = ["Safety Officer"];
+      }
+      if (phoneNumbers.length > 0) {
+        try {
+          const { Textbee } = await import("@textbee/sdk");
+          const textbee = new Textbee({ apiKey: textbeeApiKey });
+          const smsMessage = `🚨 HIGH RISK ALERT: ${report.site} — ${analysis.hazard_category}. ${analysis.justification}`;
+          await textbee.sendSms({
+            recipients: phoneNumbers,
+            message: smsMessage,
+          });
+          smsSent = true;
+          await prisma.safetyReport.update({
+            where: { id },
+            data: { smsSentAt: new Date() },
+          });
+          await prisma.auditLog.create({
+            data: {
+              reportId: id,
+              action: "sms_alert_sent",
+              performedBy: "System",
+              details: `SMS alert sent to ${smsRecipients.join(", ")}`,
+            },
+          });
+        } catch (e) {
+          console.error("SMS send failed:", e);
+          await prisma.auditLog.create({
+            data: {
+              reportId: id,
+              action: "sms_alert_failed",
+              performedBy: "System",
+              details: `SMS failed: ${e instanceof Error ? e.message : "unknown error"}`,
+            },
+          });
+        }
+      }
+    }
+  }
 
   // Auto-generate tasks for medium/high risk
   const generatedTasks = await extractAndCreateTasks(
@@ -278,5 +331,7 @@ export async function POST(
     usedFallback,
     clusterId,
     generatedTasks,
+    smsSent,
+    smsRecipients,
   });
 }

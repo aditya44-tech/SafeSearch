@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { formatDateIST } from "@/lib/helpers";
 
 export async function POST(request: NextRequest) {
   const reports = await prisma.safetyReport.findMany({
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     .sort((a, b) => b[1].high - a[1].high)
     .slice(0, 5);
 
-  const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const now = new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Kolkata" });
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       <td>${r.site}</td>
       <td>${r.hazardCategory || "—"}</td>
       <td>${r.reporterRole}</td>
-      <td>${new Date(r.reportedAt).toLocaleDateString()}</td>
+      <td>${formatDateIST(r.reportedAt)}</td>
       <td class="high">${r.status}</td>
       <td>${r.justification || "—"}</td>
     </tr>`).join("")}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
+import { formatDateIST } from "@/lib/helpers";
 
 interface Report {
   id: number; reportText: string; site: string; reporterRole: string | null;
@@ -13,20 +14,28 @@ interface Report {
   humanOverrideRiskLevel: string | null; isAnonymous: boolean;
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
   const [reports, setReports] = useState(initial);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
-  const [sortField, setSortField] = useState<"riskLevel" | "reportedAt">("riskLevel");
+  const [sortField, setSortField] = useState<"riskLevel" | "reportedAt">("reportedAt");
   const [creating, setCreating] = useState(false);
   const [newReport, setNewReport] = useState({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
   const [showClusters, setShowClusters] = useState(false);
+  const [sortDropdown, setSortDropdown] = useState(false);
+
+  // Close sort dropdown on outside click
+  const sortRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!sortDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sortDropdown]);
 
   const sorted = [...reports].sort((a, b) => {
     const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -97,8 +106,6 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
     setShowCSVUpload(false);
   };
 
-  const arrow = sortField === "riskLevel" ? "\u25BC" : "\u25B2";
-
   return (
     <div>
       {/* Offline queued toast */}
@@ -139,6 +146,32 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
             style={{ background: "var(--color-accent)" }}>
             + New report
           </button>
+          <div className="relative" ref={sortRef}>
+            <button onClick={() => setSortDropdown(!sortDropdown)}
+              className="px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97] flex items-center gap-1.5"
+              style={{
+                color: "var(--color-ink-muted)",
+                background: "var(--color-surface-raised)",
+                border: "1px solid var(--color-border)"
+              }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l4 4 4-4M7 3v18"/></svg>
+              Sort: {sortField === "riskLevel" ? "Risk" : "Recent"}
+            </button>
+            {sortDropdown && (
+              <div className="absolute right-0 mt-1 w-40 rounded-lg shadow-lg z-30 py-1" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+                <button onClick={() => { setSortField("riskLevel"); setSortDropdown(false); }}
+                  className="w-full text-left px-3 py-2 text-sm transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
+                  style={{ color: sortField === "riskLevel" ? "var(--color-accent)" : "var(--color-ink)" }}>
+                  Sort by Risk {sortField === "riskLevel" && "\u2713"}
+                </button>
+                <button onClick={() => { setSortField("reportedAt"); setSortDropdown(false); }}
+                  className="w-full text-left px-3 py-2 text-sm transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
+                  style={{ color: sortField === "reportedAt" ? "var(--color-accent)" : "var(--color-ink)" }}>
+                  Sort by Recent {sortField === "reportedAt" && "\u2713"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -195,12 +228,11 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
           <table className="min-w-[700px] w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-                <th onClick={() => setSortField(sortField === "riskLevel" ? "reportedAt" : "riskLevel")}
-                  className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase cursor-pointer hover:opacity-70 transition-opacity"
+                <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase"
                   style={{ color: "var(--color-ink-muted)" }}>
-                  Risk {arrow}</th>
+                  Risk</th>
+                <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Report</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Site</th>
-                <th className="hidden sm:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Role</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
                 <th className="hidden md:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
@@ -223,6 +255,9 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
                           )}
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-ink)] max-w-[220px] truncate" title={r.reportText}>
+                        {r.reportText.length > 60 ? r.reportText.slice(0, 60) + "\u2026" : r.reportText}
+                      </td>
                       <td className="px-4 py-3 text-sm font-medium text-[var(--color-ink)]">
                         {r.site}
                         {r.clusterId && showClusters && (
@@ -231,14 +266,6 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
                             clustered
                           </span>
                         )}
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-3 text-sm text-[var(--color-ink-muted)]">
-                        {r.isAnonymous ? (
-                          <span className="inline-flex items-center gap-1 text-[var(--color-ink-faint)]">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Anonymous
-                          </span>
-                        ) : r.reporterRole}
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.hazardCategory || "\u2014"}</td>
                       <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
@@ -251,11 +278,11 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
                         {r.slaDeadline
                           ? isOverdue
                             ? "OVERDUE"
-                            : `Due ${formatDate(r.slaDeadline)}`
+                            : `Due ${formatDateIST(r.slaDeadline)}`
                           : "\u2014"}
                       </td>
                       <td className="hidden lg:table-cell px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
-                        {formatDate(r.reportedAt)}
+                        {formatDateIST(r.reportedAt)}
                       </td>
                     </tr>
                     {expandedId === r.id && (

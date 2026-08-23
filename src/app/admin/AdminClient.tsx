@@ -1,12 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
+import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateIST, HAZARD_CATEGORIES } from "@/lib/helpers";
 
 interface Report {
   id: number; site: string; reporterRole: string; reportText: string;
   status: string; riskLevel: string | null; hazardCategory: string | null;
   justification: string | null; reportedAt: string; slaDeadline: string | null;
+}
+
+interface SmsRecipient {
+  id: number; hazardCategory: string; phone: string; name: string | null;
+  isActive: boolean; organizationId: number | null;
 }
 
 interface Task {
@@ -23,8 +28,11 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string; border: string
   low: { bg: "#f0fdf4", text: "#16a34a", border: "rgba(22,163,74,0.2)" },
 };
 
-export default function AdminClient({ reports, tasks, stats }: { reports: Report[]; tasks: Task[]; stats: { total: number; pending: number; overdueTasks: number } }) {
-  const [tab, setTab] = useState<"board" | "reports">("board");
+export default function AdminClient({ reports, tasks, smsRecipients: initialRecipients, stats }: { reports: Report[]; tasks: Task[]; smsRecipients: SmsRecipient[]; stats: { total: number; pending: number; overdueTasks: number } }) {
+  const [tab, setTab] = useState<"board" | "reports" | "sms">("board");
+  const [smsRecipients, setSmsRecipients] = useState(initialRecipients);
+  const [newRecipient, setNewRecipient] = useState({ hazardCategory: "", phone: "", name: "" });
+  const [creatingRecipient, setCreatingRecipient] = useState(false);
   const [filterSite, setFilterSite] = useState<string>("all");
   const [filterRisk, setFilterRisk] = useState<string>("all");
   const [filterDept, setFilterDept] = useState<string>("all");
@@ -115,7 +123,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4 sm:mb-6 border-b" style={{ borderColor: "var(--color-border)" }}>
-        {([["board", "Task Board"], ["reports", "Reports"]] as const).map(([key, label]) => (
+        {([["board", "Task Board"], ["reports", "Reports"], ["sms", "SMS Recipients"]] as const).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             className="px-3 sm:px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px]"
             style={{
@@ -201,7 +209,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
                             <p className="text-[10px] mb-3" style={{
                               color: new Date(task.dueDate) < new Date() ? "var(--color-danger)" : "var(--color-ink-faint)",
                             }}>
-                              Due {new Date(task.dueDate).toLocaleDateString()}
+                              Due {formatDateIST(task.dueDate)}
                             </p>
                           )}
                           <div className="flex gap-1.5">
@@ -230,6 +238,123 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* SMS Recipients */}
+      {tab === "sms" && (
+        <div>
+          <p className="text-sm text-[var(--color-ink-muted)] mb-4">
+            Configure who receives SMS alerts for each hazard category. When a high-risk report matches a category, alerts are sent to the mapped phone numbers.
+          </p>
+
+          {/* Add form */}
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!newRecipient.hazardCategory.trim() || !newRecipient.phone.trim()) return;
+            setCreatingRecipient(true);
+            try {
+              const res = await fetch("/api/sms-recipients", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newRecipient),
+              });
+              if (res.ok) {
+                const created = await res.json();
+                setSmsRecipients([created, ...smsRecipients]);
+                setNewRecipient({ hazardCategory: "", phone: "", name: "" });
+              }
+            } finally { setCreatingRecipient(false); }
+          }}
+            className="mb-6 p-4 rounded-xl flex flex-col sm:flex-row gap-3"
+            style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Hazard Category</label>
+              <select value={newRecipient.hazardCategory} onChange={(e) => setNewRecipient({ ...newRecipient, hazardCategory: e.target.value })}
+                required
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none focus:ring-2"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+                <option value="">Select category...</option>
+                {HAZARD_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Phone Number</label>
+              <input value={newRecipient.phone} onChange={(e) => setNewRecipient({ ...newRecipient, phone: e.target.value })}
+                placeholder="e.g. +1234567890" required
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none focus:ring-2"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Name (optional)</label>
+              <input value={newRecipient.name} onChange={(e) => setNewRecipient({ ...newRecipient, name: e.target.value })}
+                placeholder="e.g. John Smith"
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none focus:ring-2"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" disabled={creatingRecipient}
+                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50 whitespace-nowrap"
+                style={{ background: "var(--color-accent)" }}>
+                {creatingRecipient ? "Adding..." : "+ Add Recipient"}
+              </button>
+            </div>
+          </form>
+
+          {/* Recipients list */}
+          <div className="rounded-xl overflow-hidden" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+            <div className="overflow-x-auto">
+              <table className="min-w-[500px] w-full">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    {"Category,Phone,Name,Status,Action".split(",").map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {smsRecipients.map((r) => (
+                    <tr key={r.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-medium"
+                          style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                          {r.hazardCategory}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-mono text-[var(--color-ink)]">{r.phone}</td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-ink-muted)]">{r.name || "\u2014"}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded"
+                          style={{
+                            background: r.isActive ? "var(--color-safe-light)" : "var(--color-surface-sunken)",
+                            color: r.isActive ? "var(--color-safe)" : "var(--color-ink-faint)",
+                          }}>
+                          {r.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button onClick={async () => {
+                          await fetch(`/api/sms-recipients?id=${r.id}`, { method: "DELETE" });
+                          setSmsRecipients(smsRecipients.filter((x) => x.id !== r.id));
+                        }}
+                          className="text-xs font-medium px-2 py-1 rounded transition-all duration-200 hover:bg-[var(--color-danger-light)]"
+                          style={{ color: "var(--color-danger)" }}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {smsRecipients.length === 0 && (
+                <div className="p-8 text-center">
+                  <p className="text-sm text-[var(--color-ink-muted)]">No SMS recipients configured. Add one above to get started.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -290,7 +415,7 @@ export default function AdminClient({ reports, tasks, stats }: { reports: Report
                           color: isOverdue ? "var(--color-danger)" : "var(--color-ink-faint)",
                           fontWeight: isOverdue ? 600 : 400,
                         }}>
-                          {r.slaDeadline ? (isOverdue ? "OVERDUE" : new Date(r.slaDeadline).toLocaleDateString()) : "\u2014"}
+                          {r.slaDeadline ? (isOverdue ? "OVERDUE" : formatDateIST(r.slaDeadline)) : "\u2014"}
                         </td>
                         <td className="px-4 py-3">
                           {showCreateTask === r.id ? (

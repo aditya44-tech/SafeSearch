@@ -28,10 +28,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     t.status !== "done" && t.status !== "cancelled" && t.dueDate && new Date(t.dueDate) < new Date()
   ).length;
 
+  let smsRecipients: Awaited<ReturnType<typeof prisma.smsRecipient.findMany>> = [];
+  try {
+    smsRecipients = await prisma.smsRecipient.findMany({
+      orderBy: [{ hazardCategory: "asc" }, { createdAt: "desc" }],
+    });
+  } catch {
+    // Table may not exist yet — ignore
+  }
+
   return (
     <AdminClient
       reports={JSON.parse(JSON.stringify(reports))}
       tasks={JSON.parse(JSON.stringify(tasks))}
+      smsRecipients={JSON.parse(JSON.stringify(smsRecipients))}
       stats={{ total: reports.length, pending: pendingReports, overdueTasks }}
     />
   );

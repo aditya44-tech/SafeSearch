@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { formatDateIST } from "@/lib/helpers";
 
 interface Report {
   id: number; site: string; riskLevel: string | null; hazardCategory: string | null;
@@ -123,7 +124,7 @@ export default function MapClient({ siteData }: { siteData: SiteData[] }) {
                     {r.hazardCategory || "Uncategorized"}
                   </span>
                   <span className="text-[10px] text-[var(--color-ink-faint)] ml-auto">
-                    {new Date(r.reportedAt).toLocaleDateString()}
+                    {formatDateIST(r.reportedAt)}
                   </span>
                 </div>
                 <p className="text-sm text-[var(--color-ink)]" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>

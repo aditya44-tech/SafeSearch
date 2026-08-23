@@ -1,15 +1,11 @@
 "use client";
 import Link from "next/link";
+import { formatDateTimeIST } from "@/lib/helpers";
 
 interface Report {
   id: number; reportText: string; site: string; reporterRole: string;
   reportedAt: string; status: string; riskLevel: string | null;
   hazardCategory: string | null; justification: string | null;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 export default function AlertsClient({ reports }: { reports: Report[] }) {
@@ -80,7 +76,7 @@ export default function AlertsClient({ reports }: { reports: Report[] }) {
                       <p className="text-sm text-[var(--color-ink-faint)] italic mt-1.5">{r.justification}</p>
                     )}
                     <p className="text-xs text-[var(--color-ink-faint)] mt-2.5" suppressHydrationWarning>
-                      Reported by {r.reporterRole} on {formatDate(r.reportedAt)}
+                      Reported by {r.reporterRole} on {formatDateTimeIST(r.reportedAt)}
                     </p>
                   </div>
                   <Link

@@ -43,6 +43,7 @@ model SafetyReport {
   overriddenBy           String?
   slaDeadline            DateTime?
   keyPhrases             String?  // JSON array of key phrases that drove the risk assessment
+  smsSentAt              DateTime?
 
   organizationId         Int?
   organization           Organization? @relation(fields: [organizationId], references: [id])
@@ -119,11 +120,26 @@ model Task {
 }
 
 model Organization {
-  id        Int              @id @default(autoincrement())
-  name      String           @unique
-  createdAt DateTime         @default(now())
-  reports   SafetyReport[]
-  siteScores SiteScore[]
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  createdAt     DateTime         @default(now())
+  reports       SafetyReport[]
+  siteScores    SiteScore[]
+  smsRecipients SmsRecipient[]
+}
+
+model SmsRecipient {
+  id             Int      @id @default(autoincrement())
+  hazardCategory String
+  phone          String
+  name           String?
+  isActive       Boolean  @default(true)
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([hazardCategory])
 }
 
 model ComplianceReference {

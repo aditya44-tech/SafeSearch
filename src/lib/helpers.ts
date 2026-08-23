@@ -1,13 +1,62 @@
 import { PrismaClient } from "@/generated/prisma/client";
 
+// ── IST Date Formatting ─────────────────────────────────────────────────
+
+const IST_OPTIONS_DATE: Intl.DateTimeFormatOptions = {
+  timeZone: "Asia/Kolkata",
+  year: "2-digit",
+  month: "2-digit",
+  day: "2-digit",
+};
+
+const IST_OPTIONS_DATETIME: Intl.DateTimeFormatOptions = {
+  timeZone: "Asia/Kolkata",
+  year: "2-digit",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+};
+
+/** Format ISO string or Date as DD/MM/YY in IST */
+export function formatDateIST(iso: string | Date): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const parts = new Intl.DateTimeFormat("en-IN", IST_OPTIONS_DATE).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return `${get("day")}/${get("month")}/${get("year")}`;
+}
+
+/** Format ISO string or Date as DD/MM/YY HH:MM in IST */
+export function formatDateTimeIST(iso: string | Date): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const parts = new Intl.DateTimeFormat("en-IN", IST_OPTIONS_DATETIME).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
+}
+
+/** Format a Date as DD/MM/YY in IST (for server-side date bucketing) */
+export function dateToISTString(d: Date): string {
+  const parts = new Intl.DateTimeFormat("en-IN", IST_OPTIONS_DATE).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return `${get("day")}/${get("month")}/${get("year")}`;
+}
+
+/** Get current IST time as a Date object */
+export function nowIST(): Date {
+  const istStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+  return new Date(istStr);
+}
+
 // ── Groq Config ───────────────────────────────────────────────────────────
 
 export const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.6-27b",
+  "openai/gpt-oss-20b",
 ];
 
-export const GROQ_VISION_MODEL = "llama-3.2-90b-vision-preview";
+// No vision model available on Groq — photo cross-check will use text-only fallback
 
 export interface AnalysisResult {
   risk_level: string;
@@ -85,42 +134,7 @@ export async function callGroq(
   throw new Error("All Groq models failed");
 }
 
-// ── Groq Vision API Call ───────────────────────────────────────────────────
 
-export async function callGroqVision(
-  prompt: string,
-  base64Image: string,
-  mimeType: string,
-  apiKey: string,
-  opts?: { temperature?: number; maxOutputTokens?: number }
-): Promise<string> {
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_VISION_MODEL,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } },
-          ],
-        }],
-        temperature: opts?.temperature ?? 0.2,
-        max_tokens: opts?.maxOutputTokens ?? 300,
-      }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Groq vision failed");
-    return data.choices?.[0]?.message?.content || "";
-  } catch (e) {
-    throw e;
-  }
-}
 
 // ── JSON Extraction ────────────────────────────────────────────────────────
 
@@ -141,6 +155,52 @@ export function extractJson<T = unknown>(text: string): T {
     cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
   return JSON.parse(cleaned) as T;
+}
+
+// ── Fallback Analysis (when AI unavailable) ────────────────────────────────
+
+export function fallbackAnalysis(reportText: string): AnalysisResult {
+  const text = reportText.toLowerCase();
+  if (
+    text.includes("fall") || text.includes("unguarded") || text.includes("edge") ||
+    text.includes("trench") || text.includes("scaffold") || text.includes("crane") ||
+    text.includes("live electrical") || text.includes("exposed wiring") ||
+    text.includes("confined space") || text.includes("no guard") ||
+    (text.includes("forklift") && text.includes("pedestrian")) ||
+    (text.includes("removed") && text.includes("guard")) ||
+    (text.includes("almost") && (text.includes("hit") || text.includes("dropped"))) ||
+    text.includes("loose") || text.includes("wobbly") || text.includes("harness")
+  ) {
+    return {
+      risk_level: "high",
+      hazard_category:
+        text.includes("fall") || text.includes("scaffold") || text.includes("trench") || text.includes("guardrail") || text.includes("harness") ? "Structural" :
+        text.includes("electrical") || text.includes("wiring") || text.includes("short circuit") ? "Electrical" :
+        text.includes("forklift") || text.includes("vehicle") ? "Vehicle/Traffic" :
+        text.includes("confined") || text.includes("chemical") ? "Chemical Exposure" :
+        text.includes("crane") || text.includes("equipment") ? "Equipment Failure" : "Structural",
+      justification: "Report describes conditions with a credible path to serious injury or death if left unaddressed.",
+    };
+  }
+  if (
+    text.includes("not wearing") || text.includes("missing") || text.includes("damaged") ||
+    text.includes("spill kit") || text.includes("ventilation") ||
+    (text.includes("exit") && text.includes("block"))
+  ) {
+    return {
+      risk_level: "medium",
+      hazard_category:
+        text.includes("hard hat") || text.includes("wearing") ? "Procedural Gap" :
+        text.includes("spill") || text.includes("chemical") || text.includes("ventilation") ? "Chemical Exposure" :
+        text.includes("exit") ? "Procedural Gap" : "Equipment Failure",
+      justification: "Real hazard exists but is either partially mitigated or lower in severity.",
+    };
+  }
+  return {
+    risk_level: "low",
+    hazard_category: "Procedural Gap",
+    justification: "Minor or procedural issue unlikely to cause serious physical harm.",
+  };
 }
 
 // ── SLA Calculation ────────────────────────────────────────────────────────
@@ -339,6 +399,19 @@ export function textSimilarity(a: string, b: string): number {
   }
   return intersection / Math.max(tokensA.size, tokensB.size);
 }
+
+// ── Hazard Categories ────────────────────────────────────────────────────
+
+export const HAZARD_CATEGORIES = [
+  "Structural",
+  "Fall Hazard",
+  "Electrical",
+  "Chemical Exposure",
+  "Equipment Failure",
+  "Vehicle/Traffic",
+  "Procedural Gap",
+  "Confined Space",
+];
 
 // ── Departments (shared across admin + detail pages) ───────────────────────
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { callGemini } from "@/lib/helpers";
+import { callGroq, formatDateIST } from "@/lib/helpers";
 
 const QUERY_PROMPT = `You are a safety data assistant. You will be given a user's question and a JSON summary of safety reports (site, date, risk level, hazard category, status). Answer the question using ONLY the data provided — do not make up information. If the data doesn't contain enough information to answer, say so clearly. Keep your answer to 2-3 sentences, plain language, no jargon.
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const reportDataSummary = JSON.stringify(
     reports.map((r) => ({
       site: r.site,
-      date: new Date(r.reportedAt).toISOString().split("T")[0],
+      date: formatDateIST(r.reportedAt),
       risk: r.riskLevel || "unanalyzed",
       category: r.hazardCategory || "unknown",
       status: r.status,
@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
     .replace("{{userQuestion}}", question)
     .replace("{{reportDataSummary}}", reportDataSummary);
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (apiKey) {
     try {
-      const answer = await callGemini(prompt, apiKey, {
+      const answer = await callGroq(prompt, apiKey, {
         temperature: 0.3,
         maxOutputTokens: 500,
       });

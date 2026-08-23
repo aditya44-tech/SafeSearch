@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import RiskBadge from "@/components/RiskBadge";
 import StatusBadge from "@/components/StatusBadge";
-import { DEPARTMENTS, autoAssignDept, getDeptIcon } from "@/lib/helpers";
+import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateTimeIST, formatDateIST } from "@/lib/helpers";
 
 interface ComplianceRef {
   id: number;
@@ -20,22 +20,20 @@ interface Report {
   hazardCategory: string | null; justification: string | null; analyzedAt: string | null;
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
-  keyPhrases?: string | null; isAnonymous?: boolean;
+  keyPhrases?: string | null; isAnonymous?: boolean; smsSentAt?: string | null;
   auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
   tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
 
 export default function ReportDetailClient({ report }: { report: Report }) {
   const [status, setStatus] = useState(report.status);
-  const [analyzing, setAnalyzing] = useState(false);
+
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [showOverride, setShowOverride] = useState(false);
   const [overrideLevel, setOverrideLevel] = useState("high");
   const [overrideReason, setOverrideReason] = useState("");
   const [saving, setSaving] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoResult, setPhotoResult] = useState<{ consistent: boolean; note: string } | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   const [toast, setToast] = useState("");
   const [tasks, setTasks] = useState(report.tasks || []);
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -66,21 +64,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
     if (res.ok) { setStatus(newStatus); router.refresh(); }
   };
 
-  const handleAnalyze = async () => {
-    setAnalyzing(true);
-    try {
-      const res = await fetch("/api/reports/" + report.id + "/analyze", { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        setAnalysisResult(data);
-        router.refresh();
-        if (data.analysis?.risk_level === "high") {
-          setToast("Alert sent to Safety Officer");
-          setTimeout(() => setToast(""), 4000);
-        }
-      }
-    } finally { setAnalyzing(false); }
-  };
+
 
   const handleOverride = async () => {
     if (!overrideReason.trim()) return;
@@ -95,24 +79,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
     } finally { setSaving(false); }
   };
 
-  const handlePhotoCheck = async () => {
-    if (!photoFile) return;
-    setUploadingPhoto(true);
-    try {
-      const formData = new FormData();
-      formData.append("photo", photoFile);
-      formData.append("reportId", String(report.id));
-      const res = await fetch("/api/reports/" + report.id + "/photo", {
-        method: "POST",
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPhotoResult(data.analysis);
-        router.refresh();
-      }
-    } finally { setUploadingPhoto(false); }
-  };
+
 
   // Parse key phrases from JSON string
   const parsedKeyPhrases: string[] = (() => {
@@ -224,13 +191,6 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {report.status === "pending" && !report.riskLevel && (
-              <button onClick={handleAnalyze} disabled={analyzing}
-                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
-                style={{ background: "var(--color-accent)" }}>
-                {analyzing ? "Analyzing..." : "Run AI analysis"}
-              </button>
-            )}
             {report.riskLevel && (
               <button onClick={() => setShowOverride(!showOverride)}
                 className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
@@ -246,8 +206,27 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           <div className="mb-6 p-4 rounded-lg" style={{ background: "var(--color-accent-light)", border: "1px solid rgba(15,118,110,0.15)" }}>
             <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--color-accent)" }}>Analysis complete</h3>
             <p className="text-sm" style={{ color: "var(--color-accent)" }}>{analysisResult.analysis?.justification || analysisResult.justification}</p>
+            {analysisResult.smsSent && (
+              <div className="mt-2 flex items-center gap-2 text-xs font-medium" style={{ color: "var(--color-safe)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                SMS alert sent to {(analysisResult.smsRecipients && analysisResult.smsRecipients.length > 0) ? analysisResult.smsRecipients.join(", ") : "Safety Officer"}
+              </div>
+            )}
           </div>
         )}
+
+        {/* Persistent SMS sent indicator */}
+        {report.smsSentAt && (() => {
+          const smsLog = report.auditLogs?.find((l) => l.action === "sms_alert_sent");
+          const recipients = smsLog?.details?.replace("SMS alert sent to ", "") || "Safety Officer";
+          return (
+            <div className="mb-6 p-3 rounded-lg flex items-center gap-2 text-xs" style={{ background: "var(--color-safe-light)", border: "1px solid rgba(22,163,74,0.15)", color: "var(--color-safe)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span className="font-medium">SMS sent to {recipients}</span>
+              <span style={{ color: "var(--color-ink-muted)" }}>{formatDateTimeIST(report.smsSentAt)}</span>
+            </div>
+          );
+        })()}
 
         {/* AI vs Human Override Comparison */}
         {report.humanOverrideRiskLevel && report.riskLevel && (
@@ -318,8 +297,8 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           {[
             { label: "Site", value: report.site },
             { label: "Reporter role", value: report.isAnonymous ? "\u2728 Anonymous" : (report.reporterRole || "\u2014") },
-            { label: "Reported at", value: report.reportedAt.replace("T", " ").slice(0, 16) },
-            { label: "SLA deadline", value: report.slaDeadline ? report.slaDeadline.replace("T", " ").slice(0, 16) : "\u2014" },
+            { label: "Reported at", value: formatDateTimeIST(report.reportedAt) },
+            { label: "SLA deadline", value: report.slaDeadline ? formatDateIST(report.slaDeadline) : "\u2014" },
           ].map((field) => (
             <div key={field.label}>
               <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--color-ink-muted)" }}>{field.label}</h3>
@@ -376,34 +355,6 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           </div>
         )}
 
-        {/* Photo Upload */}
-        <div className="mb-5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>Upload evidence photo</h3>
-          <div className="flex items-center gap-3">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-              className="text-sm text-[var(--color-ink-muted)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:text-sm file:font-medium file:border-0 file:cursor-pointer"
-              style={{ ["--tw-file-bg" as string]: "var(--color-surface-sunken)" } as any}
-            />
-            <button onClick={handlePhotoCheck} disabled={!photoFile || uploadingPhoto}
-              className="px-4 py-1.5 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50"
-              style={{ background: "var(--color-accent)" }}>
-              {uploadingPhoto ? "Checking..." : "Upload & cross-check"}
-            </button>
-          </div>
-          {photoResult && (
-            <div className="mt-3 p-3 rounded-lg text-sm" style={{
-              background: photoResult.consistent ? "var(--color-safe-light)" : "var(--color-danger-light)",
-              color: photoResult.consistent ? "var(--color-safe)" : "var(--color-danger)",
-              border: `1px solid ${photoResult.consistent ? "rgba(22,163,74,0.15)" : "rgba(220,38,38,0.15)"}`,
-            }}>
-              <span className="font-semibold">{photoResult.consistent ? "Consistent" : "Inconsistent"}</span>: {photoResult.note}
-            </div>
-          )}
-        </div>
-
         {/* AI Justification */}
         {report.justification && (
           <div className="mb-5">
@@ -444,18 +395,28 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         {report.auditLogs && report.auditLogs.length > 0 && (
           <div>
             <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>Activity log</h3>
-            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
-              {report.auditLogs.map((log) => (
-                <div key={log.id} className="flex items-center gap-2 text-xs py-1.5 px-3 rounded-lg" style={{ background: "var(--color-surface-sunken)" }}>
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{
-                    background: log.action === "risk_overridden" ? "var(--color-warning)" : "var(--color-accent)"
-                  }} />
-                  <span className="text-[var(--color-ink-muted)]" suppressHydrationWarning>{log.timestamp.replace("T", " ").slice(0, 16)}</span>
-                  <span className="text-[var(--color-ink)] font-medium">{log.action.replace(/_/g, " ")}</span>
-                  <span className="text-[var(--color-ink-faint)]">by {log.performedBy}</span>
-                  {log.details && <span className="text-[var(--color-ink-faint)] ml-auto truncate max-w-[200px]">{log.details}</span>}
-                </div>
-              ))}
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+              {report.auditLogs.map((log) => {
+                const isSMS = log.action === "sms_alert_sent";
+                const smsFailed = log.action === "sms_alert_failed";
+                const dotColor = isSMS ? "var(--color-safe)" : smsFailed ? "var(--color-danger)" : log.action === "risk_overridden" ? "var(--color-warning)" : "var(--color-accent)";
+                const actionLabel = log.action === "sms_alert_sent" ? "SMS sent" : log.action === "sms_alert_failed" ? "SMS failed" : log.action === "report_analyzed" ? "Analyzed" : log.action === "risk_overridden" ? "Risk overridden" : log.action.replace(/_/g, " ");
+                return (
+                  <div key={log.id} className="flex items-center gap-2 text-xs py-2 px-3 rounded-lg" style={{ background: "var(--color-surface-sunken)" }}>
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />
+                    <span className="text-[var(--color-ink-muted)] whitespace-nowrap" suppressHydrationWarning>{formatDateTimeIST(log.timestamp)}</span>
+                    {isSMS && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-safe)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    )}
+                    {smsFailed && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    )}
+                    <span className="text-[var(--color-ink)] font-medium">{actionLabel}</span>
+                    <span className="text-[var(--color-ink-faint)]">by {log.performedBy}</span>
+                    {log.details && <span className="text-[var(--color-ink-muted)] ml-auto truncate max-w-[250px]">{log.details}</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -543,8 +504,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                         </span>
                       </div>
                       <div className="text-[11px] text-[var(--color-ink-faint)]">
-                        Assigned to <strong>{task.assignedTo}</strong>
-                        {task.dueDate && <> • Due {new Date(task.dueDate).toLocaleDateString()}</>}
+                        Assigned to <strong>{task.assignedTo}</strong>                         {task.dueDate && <> • Due {formatDateIST(task.dueDate)}</>}
                       </div>
                       {task.description && <p className="text-xs text-[var(--color-ink-muted)] mt-1">{task.description}</p>}
                     </div>
