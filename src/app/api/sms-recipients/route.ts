@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "hazardCategory and phone are required" }, { status: 400 });
   }
 
+  // Validate E.164 phone format (+<country code><number>, 7-15 digits)
+  if (!/^\+[1-9]\d{6,14}$/.test(phone)) {
+    return NextResponse.json({ error: "Phone must be in E.164 format, e.g. +919876543210" }, { status: 400 });
+  }
+
   const recipient = await prisma.smsRecipient.create({
     data: {
       hazardCategory,

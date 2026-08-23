@@ -20,5 +20,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     if (aVal !== bVal) return aVal - bVal;
     return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
   });
-  return <ReportsClient reports={JSON.parse(JSON.stringify(sorted))} />;
+  // Get unique sites for the dropdown
+  const siteRows = await prisma.safetyReport.findMany({
+    where: orgId ? { organizationId: orgId } : undefined,
+    select: { site: true },
+    distinct: ["site"],
+    orderBy: { site: "asc" },
+  });
+  const sites = siteRows.map((r) => r.site);
+
+  return <ReportsClient reports={JSON.parse(JSON.stringify(sorted))} sites={sites} />;
 }

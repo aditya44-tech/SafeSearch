@@ -212,12 +212,16 @@ export async function POST(request: NextRequest) {
     if (analysis.risk_level === "high") {
       const textbeeApiKey = process.env.TEXTBEE_API_KEY;
       if (textbeeApiKey) {
-        // Look up category-specific recipients
-        const categoryRecipients = analysis.hazard_category
-          ? await prisma.smsRecipient.findMany({
-              where: { hazardCategory: analysis.hazard_category, isActive: true },
-            })
-          : [];
+        // Look up category-specific + "All Categories" recipients
+        const categoryRecipients = await prisma.smsRecipient.findMany({
+          where: {
+            isActive: true,
+            OR: [
+              { hazardCategory: analysis.hazard_category },
+              { hazardCategory: "All Categories" },
+            ],
+          },
+        });
         const phoneNumbers = categoryRecipients.map((r) => r.phone);
         smsRecipients = categoryRecipients.map((r) => r.name || r.hazardCategory);
         // Fallback to env SAFETY_OFFICER_PHONE if no category-specific recipients exist

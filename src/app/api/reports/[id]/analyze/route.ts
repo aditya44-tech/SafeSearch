@@ -266,11 +266,15 @@ export async function POST(
   if (analysis.risk_level === "high") {
     const textbeeApiKey = process.env.TEXTBEE_API_KEY;
     if (textbeeApiKey) {
-      const categoryRecipients = analysis.hazard_category
-        ? await prisma.smsRecipient.findMany({
-            where: { hazardCategory: analysis.hazard_category, isActive: true },
-          })
-        : [];
+      const categoryRecipients = await prisma.smsRecipient.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { hazardCategory: analysis.hazard_category },
+            { hazardCategory: "All Categories" },
+          ],
+        },
+      });
       const phoneNumbers = categoryRecipients.map((r) => r.phone);
       smsRecipients = categoryRecipients.map((r) => r.name || r.hazardCategory);
       if (phoneNumbers.length === 0 && process.env.SAFETY_OFFICER_PHONE) {

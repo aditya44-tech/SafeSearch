@@ -403,6 +403,7 @@ export function textSimilarity(a: string, b: string): number {
 // ── Hazard Categories ────────────────────────────────────────────────────
 
 export const HAZARD_CATEGORIES = [
+  "All Categories",
   "Structural",
   "Fall Hazard",
   "Electrical",

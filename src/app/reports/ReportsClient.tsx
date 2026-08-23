@@ -14,7 +14,7 @@ interface Report {
   humanOverrideRiskLevel: string | null; isAnonymous: boolean;
 }
 
-export default function ReportsClient({ reports: initial }: { reports: Report[] }) {
+export default function ReportsClient({ reports: initial, sites = [] }: { reports: Report[]; sites?: string[] }) {
   const [reports, setReports] = useState(initial);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -185,9 +185,20 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
       {showNewForm && (
         <form onSubmit={handleCreate} className="mb-4 p-5 rounded-xl space-y-3" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
           <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Site</label>
-            <input required value={newReport.site} onChange={(e) => setNewReport({ ...newReport, site: e.target.value })}
+            <select required value={newReport.site} onChange={(e) => setNewReport({ ...newReport, site: e.target.value })}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2"
-              style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} /></div>
+              style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
+              <option value="">Select a site...</option>
+              {sites.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="__new__">+ Add new site</option>
+            </select>
+            {newReport.site === "__new__" && (
+              <input autoFocus required value="" onChange={(e) => setNewReport({ ...newReport, site: e.target.value })}
+                placeholder="Enter new site name"
+                className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <div className="flex-1"><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Reporter Role</label>
               <input required={!newReport.isAnonymous} disabled={newReport.isAnonymous} value={newReport.isAnonymous ? "" : newReport.reporterRole}

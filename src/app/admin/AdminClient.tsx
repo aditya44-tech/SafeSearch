@@ -248,6 +248,9 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
           <p className="text-sm text-[var(--color-ink-muted)] mb-4">
             Configure who receives SMS alerts for each hazard category. When a high-risk report matches a category, alerts are sent to the mapped phone numbers.
           </p>
+          <div className="mb-4 p-3 rounded-lg text-xs" style={{ background: "var(--color-warning-light)", border: "1px solid rgba(217,119,6,0.15)", color: "var(--color-warning)" }}>
+            <span className="font-semibold">Important:</span> Phone numbers must be in E.164 format with country code (e.g. <code className="font-mono">+919876543210</code> for India). Your Android phone must be online with Textbee app running for SMS to be delivered.
+          </div>
 
           {/* Add form */}
           <form onSubmit={async (e) => {
@@ -282,11 +285,14 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Phone Number</label>
+              <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Phone Number (E.164)</label>
               <input value={newRecipient.phone} onChange={(e) => setNewRecipient({ ...newRecipient, phone: e.target.value })}
-                placeholder="e.g. +1234567890" required
+                placeholder="e.g. +919876543210" required
+                pattern="^\+[1-9]\d{6,14}$"
+                title="Must be in E.164 format: +<country code><number>, e.g. +919876543210"
                 className="w-full px-3 py-2 text-sm rounded-lg outline-none focus:ring-2"
                 style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
+              <p className="text-[10px] mt-1" style={{ color: "var(--color-ink-faint)" }}>Format: +[country code][number] — no spaces or dashes</p>
             </div>
             <div className="flex-1">
               <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Name (optional)</label>

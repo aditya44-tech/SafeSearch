@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeSignal — Full Project Documentation</title>
+  <style>
+    :root {
+      --bg: #f8f9fa; --surface: #ffffff; --surface2: #f0f2f5;
+      --border: #e0e3e8; --text: #1a1a2e; --muted: #5a6170;
+      --accent: #0f766e; --accent-light: #e6f7f5; --danger: #dc2626;
+      --warning: #d97706; --safe: #16a34a; --purple: #7c3aed;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+    h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 18px; margin-bottom: 48px; max-width: 700px; }
+    h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+    h3 { font-size: 18px; font-weight: 600; margin: 28px 0 10px; color: var(--accent); }
+    p { margin-bottom: 14px; color: var(--muted); }
+    p strong { color: var(--text); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 20px 0; }
+    .mini-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    .mini-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .mini-card p { font-size: 13px; margin-bottom: 0; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-high { background: #dc262620; color: var(--danger); border: 1px solid #dc262640; }
+    .badge-med { background: #d9770620; color: var(--warning); border: 1px solid #d9770640; }
+    .badge-low { background: #16a34a20; color: var(--safe); border: 1px solid #16a34a40; }
+    .badge-accent { background: var(--accent-light); color: #5eead4; border: 1px solid var(--accent); }
+    .badge-purple { background: #7c3aed20; color: var(--purple); border: 1px solid #7c3aed40; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th { text-align: left; padding: 10px 14px; background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); }
+    td:first-child { color: var(--text); font-weight: 500; }
+    code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Cascadia Code', 'Fira Code', monospace; color: #0f766e; }
+    pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; font-family: 'Cascadia Code', 'Fira Code', monospace; color: #4a5568; margin: 16px 0; }
+    pre .kw { color: var(--purple); } pre .fn { color: #0f766e; } pre .str { color: #d97706; } pre .cm { color: #8b95a3; }
+    .flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .flow-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+    .flow-arrow { color: var(--accent); font-size: 18px; font-weight: 700; }
+    .problem-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .problem-box h4 { color: var(--danger); font-size: 14px; margin-bottom: 6px; }
+    .solution-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .solution-box h4 { color: var(--safe); font-size: 14px; margin-bottom: 6px; }
+    ul { padding-left: 20px; margin: 10px 0; }
+    li { margin-bottom: 6px; color: var(--muted); font-size: 14px; }
+    li strong { color: var(--text); }
+    .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 32px 0; }
+    .toc h3 { margin-top: 0; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 4px; }
+    .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+    .diagram { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin: 20px 0; font-family: 'Cascadia Code', monospace; font-size: 13px; line-height: 1.5; color: #5a6170; overflow-x: auto; white-space: pre; }
+    .tech-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<h1><span>SafeSignal</span> — Workplace Safety Early Warning System</h1>
+<p class="subtitle">An AI-powered safety reporting, analysis, and alerting platform that helps organizations detect, classify, and respond to workplace hazards before they become accidents.</p>
+
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#problem">Problem Statement</a></li>
+    <li><a href="#architecture">System Architecture</a></li>
+    <li><a href="#database">Database Design</a></li>
+    <li><a href="#features">Feature Deep-Dives</a>
+      <ol>
+        <li><a href="#ai-analysis">AI Risk Analysis & Reasoning Highlights</a></li>
+        <li><a href="#sms">Category-Based SMS Alerting via Textbee</a></li>
+        <li><a href="#reports">Safety Reports</a></li>
+        <li><a href="#admin">Admin Center (Kanban + SMS Config)</a></li>
+        <li><a href="#dashboard">Dashboard & Analytics (Heinrich's Law)</a></li>
+        <li><a href="#scoreboard">Site Safety Scoreboard</a></li>
+        <li><a href="#map">Interactive Map</a></li>
+        <li><a href="#alerts">Active Alerts (Stale Report Detection)</a></li>
+        <li><a href="#compliance">Regulatory Compliance Matching</a></li>
+        <li><a href="#offline">Offline-First Reporting (PWA)</a></li>
+        <li><a href="#tasks">AI-Powered Task Generation</a></li>
+        <li><a href="#query">Natural Language Query</a></li>
+        <li><a href="#pdf">PDF Export</a></li>
+        <li><a href="#multi-tenant">Multi-Tenant Organization Support</a></li>
+        <li><a href="#override">Human Risk Override</a></li>
+      </ol>
+    </li>
+    <li><a href="#tech">Technology Stack</a></li>
+    <li><a href="#api">API Routes</a></li>
+    <li><a href="#data-flow">Complete Data Flow</a></li>
+  </ol>
+</div>
+
+<!-- ============ PROBLEM ============ -->
+<h2 id="problem">1. The Problem</h2>
+
+<div class="problem-box">
+  <h4>🚧 Current State of Workplace Safety</h4>
+  <p style="color:#fca5a5">In construction, manufacturing, and industrial sectors, safety reports are filed on paper or via scattered emails. Critical hazards go unnoticed, responses are slow, and there is no data-driven way to identify recurring risks at specific sites. By the time a pattern is detected, injuries have already occurred.</p>
+</div>
+
+<div class="card">
+  <h3>Specific Problems SafeSignal Solves</h3>
+  <table>
+    <tr><th>Problem</th><th>Impact</th><th>How SafeSignal Solves It</th></tr>
+    <tr><td>No real-time risk classification</td><td>High-risk hazards sit in queues for days</td><td>AI instantly classifies every report as <code>high</code>, <code>medium</code>, or <code>low</code> risk with hazard category and justification</td></tr>
+    <tr><td>Delayed notifications</td><td>Emergency conditions aren't communicated fast enough</td><td>SMS alerts are auto-sent to the right department within seconds of analysis</td></tr>
+    <tr><td>No site-level risk tracking</td><td>Recurring hazard patterns are invisible</td><td>Heinrich's Law escalation scoring and per-site scoreboards track risk trends over time</td></tr>
+    <tr><td>No accountability workflow</td><td>Reports are filed but nobody follows up</td><td>Auto-generated corrective tasks assigned to specific departments with SLA deadlines</td></tr>
+    <tr><td>No regulatory compliance tracking</td><td>Organizations don't know which regulations apply</td><td>Automatic matching of hazard categories to Indian factory/safety regulations</td></tr>
+    <tr><td>Field workers can't report offline</td><td>Hazards in remote areas go unreported</td><td>Offline queue via IndexedDB syncs reports when connectivity returns</td></tr>
+  </table>
+</div>
+
+<!-- ============ ARCHITECTURE ============ -->
+<h2 id="architecture">2. System Architecture</h2>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         CLIENT (React/Next.js)                         │
+│                                                                         │
+│  ┌──────────┐ ┌──────────┐ ┌────────┐ ┌────────────┐ ┌──────────────┐ │
+│  │ Reports  │ │Dashboard │ │  Map   │ │Scoreboard  │ │   Query (AI) │ │
+│  └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬──────┘ └──────┬───────┘ │
+│       │             │           │             │               │         │
+│  ┌────┴─────────────┴───────────┴─────────────┴───────────────┴──────┐  │
+│  │              API Routes (Next.js Server Actions)                  │  │
+│  └────┬──────────────────────────────────────────────────────────────┘  │
+└───────┼─────────────────────────────────────────────────────────────────┘
+        │
+┌───────┼─────────────────────────────────────────────────────────────────┐
+│       ▼                     SERVER SIDE                                │
+│  ┌────────────┐  ┌──────────┐  ┌────────────┐  ┌──────────────────┐   │
+│  │  Groq AI   │  │ Textbee  │  │  Prisma    │  │  Compliance DB   │   │
+│  │ (classify) │  │  (SMS)   │  │  (ORM)     │  │  (regulations)   │   │
+│  └────────────┘  └──────────┘  └─────┬──────┘  └──────────────────┘   │
+│                                       │                                 │
+│                                  ┌────┴─────┐                          │
+│                                  │ Neon DB  │                          │
+│                                  │(Postgres)│                          │
+│                                  └──────────┘                          │
+└────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ============ DATABASE ============ -->
+<h2 id="database">3. Database Design</h2>
+
+<div class="card">
+  <h3>Data Models</h3>
+  <table>
+    <tr><th>Model</th><th>Purpose</th><th>Key Fields</th></tr>
+    <tr><td><strong>SafetyReport</strong></td><td>Core entity — every hazard report filed by workers</td><td><code>reportText</code>, <code>site</code>, <code>riskLevel</code>, <code>hazardCategory</code>, <code>status</code>, <code>slaDeadline</code>, <code>smsSentAt</code></td></tr>
+    <tr><td><strong>AuditLog</strong></td><td>Complete trail of every action taken on a report</td><td><code>action</code>, <code>performedBy</code>, <code>details</code>, <code>timestamp</code></td></tr>
+    <tr><td><strong>Task</strong></td><td>Corrective actions generated by AI or assigned manually</td><td><code>title</code>, <code>assignedTo</code>, <code>priority</code>, <code>status</code>, <code>dueDate</code></td></tr>
+    <tr><td><strong>SiteScore</strong></td><td>Running safety score per site (0–100)</td><td><code>scoreValue</code>, <code>highRiskCount</code>, <code>avgResolutionHours</code></td></tr>
+    <tr><td><strong>Organization</strong></td><td>Multi-tenant isolation</td><td><code>name</code>, links to reports, site scores, SMS recipients</td></tr>
+    <tr><td><strong>SmsRecipient</strong></td><td>Category-to-phone mappings for SMS routing</td><td><code>hazardCategory</code>, <code>phone</code>, <code>name</code>, <code>isActive</code></td></tr>
+    <tr><td><strong>ComplianceReference</strong></td><td>Regulation database matching categories to laws</td><td><code>hazardCategory</code>, <code>regulationName</code>, <code>sectionReference</code></td></tr>
+  </table>
+</div>
+
+<!-- ============ FEATURES ============ -->
+<h2 id="features">4. Feature Deep-Dives</h2>
+
+<!-- AI Analysis -->
+<h3 id="ai-analysis">4.1 AI Risk Analysis & Reasoning Highlights</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Every new report is automatically analyzed by an AI model (via Groq API) that classifies its risk level, assigns a hazard category, generates a human-readable justification, and extracts key danger phrases from the text.</p>
+
+  <div class="flow">
+    <div class="flow-step">📝 Report filed</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">🤖 Groq AI classifies</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">📊 Risk + Category</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">⏰ SLA calculated</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">📋 Tasks generated</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">📱 SMS sent (if high)</div>
+  </div>
+
+  <h4>How AI Analysis Works</h4>
+  <p>When a report is filed, a <strong>fire-and-forget background job</strong> starts immediately (the report returns to the user instantly without waiting). The background job:</p>
+  <ol style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Sends the report text</strong> to Groq API with a carefully crafted prompt that asks for: <code>risk_level</code> (high/medium/low), <code>hazard_category</code> (one of 8 types), <code>justification</code> (1-2 sentence explanation), and <code>key_phrases</code> (danger words found in the text).</li>
+    <li><strong>Tries multiple AI models</strong> in sequence: <code>openai/gpt-oss-120b</code> → <code>qwen/qwen3.6-27b</code> → <code>openai/gpt-oss-20b</code>. If one fails or is rate-limited, the next is tried automatically.</li>
+    <li><strong>Extracts structured JSON</strong> from the AI response, stripping markdown fences and parsing the classification result.</li>
+  </ol>
+
+  <h4>AI Reasoning Highlights (Key Phrase Extraction)</h4>
+  <p>The AI identifies <strong>key danger phrases</strong> from the report text and stores them. On the report detail page, these phrases are <strong>highlighted in yellow</strong> within the report text, so safety officers can instantly see what triggered the classification. For example:</p>
+  <div style="background:var(--surface2); padding:12px 16px; border-radius:8px; margin:12px 0; font-size:14px; color:var(--muted);">
+    "Strong chemical fumes detected in paint booth area. Ventilation system appears to be <mark style="background:#fef3c7; padding:1px 4px; border-radius:3px; color:#92400e;">malfunction</mark>ing. Workers complaining of <mark style="background:#fef3c7; padding:1px 4px; border-radius:3px; color:#92400e;">headache</mark>s and <mark style="background:#fef3c7; padding:1px 4px; border-radius:3px; color:#92400e;">nausea</mark>."
+  </div>
+  <p>This is powered by two mechanisms: (1) the AI extracts <code>key_phrases</code> in its JSON response, and (2) a regex-based fallback in <code>helpers.ts</code> scans for high-risk patterns like <code>/(?:unguarded|exposed|live)\s+(?:wire|electrical|edge)/gi</code> and medium-risk patterns like <code>/(?:not\s+wearing|missing\s+(?:helmet|hardhat))/gi</code>.</p>
+
+  <h4>Fallback Classification (When AI is Down)</h4>
+  <p>If all Groq models fail, the <strong>fallback classifier</strong> in <code>fallbackAnalysis()</code> kicks in. It uses keyword matching on the report text:</p>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>High risk</strong> keywords: "fall", "unguarded", "exposed wiring", "confined space", "forklift" + "pedestrian", "almost hit", "loose", "wobbly"</li>
+    <li><strong>Medium risk</strong> keywords: "not wearing", "missing", "damaged", "spill", "ventilation", "exit blocked"</li>
+    <li><strong>Default</strong>: low risk / procedural gap</li>
+  </ul>
+  <p>The hazard category is also inferred from keywords: "electrical/wiring" → Electrical, "forklift/vehicle" → Vehicle/Traffic, etc.</p>
+
+  <h4>Risk Classification Rules</h4>
+  <table>
+    <tr><th>Risk Level</th><th>SLA Deadline</th><th>SMS Alert</th><th>Auto Tasks</th></tr>
+    <tr><td><span class="badge badge-high">High</span></td><td>24 hours</td><td>✅ Yes (to category dept)</td><td>3 tasks (immediate safety + root cause fix + follow-up)</td></tr>
+    <tr><td><span class="badge badge-med">Medium</span></td><td>72 hours</td><td>❌ No</td><td>2 tasks (immediate safety + root cause fix)</td></tr>
+    <tr><td><span class="badge badge-low">Low</span></td><td>7 days</td><td>❌ No</td><td>1 task (fix/improvement)</td></tr>
+  </table>
+
+  <h4>Hazard Categories (8 types)</h4>
+  <div class="tech-row">
+    <span class="badge badge-accent">Structural</span>
+    <span class="badge badge-accent">Fall Hazard</span>
+    <span class="badge badge-accent">Electrical</span>
+    <span class="badge badge-accent">Chemical Exposure</span>
+    <span class="badge badge-accent">Equipment Failure</span>
+    <span class="badge badge-accent">Vehicle/Traffic</span>
+    <span class="badge badge-accent">Procedural Gap</span>
+    <span class="badge badge-accent">Confined Space</span>
+  </div>
+</div>
+
+<!-- SMS Alerting -->
+<h3 id="sms">4.2 Category-Based SMS Alerting via Textbee</h3>
+<div class="card">
+  <p><strong>Problem:</strong> When a high-risk hazard is detected, the right people need to be notified immediately — but different hazard types need different responders. An electrical hazard should alert the Electrical department, not the Chemical Safety team.</p>
+  <p><strong>Solution:</strong> Admins configure SMS recipients per hazard category in the Admin → SMS Recipients tab. The system also supports an <strong>"All Categories"</strong> option for safety officers who need to know about everything.</p>
+
+  <h4>How Textbee Works</h4>
+  <p>Textbee turns your own Android phone into an SMS gateway. The flow:</p>
+  <ol style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Install Textbee app</strong> on an Android phone with a SIM card</li>
+    <li><strong>Register the device</strong> on textbee.dev and get an API key</li>
+    <li><strong>Our server sends</strong> an HTTP POST to Textbee's API with the message and phone numbers</li>
+    <li><strong>Textbee's server</strong> pushes the message to your Android phone via WebSocket</li>
+    <li><strong>Your phone</strong> sends the actual SMS through the cellular network</li>
+    <li><strong>Status changes</strong> from "pending" (queued) → "sent" (delivered by phone)</li>
+  </ol>
+
+  <div class="flow">
+    <div class="flow-step">High-risk report analyzed</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Query SmsRecipient table<br><small>WHERE category = report.category<br>OR category = 'All Categories'</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Collect phone numbers</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Textbee API call<br><small>POST /api/v1/gateway/send-sms</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Android phone sends SMS</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">AuditLog records<br><small>"SMS sent to Electrical, Fire Dept"</small></div>
+  </div>
+
+  <h4>Key Implementation Details</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>E.164 format required:</strong> Phone numbers must be <code>+919876543210</code> (country code + number, no spaces). Both client (HTML pattern) and server (regex <code>/^\+[1-9]\d{6,14}$/</code>) validate this.</li>
+    <li><strong>Multiple recipients:</strong> One category can have multiple phone numbers. All receive the same alert simultaneously.</li>
+    <li><strong>Fallback to env:</strong> If no SMS recipients are configured for a category, the system falls back to <code>SAFETY_OFFICER_PHONE</code> from the <code>.env</code> file.</li>
+    <li><strong>Audit trail:</strong> Every SMS send attempt (success or failure) is logged to <code>AuditLog</code> with the department names (not phone numbers) for privacy.</li>
+    <li><strong>Offline phone required:</strong> The Android phone must be online with Textbee app running. If the phone is off, messages stay in "pending" status until it reconnects.</li>
+  </ul>
+
+  <h4>SMS Message Format</h4>
+  <pre>🚨 HIGH RISK ALERT: Metro Industrial Park — Electrical. Exposed wiring near water pipe creates electrocution risk.</pre>
+</div>
+
+<!-- Reports Page -->
+<h3 id="reports">4.3 Safety Reports</h3>
+<div class="card">
+  <p><strong>What it does:</strong> The central hub for viewing, creating, and managing all hazard reports. Workers file reports here (or from the field via offline mode), and safety officers review and triage them.</p>
+
+  <h4>Report Table Features</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Risk badge column:</strong> Color-coded badges — <span class="badge badge-high">High</span> <span class="badge badge-med">Medium</span> <span class="badge badge-low">Low</span>. Shows "override" tag if a human reviewer changed the AI's classification.</li>
+    <li><strong>Report text column:</strong> Shows truncated report text (60 chars + ellipsis) with full text on hover tooltip.</li>
+    <li><strong>Site dropdown:</strong> Select from existing sites or choose "+ Add new site" for a new location. Prevents typos and duplicate site names.</li>
+    <li><strong>Sort dropdown:</strong> Toggle between "Sort by Risk" (high first) and "Sort by Recent" (newest first). Click-outside closes the dropdown.</li>
+    <li><strong>Expandable rows:</strong> Click any row to expand and see the full report text, AI justification, override info, and a "View full details" link to the report detail page.</li>
+    <li><strong>Cluster visualization:</strong> Toggle the "Clusters" button to show which reports are semantically similar (e.g., two reports about "exposed wiring" at the same site get clustered together).</li>
+    <li><strong>Anonymous reporting:</strong> Checkbox hides the reporter role. The report still shows the site and hazard info, but the reporter identity is hidden.</li>
+    <li><strong>CSV bulk upload:</strong> Upload a CSV file with columns <code>reportText, site, reporterRole</code> to create multiple reports at once. Useful for importing historical data.</li>
+  </ul>
+
+  <h4>Report Detail Page</h4>
+  <p>Click "View full details" to see:</p>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Report text with highlighted key phrases</strong> — danger words highlighted in yellow</li>
+    <li><strong>AI justification</strong> — the AI's reasoning for its classification</li>
+    <li><strong>Regulatory compliance</strong> — which Indian laws apply to this hazard type</li>
+    <li><strong>Corrective tasks</strong> — auto-generated tasks assigned to departments with due dates</li>
+    <li><strong>Activity log</strong> — complete audit trail with IST timestamps (e.g., "Analyzed by Groq AI at 23/08/26 15:01")</li>
+    <li><strong>Status dropdown</strong> — change from Pending → Analyzed → Acknowledged → Resolved</li>
+    <li><strong>Risk override</strong> — human reviewer can change the AI's risk assessment with a reason</li>
+  </ul>
+</div>
+
+<!-- Admin -->
+<h3 id="admin">4.4 Admin Center</h3>
+<div class="card">
+  <p><strong>What it does:</strong> The command center for safety managers. Three tabs cover task management, report triage, and SMS configuration.</p>
+
+  <h4>Tab 1: Task Board (Kanban)</h4>
+  <p>A drag-free kanban board with three columns: <strong>Open</strong> → <strong>In Progress</strong> → <strong>Done</strong>. Features:</p>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Auto-assignment:</strong> When tasks are auto-generated by AI, they're assigned to the matching department. E.g., an Electrical hazard task goes to the Electrical department, a Structural hazard to Structural.</li>
+    <li><strong>Department filters:</strong> Filter the board by department (Traffic & Vehicles, Electrical, Structural, etc.) to focus on your team's work.</li>
+    <li><strong>Priority badges:</strong> Each task shows its priority (URGENT / HIGH / NORMAL / LOW) with color coding.</li>
+    <li><strong>One-click transitions:</strong> "Start work" moves Open → In Progress. "Mark done" moves In Progress → Done.</li>
+    <li><strong>Due date tracking:</strong> Overdue tasks are highlighted in red.</li>
+  </ul>
+
+  <h4>Tab 2: Reports</h4>
+  <p>Filterable report list with site and risk-level filters. Create corrective tasks inline per report — the department is auto-assigned based on the hazard category, and you can override it.</p>
+
+  <h4>Tab 3: SMS Recipients</h4>
+  <p>Configure which phone numbers receive SMS alerts for each hazard category. Features:</p>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Category dropdown</strong> with 8 hazard types + "All Categories"</li>
+    <li><strong>E.164 validation</strong> on both client and server (rejects invalid phone formats)</li>
+    <li><strong>Multiple recipients per category</strong> — e.g., both the Electrical department head and the safety officer</li>
+    <li><strong>Name field</strong> — optional label (e.g., "Fire Department") shown in audit logs instead of phone numbers</li>
+  </ul>
+</div>
+
+<!-- Dashboard -->
+<h3 id="dashboard">4.5 Dashboard & Analytics</h3>
+<div class="card">
+  <p><strong>What it does:</strong> A real-time analytics dashboard showing the organization's safety posture across all sites. Updated on every page load (server-rendered).</p>
+
+  <h4>Summary Cards</h4>
+  <p>Three at-a-glance metrics: Total Reports, High Risk count, Pending Action count. These update in real-time as reports are filed and resolved.</p>
+
+  <h4>Anomaly Detection</h4>
+  <p>The system compares each site's <strong>this week</strong> report count against its <strong>historical 3-week average</strong>. If a site has 2x or more its normal volume (or 2x high-risk reports), it's flagged as an anomaly with a red banner at the top of the dashboard. This catches sites that are suddenly becoming more dangerous.</p>
+  <pre>threshold = max(historicalAvg × 2, 3 reports)
+if thisWeekCount ≥ threshold → <span style="color:var(--danger)">ANOMALY DETECTED</span></pre>
+
+  <h4>Heinrich's Law Escalation Scoring</h4>
+  <p>Based on <strong>Heinrich's Law</strong>: for every 1 serious injury, there are 29 minor injuries and 300 near-misses. SafeSignal applies this principle by scoring each site's <strong>escalation risk</strong> based on its hazard mix over the last 30 days.</p>
+  <div class="card" style="background:var(--surface2); margin:12px 0;">
+    <h4 style="color:var(--text);">How the Escalation Score Works</h4>
+    <pre>Escalation Score = (highRisk × 10) + (mediumRisk × 3) + (lowRisk × 1)
+
+Classification:
+  Score > 40  → 🔴 Critical  (immediate intervention needed)
+  Score ≥ 20  → 🟡 Elevated  (close monitoring required)
+  Score < 20  → 🟢 Normal    (manageable risk level)</pre>
+    <p style="margin-top:12px;">The scoring weights reflect Heinrich's insight: <strong>high-risk reports are 10x more indicative of escalation</strong> than low-risk ones. A site with many low-risk reports is concerning, but a site with even a few high-risk reports is a red flag for potential serious injury.</p>
+    <p><strong>Example:</strong> Metro Industrial Park has 5 high-risk, 3 medium-risk, and 2 low-risk reports in 30 days.</p>
+    <pre>Score = (5 × 10) + (3 × 3) + (2 × 1) = 50 + 9 + 2 = 61 → 🔴 Critical</pre>
+  </div>
+
+  <h4>Regulatory Compliance Flags</h4>
+  <p>For each active hazard category, the system shows which Indian regulations apply. This helps safety officers understand their legal obligations. See section 4.9 for details.</p>
+
+  <h4>Hazard Category Frequency (Bar Chart)</h4>
+  <p>A bar chart showing how many reports fall into each hazard category. Helps identify which types of hazards are most common across the organization.</p>
+
+  <h4>High-Risk Reports Over Time (Line Chart)</h4>
+  <p>A 30-day line chart showing daily high-risk report counts, bucketed by IST dates. Spikes indicate periods of increased danger that may need investigation.</p>
+
+  <h4>Recurring High-Risk Sites</h4>
+  <p>Sites with <strong>2 or more high-risk reports</strong> are listed with their count. These are sites that need immediate attention — recurring high-risk reports suggest systemic problems, not one-off incidents.</p>
+</div>
+
+<!-- Scoreboard -->
+<h3 id="scoreboard">4.6 Site Safety Scoreboard</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Ranks all sites by their safety score (0–100). Higher = safer. Creates healthy competition between sites and makes it easy to identify the most dangerous locations.</p>
+
+  <h4>Scoring Formula</h4>
+  <pre>Score = 100 - (highRiskCount × 15) + speedBonus
+
+where speedBonus = max(0, 30 - avgResolutionHours / 2)</pre>
+
+  <h4>How It Works</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Every site starts at 100</strong> (perfect safety score)</li>
+    <li><strong>Each high-risk report costs 15 points</strong> — 7 high-risk reports zero out the score</li>
+    <li><strong>Speed bonus rewards fast resolution:</strong> If you resolve reports quickly (low avgResolutionHours), you earn up to 30 bonus points. A site that resolves high-risk reports in 2 hours gets +29 points.</li>
+    <li><strong>Score is recalculated</strong> every time a report is resolved (via <code>recalculateSiteScore()</code>)</li>
+  </ul>
+
+  <h4>Visual Design</h4>
+  <p>Sites are ranked with medal emojis for top 3 (🥇🥈🥉). Each site shows a progress bar colored by score: green (≥80), yellow (≥50), red (<50).</p>
+</div>
+
+<!-- Map -->
+<h3 id="map">4.7 Interactive Map</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Displays all reported hazards on a map view with risk-level color coding. Each pin shows the site, hazard category, date, report text, and AI justification on click.</p>
+  <p>Useful for identifying <strong>geographic clusters</strong> of hazards — e.g., if multiple reports come from the same area, it may indicate a systemic issue at that location.</p>
+</div>
+
+<!-- Alerts -->
+<h3 id="alerts">4.8 Active Alerts (Stale Report Detection)</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Monitors for <strong>high-risk reports that have been sitting too long</strong> without resolution. If a high-risk report has been in "pending" or "acknowledged" status for more than 48 hours, it appears on the Alerts page.</p>
+  <h4>How It Works</h4>
+  <pre>SELECT * FROM SafetyReport
+WHERE riskLevel = 'high'
+  AND status IN ('pending', 'acknowledged')
+  AND reportedAt < NOW() - INTERVAL '48 hours'
+ORDER BY reportedAt ASC  -- oldest first (most overdue)</pre>
+  <p>Each alert shows <strong>how many hours overdue</strong> it is (e.g., "72h overdue") and a "Review" button to jump directly to the report detail page. This ensures no critical hazard is forgotten.</p>
+</div>
+
+<!-- Compliance -->
+<h3 id="compliance">4.9 Regulatory Compliance Matching</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Automatically matches each hazard category to the applicable Indian safety regulations. Stored in the <code>ComplianceReference</code> table and displayed on both the report detail page and the dashboard.</p>
+  <table>
+    <tr><th>Hazard Category</th><th>Applicable Regulations</th><th>What They Cover</th></tr>
+    <tr><td><span class="badge badge-accent">Electrical</span></td><td>Electricity Act 2003 §14, IS 10101:2021</td><td>Safe electrical installations, insulation, earthing, lockout/tagout</td></tr>
+    <tr><td><span class="badge badge-accent">Chemical Exposure</span></td><td>Factories Act 1948 §41A-41H, GHS/CMSR Rules 2024</td><td>Toxic substances, exposure limits, PPE, health surveillance, SDS requirements</td></tr>
+    <tr><td><span class="badge badge-accent">Confined Space</span></td><td>Factories Act §36A-36D, DGMS Circular 04/2019</td><td>Permit systems, atmospheric testing, rescue standby, gas detection</td></tr>
+    <tr><td><span class="badge badge-accent">Equipment Failure</span></td><td>Factories Act §22, IS 15489:2004</td><td>Fencing of machinery, load testing, maintenance schedules</td></tr>
+    <tr><td><span class="badge badge-accent">Structural</span></td><td>Building Construction Rules, IS 4912</td><td>Structural integrity, scaffolding, fall protection</td></tr>
+    <tr><td><span class="badge badge-accent">Fall Hazard</span></td><td>Factories Act §36, IS 15489:2004</td><td>Working at heights, guardrails, personal fall arrest systems</td></tr>
+    <tr><td><span class="badge badge-accent">Vehicle/Traffic</span></td><td>Motor Vehicles Act, Factory Safety Rules</td><td>Internal traffic management, pedestrian zones, speed limits</td></tr>
+  </table>
+  <p>When a report is filed for "Chemical Exposure", the report detail page automatically shows: "Factories Act 1948 §41A-41H — Provisions relating to toxic substances, exposure limits, PPE, and health surveillance." This helps safety officers understand their legal obligations immediately.</p>
+</div>
+
+<!-- Offline -->
+<h3 id="offline">4.10 Offline-First Reporting (PWA Support)</h3>
+<div class="card">
+  <p><strong>Problem:</strong> Construction sites, mining operations, and remote industrial areas often have poor or no internet connectivity. Workers can't file hazard reports from the field, which means dangerous conditions go unreported until someone gets back to the office — by which time it may be too late.</p>
+  <p><strong>Solution:</strong> SafeSignal uses <strong>IndexedDB</strong> (via the <code>idb</code> library) to create a local offline queue. Workers can file reports even with zero connectivity.</p>
+
+  <h4>How Offline Reporting Works</h4>
+  <div class="flow">
+    <div class="flow-step">Worker fills report form</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Check <code>navigator.onLine</code></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">If offline → save to IndexedDB</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Toast: "Saved offline"</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">When online → auto-sync</div>
+  </div>
+
+  <h4>Technical Implementation</h4>
+  <ol style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Detect connectivity:</strong> The form checks <code>navigator.onLine</code> before submitting. If <code>false</code>, it imports the <code>enqueueReport()</code> function from <code>lib/offline-queue.ts</code>.</li>
+    <li><strong>Save to IndexedDB:</strong> The report payload (<code>reportText, site, reporterRole, isAnonymous</code>) is stored in an IndexedDB object store called <code>pendingReports</code>. IndexedDB persists even if the browser is closed.</li>
+    <li><strong>Show confirmation:</strong> A toast notification appears: "Saved offline — will sync when connected". The form closes and the user can continue working.</li>
+    <li><strong>Auto-sync on reconnect:</strong> When <code>navigator.onLine</code> becomes <code>true</code> again, the queue is processed. Each pending report is submitted to <code>POST /api/reports</code> and removed from IndexedDB on success.</li>
+  </ol>
+
+  <h4>Why IndexedDB (Not localStorage)?</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Storage limit:</strong> IndexedDB can store hundreds of MBs vs localStorage's 5MB limit</li>
+    <li><strong>Async API:</strong> Won't block the main thread</li>
+    <li><strong>Structured data:</strong> Supports objects and indexes, not just strings</li>
+    <li><strong>Reliable:</strong> Data survives browser crashes and restarts</li>
+  </ul>
+</div>
+
+<!-- AI Task Generation -->
+<h3 id="tasks">4.11 AI-Powered Task Generation</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Automatically generates 1-3 corrective tasks for every analyzed report. Tasks are specific, actionable, and assigned to the right department.</p>
+
+  <h4>How It Works</h4>
+  <ol style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>AI extracts tasks</strong> using the <code>TASK_EXTRACTION_PROMPT</code> — a carefully crafted prompt that asks the AI to generate concrete actions like "Install temporary fall protection barriers" rather than vague ones like "investigate".</li>
+    <li><strong>Tasks are auto-assigned</strong> to the matching department. The mapping: Electrical → Electrical dept, Structural/Fall Hazard → Structural dept, Chemical Exposure → Chemical Safety dept, etc.</li>
+    <li><strong>Priority matches risk:</strong> High-risk reports get urgent/high tasks, medium-risk get high/normal, low-risk get normal/low.</li>
+    <li><strong>For high-risk reports</strong>, the system generates 3 tasks: (1) immediate safety action, (2) root cause fix, (3) follow-up inspection within 24 hours.</li>
+  </ol>
+
+  <h4>Fallback Task Generator</h4>
+  <p>If the AI fails, <code>fallbackTaskExtraction()</code> generates tasks based on hazard category keywords. For example, an electrical hazard automatically generates: "De-energize and lockout affected electrical system" (urgent) + "Inspect and remediate root cause" (high) + "Schedule follow-up inspection" (normal).</p>
+</div>
+
+<!-- Query -->
+<h3 id="query">4.12 Natural Language Query</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Users can ask questions about their safety data in plain English and get natural language answers.</p>
+  <h4>How It Works</h4>
+  <ol style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li>User types a question: "How many high-risk reports at Metro Industrial Park this week?"</li>
+    <li>System fetches all report data (site, date, risk, category, status) and serializes it as JSON</li>
+    <li>Both the question and data are sent to Groq AI with a prompt: "Answer using ONLY the data provided"</li>
+    <li>AI generates a natural language answer: "There are 4 high-risk reports at Metro Industrial Park, all classified as Electrical hazards."</li>
+  </ol>
+  <p>This makes data accessible to non-technical users who don't know how to write SQL queries or use filters.</p>
+</div>
+
+<!-- PDF -->
+<h3 id="pdf">4.13 PDF Export</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Generates a formatted report document (downloadable via browser) containing all key metrics. Useful for management reviews, safety audits, and regulatory submissions.</p>
+  <h4>Contents</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li><strong>Summary stats:</strong> Total reports, high-risk count, unresolved high-risk, pending action</li>
+    <li><strong>Unresolved high-risk items table:</strong> Site, category, reporter, date, status, justification</li>
+    <li><strong>Top 5 riskiest sites</strong> ranked by high-risk report count</li>
+    <li><strong>Footer</strong> with generation timestamp in IST</li>
+  </ul>
+</div>
+
+<!-- Multi-tenant -->
+<h3 id="multi-tenant">4.14 Multi-Tenant Organization Support</h3>
+<div class="card">
+  <p><strong>What it does:</strong> A global organization selector in the navbar filters all data by organization. Multiple companies can use the same SafeSignal instance without seeing each other's data.</p>
+  <h4>How It Works</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li>Every report, site score, and SMS recipient can be linked to an <code>Organization</code></li>
+    <li>The org selector passes <code>?org=ID</code> as a query parameter to every page</li>
+    <li>Server-side queries filter by <code>organizationId</code> when an org is selected</li>
+    <li>"All Organizations" shows data across the entire system</li>
+  </ul>
+</div>
+
+<!-- Human Override -->
+<h3 id="override">4.15 Human Risk Override</h3>
+<div class="card">
+  <p><strong>What it does:</strong> Safety officers can override the AI's risk classification with their own judgment. This acknowledges that AI isn't perfect and experienced humans may catch nuances the model misses.</p>
+  <h4>How It Works</h4>
+  <ul style="padding-left:20px; margin:10px 0; color:var(--muted);">
+    <li>On the report detail page, click "Override risk" to change the classification</li>
+    <li>The override is stored in <code>humanOverrideRiskLevel</code> and <code>overrideReason</code></li>
+    <li>The report table shows an "override" tag next to the risk badge when a human has changed the AI's assessment</li>
+    <li>The original AI classification is preserved in <code>riskLevel</code> for comparison</li>
+    <li>All overrides are logged to the AuditLog with the reviewer's name</li>
+  </ul>
+</div>
+
+<!-- ============ TECH STACK ============ -->
+<h2 id="tech">5. Technology Stack</h2>
+<div class="card">
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
+    <tr><td>Framework</td><td>Next.js 16 (App Router, Turbopack)</td><td>Server components for SSR, API routes, file-based routing</td></tr>
+    <tr><td>UI</td><td>React 19 + Tailwind CSS 4</td><td>Component-based UI with utility-first styling</td></tr>
+    <tr><td>Database</td><td>PostgreSQL (Neon serverless)</td><td>Managed, scales to zero, driver adapter for edge</td></tr>
+    <tr><td>ORM</td><td>Prisma 7</td><td>Type-safe queries, migration management</td></tr>
+    <tr><td>AI</td><td>Groq API (GPT-OSS-120B / Qwen3.6)</td><td>Fast inference, free tier, OpenAI-compatible API</td></tr>
+    <tr><td>SMS</td><td>Textbee SDK (Android gateway)</td><td>Free SMS via your own Android phone</td></tr>
+    <tr><td>Charts</td><td>Recharts 3</td><td>Declarative React charting library</td></tr>
+    <tr><td>Offline</td><td>IndexedDB (idb library)</td><td>Browser-native storage for offline queue</td></tr>
+    <tr><td>Language</td><td>TypeScript 5</td><td>End-to-end type safety</td></tr>
+  </table>
+</div>
+
+<!-- ============ API ============ -->
+<h2 id="api">6. API Routes</h2>
+<div class="card">
+  <table>
+    <tr><th>Route</th><th>Method</th><th>Purpose</th></tr>
+    <tr><td><code>/api/reports</code></td><td>GET / POST</td><td>List all reports / Create new report (triggers AI analysis)</td></tr>
+    <tr><td><code>/api/reports/[id]</code></td><td>GET / PATCH</td><td>Get report detail / Update status or override</td></tr>
+    <tr><td><code>/api/reports/[id]/analyze</code></td><td>POST</td><td>Trigger AI analysis on demand</td></tr>
+    <tr><td><code>/api/reports/[id]/photo</code></td><td>POST</td><td>Upload photo for a report</td></tr>
+    <tr><td><code>/api/reports/anomaly-check</code></td><td>GET</td><td>Detect anomalous site activity (2x historical average)</td></tr>
+    <tr><td><code>/api/reports/cluster</code></td><td>POST</td><td>Cluster similar reports using text similarity</td></tr>
+    <tr><td><code>/api/tasks</code></td><td>POST</td><td>Create corrective task for a report</td></tr>
+    <tr><td><code>/api/tasks/[id]</code></td><td>PATCH</td><td>Update task status</td></tr>
+    <tr><td><code>/api/sms-recipients</code></td><td>GET / POST / DELETE</td><td>CRUD for category-to-phone mappings</td></tr>
+    <tr><td><code>/api/sites/escalation-scores</code></td><td>GET</td><td>Heinrich's Law escalation scores per site</td></tr>
+    <tr><td><code>/api/compliance/summary</code></td><td>GET</td><td>Regulatory compliance flags per category</td></tr>
+    <tr><td><code>/api/pdf</code></td><td>POST</td><td>Generate PDF export</td></tr>
+    <tr><td><code>/api/query</code></td><td>POST</td><td>Natural language query over report data</td></tr>
+    <tr><td><code>/api/organizations</code></td><td>GET</td><td>List organizations for tenant filter</td></tr>
+  </table>
+</div>
+
+<!-- ============ DATA FLOW ============ -->
+<h2 id="data-flow">7. Complete Data Flow</h2>
+<div class="card">
+  <h3>End-to-End: Report → Resolution</h3>
+  <pre>
+<span class="cm">1. WORKER FILES REPORT</span>
+   POST /api/reports { reportText, site, reporterRole, isAnonymous }
+   → Record saved to SafetyReport (status: pending)
+   → AuditLog entry created
+
+<span class="cm">2. AI ANALYSIS (fire-and-forget background job)</span>
+   → Groq AI classifies: risk_level, hazard_category, justification
+   → If all models fail → fallback keyword classifier activates
+   → SLA deadline calculated (24h / 72h / 7d)
+   → Key phrases extracted and stored
+   → Report status updated to "analyzed"
+   → AuditLog entry created
+
+<span class="cm">3. SMS ALERT (if high risk)</span>
+   → Query SmsRecipient WHERE category = report.category OR "All Categories"
+   → If no matches → fallback to SAFETY_OFFICER_PHONE
+   → Send via Textbee SDK to all matched phone numbers
+   → AuditLog entry: "SMS sent to [department names]"
+
+<span class="cm">4. TASK GENERATION</span>
+   → Groq AI extracts 1-3 corrective tasks
+   → If AI fails → fallback task generator by hazard category
+   → Tasks auto-assigned to matching department
+   → AuditLog entry: "Auto-generated N task(s)"
+
+<span class="cm">5. ADMIN MANAGEMENT</span>
+   → Kanban board: Open → In Progress → Done
+   → Manual task assignment and priority override
+   → Risk override with reason logging
+   → All changes tracked in AuditLog
+
+<span class="cm">6. MONITORING & ANALYTICS</span>
+   → Dashboard: anomaly detection, escalation scores, compliance
+   → Scoreboard: site safety scores (0-100)
+   → Alerts: stale high-risk reports (48h+)
+   → PDF export for reporting
+
+<span class="cm">7. RESOLUTION</span>
+   → Status changed to "resolved"
+   → SiteScore recalculated
+   → Resolution time tracked for speed bonus
+  </pre>
+</div>
+
+<div class="card" style="text-align:center; margin-top:48px;">
+  <p style="color:var(--text); font-size:16px; margin-bottom:4px;"><strong>SafeSignal</strong> — Built for Smart India Hackathon</p>
+  <p style="font-size:13px; color:var(--muted);">Next.js 16 · React 19 · Prisma 7 · Groq AI · Textbee · Neon PostgreSQL</p>
+  <p style="font-size:12px; margin-top:8px; color:var(--muted);">All dates in IST (DD/MM/YY) · Category-based SMS routing · Offline-first reporting</p>
+</div>
+
+</div>
+</body>
+</html>
