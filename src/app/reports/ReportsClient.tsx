@@ -101,6 +101,14 @@ export default function ReportsClient({ reports: initial }: { reports: Report[] 
 
   return (
     <div>
+      {/* Offline queued toast */}
+      {offlineQueued && (
+        <div className="fixed top-20 right-6 z-50 px-5 py-3 rounded-xl text-sm font-medium shadow-lg animate-slide-in"
+          style={{ background: "var(--color-warning-light)", color: "var(--color-warning)", border: "1px solid rgba(217,119,6,0.15)" }}>
+          Saved offline — will sync when connected
+        </div>
+      )}
+
       {/* Header — stacks on mobile */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>

@@ -1,14 +1,13 @@
 import { PrismaClient } from "@/generated/prisma/client";
 
-// ── Gemini Config ──────────────────────────────────────────────────────────
+// ── Groq Config ───────────────────────────────────────────────────────────
 
-export const GEMINI_MODELS = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-flash-latest",
-  "gemini-2.5-flash-lite",
-  "gemini-2.5-flash",
+export const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
 ];
+
+export const GROQ_VISION_MODEL = "llama-3.2-90b-vision-preview";
 
 export interface AnalysisResult {
   risk_level: string;
@@ -48,38 +47,79 @@ Risk level: {{riskLevel}}
 Hazard category: {{hazardCategory}}
 Report text: "{{reportText}}"`;
 
-// ── Gemini API Call ────────────────────────────────────────────────────────
+// ── Groq API Call (OpenAI-compatible) ─────────────────────────────────────
 
-export async function callGemini(
+export async function callGroq(
   prompt: string,
   apiKey: string,
-  opts?: { temperature?: number; maxOutputTokens?: number; responseMimeType?: string }
+  opts?: { temperature?: number; maxOutputTokens?: number; responseFormat?: { type: string } }
 ): Promise<string> {
-  for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  for (const model of GROQ_MODELS) {
     try {
-      const response = await fetch(url, {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: opts?.temperature ?? 0.1,
-            maxOutputTokens: opts?.maxOutputTokens ?? 500,
-            responseMimeType: opts?.responseMimeType,
-          },
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: opts?.temperature ?? 0.1,
+          max_tokens: opts?.maxOutputTokens ?? 500,
+          response_format: opts?.responseFormat,
         }),
       });
       const data = await response.json();
-      if (!response.ok) continue;
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!response.ok) {
+        console.warn(`Groq ${model} failed:`, data.error?.message);
+        continue;
+      }
+      const text = data.choices?.[0]?.message?.content;
       if (!text) continue;
       return text;
     } catch {
       // try next model
     }
   }
-  throw new Error("All Gemini models failed");
+  throw new Error("All Groq models failed");
+}
+
+// ── Groq Vision API Call ───────────────────────────────────────────────────
+
+export async function callGroqVision(
+  prompt: string,
+  base64Image: string,
+  mimeType: string,
+  apiKey: string,
+  opts?: { temperature?: number; maxOutputTokens?: number }
+): Promise<string> {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_VISION_MODEL,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } },
+          ],
+        }],
+        temperature: opts?.temperature ?? 0.2,
+        max_tokens: opts?.maxOutputTokens ?? 300,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "Groq vision failed");
+    return data.choices?.[0]?.message?.content || "";
+  } catch (e) {
+    throw e;
+  }
 }
 
 // ── JSON Extraction ────────────────────────────────────────────────────────
