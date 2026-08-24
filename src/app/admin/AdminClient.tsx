@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import Link from "next/link";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateIST, HAZARD_CATEGORIES } from "@/lib/helpers";
@@ -106,7 +106,7 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
         </div>
       </div>
 
-      {/* Stats — 2 cols on mobile, 4 on desktop */}
+      {/* Stats - 2 cols on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: "Total reports", value: stats.total, color: "var(--color-ink)" },
@@ -204,7 +204,7 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
                           <p className="text-xs text-[var(--color-ink-muted)] mb-2">
                             {getDeptIcon(task.assignedTo)} {task.assignedTo}
                           </p>
-                          <p className="text-xs text-[var(--color-ink-faint)] mb-1">{task.report.site} — {task.report.hazardCategory || "Uncategorized"}</p>
+                          <p className="text-xs text-[var(--color-ink-faint)] mb-1">{task.report.site} - {task.report.hazardCategory || "Uncategorized"}</p>
                           {task.dueDate && (
                             <p className="text-[10px] mb-3" style={{
                               color: new Date(task.dueDate) < new Date() ? "var(--color-danger)" : "var(--color-ink-faint)",
@@ -292,7 +292,7 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
                 title="Must be in E.164 format: +<country code><number>, e.g. +919876543210"
                 className="w-full px-3 py-2 text-sm rounded-lg outline-none focus:ring-2"
                 style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
-              <p className="text-[10px] mt-1" style={{ color: "var(--color-ink-faint)" }}>Format: +[country code][number] — no spaces or dashes</p>
+              <p className="text-[10px] mt-1" style={{ color: "var(--color-ink-faint)" }}>Format: +[country code][number] - no spaces or dashes</p>
             </div>
             <div className="flex-1">
               <label className="block text-[10px] font-medium tracking-wider uppercase text-[var(--color-ink-muted)] mb-1">Name (optional)</label>

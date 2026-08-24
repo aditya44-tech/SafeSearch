@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import ScoreboardClient from "./ScoreboardClient";
 
 export const dynamic = "force-dynamic";

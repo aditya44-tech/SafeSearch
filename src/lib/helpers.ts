@@ -1,6 +1,6 @@
-import { PrismaClient } from "@/generated/prisma/client";
+﻿import { PrismaClient } from "@/generated/prisma/client";
 
-// ── IST Date Formatting ─────────────────────────────────────────────────
+// â”€â”€ IST Date Formatting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const IST_OPTIONS_DATE: Intl.DateTimeFormatOptions = {
   timeZone: "Asia/Kolkata",
@@ -48,7 +48,7 @@ export function nowIST(): Date {
   return new Date(istStr);
 }
 
-// ── Groq Config ───────────────────────────────────────────────────────────
+// â”€â”€ Groq Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const GROQ_MODELS = [
   "openai/gpt-oss-120b",
@@ -56,7 +56,7 @@ export const GROQ_MODELS = [
   "openai/gpt-oss-20b",
 ];
 
-// No vision model available on Groq — photo cross-check will use text-only fallback
+// No vision model available on Groq - photo cross-check will use text-only fallback
 
 export interface AnalysisResult {
   risk_level: string;
@@ -73,7 +73,7 @@ export interface ExtractedTask {
 
 export const TASK_EXTRACTION_PROMPT = `You are a workplace safety operations manager. Given a safety report and its risk classification, extract specific corrective actions that should be taken.
 
-Respond with ONLY valid JSON — an array of 1-3 tasks:
+Respond with ONLY valid JSON - an array of 1-3 tasks:
 [
   {
     "title": "<short action verb phrase, max 80 chars>",
@@ -85,7 +85,7 @@ Respond with ONLY valid JSON — an array of 1-3 tasks:
 Rules:
 - Each task must be a concrete, actionable step (not vague like "investigate" or "look into")
 - Use action verbs: Install, Repair, Replace, Remove, Inspect, Test, Post, Train, etc.
-- Priority should match the report's risk level: high-risk → urgent/high tasks, medium → high/normal, low → normal/low
+- Priority should match the report's risk level: high-risk â†’ urgent/high tasks, medium â†’ high/normal, low â†’ normal/low
 - For high-risk reports, include an immediate safety action AND a root-cause fix
 - Keep titles under 80 characters
 - Descriptions should be 1-2 sentences, specific to this report
@@ -96,7 +96,7 @@ Risk level: {{riskLevel}}
 Hazard category: {{hazardCategory}}
 Report text: "{{reportText}}"`;
 
-// ── Groq API Call (OpenAI-compatible) ─────────────────────────────────────
+// â”€â”€ Groq API Call (OpenAI-compatible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function callGroq(
   prompt: string,
@@ -136,7 +136,7 @@ export async function callGroq(
 
 
 
-// ── JSON Extraction ────────────────────────────────────────────────────────
+// â”€â”€ JSON Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function extractJson<T = unknown>(text: string): T {
   let cleaned = text.trim();
@@ -157,7 +157,7 @@ export function extractJson<T = unknown>(text: string): T {
   return JSON.parse(cleaned) as T;
 }
 
-// ── Fallback Analysis (when AI unavailable) ────────────────────────────────
+// â”€â”€ Fallback Analysis (when AI unavailable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function fallbackAnalysis(reportText: string): AnalysisResult {
   const text = reportText.toLowerCase();
@@ -203,7 +203,7 @@ export function fallbackAnalysis(reportText: string): AnalysisResult {
   };
 }
 
-// ── SLA Calculation ────────────────────────────────────────────────────────
+// â”€â”€ SLA Calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function getSLADeadline(riskLevel: string): Date {
   const now = new Date();
@@ -212,7 +212,7 @@ export function getSLADeadline(riskLevel: string): Date {
   return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 }
 
-// ── Site Score Calculation ─────────────────────────────────────────────────
+// â”€â”€ Site Score Calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function recalculateSiteScore(prisma: PrismaClient, site: string) {
   const reports = await prisma.safetyReport.findMany({
@@ -253,7 +253,7 @@ export async function recalculateSiteScore(prisma: PrismaClient, site: string) {
   });
 }
 
-// ── Key Phrase Extraction (fallback when Gemini unavailable) ──────────────────
+// â”€â”€ Key Phrase Extraction (fallback when Gemini unavailable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const KEY_PHRASE_PATTERNS: Record<string, RegExp[]> = {
   high: [
@@ -314,7 +314,7 @@ export function extractKeyPhrases(reportText: string): string[] {
   return phrases.slice(0, 5);
 }
 
-// ── Heinrich's Law Escalation Score ─────────────────────────────────────────
+// â”€â”€ Heinrich's Law Escalation Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface EscalationScore {
   site: string;
@@ -362,7 +362,7 @@ export function calculateEscalationScores(
     .sort((a, b) => b.score - a.score);
 }
 
-// ── Text Similarity & Clustering ───────────────────────────────────────────
+// â”€â”€ Text Similarity & Clustering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function semanticHash(text: string): string {
   const t = text.toLowerCase();
@@ -400,7 +400,7 @@ export function textSimilarity(a: string, b: string): number {
   return intersection / Math.max(tokensA.size, tokensB.size);
 }
 
-// ── Hazard Categories ────────────────────────────────────────────────────
+// â”€â”€ Hazard Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const HAZARD_CATEGORIES = [
   "All Categories",
@@ -414,16 +414,16 @@ export const HAZARD_CATEGORIES = [
   "Confined Space",
 ];
 
-// ── Departments (shared across admin + detail pages) ───────────────────────
+// â”€â”€ Departments (shared across admin + detail pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEPARTMENTS: { name: string; icon: string; categories: string[] }[] = [
-  { name: "Electrical", icon: "⚡", categories: ["Electrical"] },
-  { name: "Structural", icon: "🏗️", categories: ["Structural", "Fall Hazard"] },
-  { name: "Chemical Safety", icon: "☢️", categories: ["Chemical Exposure"] },
-  { name: "Mechanical", icon: "⚙️", categories: ["Equipment Failure"] },
-  { name: "Traffic & Vehicles", icon: "🚗", categories: ["Vehicle/Traffic"] },
-  { name: "General Maintenance", icon: "🔧", categories: ["Procedural Gap", "Confined Space"] },
-  { name: "Safety Compliance", icon: "🛡️", categories: [] },
+  { name: "Electrical", icon: "âš¡", categories: ["Electrical"] },
+  { name: "Structural", icon: "ðŸ-ï¸", categories: ["Structural", "Fall Hazard"] },
+  { name: "Chemical Safety", icon: "â˜¢ï¸", categories: ["Chemical Exposure"] },
+  { name: "Mechanical", icon: "âš™ï¸", categories: ["Equipment Failure"] },
+  { name: "Traffic & Vehicles", icon: "ðŸš-", categories: ["Vehicle/Traffic"] },
+  { name: "General Maintenance", icon: "ðŸ”§", categories: ["Procedural Gap", "Confined Space"] },
+  { name: "Safety Compliance", icon: "ðŸ›¡ï¸", categories: [] },
 ];
 
 export function autoAssignDept(category: string | null): string {
@@ -433,10 +433,10 @@ export function autoAssignDept(category: string | null): string {
 }
 
 export function getDeptIcon(dept: string): string {
-  return DEPARTMENTS.find((d) => d.name === dept)?.icon || "📋";
+  return DEPARTMENTS.find((d) => d.name === dept)?.icon || "ðŸ“‹";
 }
 
-// ── Fallback Task Extraction ───────────────────────────────────────────────
+// â”€â”€ Fallback Task Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function fallbackTaskExtraction(
   reportText: string,

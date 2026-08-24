@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 interface Site {
   site: string; totalReports: number; highRiskCount: number;

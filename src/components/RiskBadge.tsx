@@ -1,4 +1,4 @@
-const colorMap: Record<string, { bg: string; text: string; dot: string; border: string }> = {
+﻿const colorMap: Record<string, { bg: string; text: string; dot: string; border: string }> = {
   high: {
     bg: "var(--color-danger-light)",
     text: "var(--color-danger)",

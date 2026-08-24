@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
-/* ─── Design Tokens ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Design Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const t = {
   canvas: "#f6f5f3",
   ink: "#111111",
@@ -38,7 +38,7 @@ const tightHeading = (size: number, ls: number): React.CSSProperties => {
   };
 };
 
-/* ─── Scroll Reveal ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Scroll Reveal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function useReveal(threshold = 0.01) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -65,7 +65,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-/* ─── Data ────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const features = [
   { tab: "Intelligence", title: "AI-powered risk analysis", desc: "Every safety report is classified in seconds using Groq LLM. Hazard categories, justifications, and key phrases extracted automatically.", color: t.accentCyan },
   { tab: "SMS Alerts", title: "Instant department alerts", desc: "High-risk reports trigger SMS to category-mapped departments via Textbee. No manual routing needed.", color: t.accentBlue },
@@ -85,7 +85,7 @@ const roles = [
   { role: "Executive Leadership", desc: "Dashboard with anomaly detection, site scorecards, and trend analysis across all locations.", highlight: "Data-driven safety decisions" },
 ];
 
-/* ─── Main ────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function LandingClient() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -101,7 +101,7 @@ export default function LandingClient() {
   return (
     <div style={{ background: t.canvas, color: t.ink, minHeight: "100vh", zoom: 1.1 }}>
 
-      {/* ── Navbar ──────────────────────────────────────────────── */}
+      {/* â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: t.canvas }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, padding: "0 20px" }} className="sm:px-10">
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
@@ -144,7 +144,7 @@ export default function LandingClient() {
         )}
       </nav>
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
+      {/* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section style={{ background: t.canvas, padding: "32px 20px 48px", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:pt-10 sm:pb-16">
         {/* Warm gradient bloom - left side */}
         <div style={{ position: "absolute", top: "0%", left: "-12%", width: 500, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentOrange}40 0%, ${t.accentPink}25 40%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
@@ -180,7 +180,7 @@ export default function LandingClient() {
               <div style={{ display: "flex", gap: 1 }}>
                 {[1,2,3,4,5].map(i => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
               </div>
-              <span style={{ ...fontDisplay, fontSize: 11, color: "#999" }}>G Cool Vendor by <strong style={{ color: "#666" }}>Gartner</strong></span>
+              <span style={{ ...fontDisplay, fontSize: 11, color: "#999" }}>Trusted by <strong style={{ color: "#666" }}>modern safety teams</strong></span>
             </div>
           </div>
 
@@ -232,7 +232,7 @@ export default function LandingClient() {
       </section>
 
 
-      {/* ── Dark Product Showcase ───────────────────────────────── */}
+      {/* â”€â”€ Dark Product Showcase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section id="features" style={{ background: "#000000", padding: "48px 20px" }} className="sm:px-8 sm:py-20">
         <Reveal>
           <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
@@ -274,29 +274,8 @@ export default function LandingClient() {
         </Reveal>
       </section>
 
-      {/* ── Testimonial 2 + CTA Card ───────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "48px 20px" }} className="sm:px-8 sm:py-20">
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <Reveal>
-            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 48 }} className="sm:gap-6 sm:mb-16">
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 9, fontWeight: 700, color: t.ink }} className="sm:w-14 sm:h-14 sm:text-[10px]">
-                Tata
-              </div>
-              <div>
-                <p style={{ ...tightHeading(18, -0.3), marginBottom: 10, lineHeight: 1.4 }} className="sm:text-xl sm:tracking-[-0.4px]">
-                  &ldquo;SafeSignal has everything you need for safety management in one place. The AI classification is incredibly accurate.&rdquo;
-                </p>
-                <p style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>EHS Director at Tata Projects</p>
-              </div>
-            </div>
-          </Reveal>
 
-
-        </div>
-      </section>
-
-      {/* ── Roles Section ───────────────────────────────────────── */}
-      <section id="roles" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
+      <section id="roles" style={{ background: t.canvas, padding: "64px 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
             <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 32 }} className="text-[28px] sm:text-[40px] sm:mb-10">Built for every safety role</h2>
@@ -310,23 +289,18 @@ export default function LandingClient() {
                 }}>{r.role}</button>
               ))}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 p-5 sm:p-8 gap-6 md:gap-8" style={{ background: t.surfaceWhite, borderRadius: 16, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", alignItems: "center" }}>
-              <div>
-                <h3 style={{ ...tightHeading(24, -0.5), marginBottom: 8 }}>{roles[activeRole].role}</h3>
-                <p style={{ ...fontDisplay, fontSize: 15, color: "#666", lineHeight: 1.5, marginBottom: 16 }}>{roles[activeRole].desc}</p>
-                <span style={{ ...fontDisplay, fontSize: 13, fontWeight: 600, color: t.ink }}>{roles[activeRole].highlight}</span>
-              </div>
-              <div style={{ background: t.canvas, borderRadius: 12, padding: 24, minHeight: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={t.ink} strokeWidth="1.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
+            <div className="p-6 sm:p-10 text-center" style={{ background: t.surfaceWhite, borderRadius: 16, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", maxWidth: 600, margin: "0 auto" }}>
+              <h3 style={{ ...tightHeading(24, -0.5), marginBottom: 12 }}>{roles[activeRole].role}</h3>
+              <p style={{ ...fontDisplay, fontSize: 15, color: "#666", lineHeight: 1.6, marginBottom: 20 }}>{roles[activeRole].desc}</p>
+              <div style={{ display: "inline-block", ...fontDisplay, fontSize: 13, fontWeight: 600, color: t.ink, padding: "8px 18px", background: t.canvas, borderRadius: 20, border: `1px solid ${t.hairline}` }}>
+                {roles[activeRole].highlight}
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ── Results Grid ────────────────────────────────────────── */}
+      {/* â”€â”€ Results Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section id="results" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <Reveal>
@@ -345,7 +319,7 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── Compliance ─────────────────────────────────────────── */}
+      {/* â”€â”€ Compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section id="compliance" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <Reveal>
@@ -365,7 +339,7 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── Final CTA (dark) ────────────────────────────────────── */}
+      {/* â”€â”€ Final CTA (dark) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section style={{ background: t.ink, padding: "48px 20px", textAlign: "center", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:py-20">
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 500, height: 250, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentCyan}12, ${t.accentBlue}08, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
         <Reveal>
@@ -375,13 +349,13 @@ export default function LandingClient() {
             <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "12px 24px", borderRadius: 22, background: t.onDark, display: "inline-block", marginBottom: 20 }} className="sm:text-[15px] sm:px-7 sm:py-3.5">Get started</Link>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
               <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(i => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}</div>
-              <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>G Cool Vendor by <strong style={{ color: "rgba(255,255,255,0.6)" }}>Gartner</strong></span>
+              <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Trusted by <strong style={{ color: "rgba(255,255,255,0.6)" }}>modern safety teams</strong></span>
             </div>
           </div>
         </Reveal>
       </section>
 
-      {/* ── Footer ─────────────────────────────────────────────── */}
+      {/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <footer style={{ background: t.ink, padding: "32px 20px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }} className="sm:px-10 sm:py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10" style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div>

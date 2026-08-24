@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 import OfflineBanner from "@/components/OfflineBanner";
 import { OrgProvider } from "@/lib/org-context";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 
 export const metadata: Metadata = {
-  title: "SafeSignal — Workplace Safety Early Warning System",
+  title: "SafeSignal - Workplace Safety Early Warning System",
   description: "Detect precursors of serious injury and fatality incidents through AI-powered safety report analysis",
 };
 

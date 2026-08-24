@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -59,7 +59,7 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Org selector — desktop */}
+          {/* Org selector - desktop */}
           {!loading && orgs.length > 0 && (
             <div className="hidden md:flex items-center ml-3">
               <select

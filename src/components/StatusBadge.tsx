@@ -1,4 +1,4 @@
-const styles: Record<string, { bg: string; text: string; border: string }> = {
+﻿const styles: Record<string, { bg: string; text: string; border: string }> = {
   pending: { bg: "var(--color-warning-light)", text: "var(--color-warning)", border: "rgba(217, 119, 6, 0.12)" },
   analyzed: { bg: "var(--color-accent-light)", text: "var(--color-accent)", border: "rgba(15, 118, 110, 0.12)" },
   acknowledged: { bg: "#faf5ff", text: "#7c3aed", border: "rgba(124, 58, 237, 0.12)" },

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { openDB, DBSchema, IDBPDatabase } from "idb";
 

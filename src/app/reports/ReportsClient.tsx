@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React from "react";
 import { useState } from "react";
 import Link from "next/link";
@@ -112,11 +112,11 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
       {offlineQueued && (
         <div className="fixed top-20 right-6 z-50 px-5 py-3 rounded-xl text-sm font-medium shadow-lg animate-slide-in"
           style={{ background: "var(--color-warning-light)", color: "var(--color-warning)", border: "1px solid rgba(217,119,6,0.15)" }}>
-          Saved offline — will sync when connected
+          Saved offline - will sync when connected
         </div>
       )}
 
-      {/* Header — stacks on mobile */}
+      {/* Header - stacks on mobile */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-[28px] font-heading font-bold tracking-tight text-[var(--color-ink)]">
@@ -233,7 +233,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
         </form>
       )}
 
-      {/* Table — horizontal scroll on mobile */}
+      {/* Table - horizontal scroll on mobile */}
       <div className="rounded-xl overflow-hidden" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
         <div className="overflow-x-auto">
           <table className="min-w-[700px] w-full">

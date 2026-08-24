@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import DashboardClient from "./DashboardClient";
 import { dateToISTString, nowIST } from "@/lib/helpers";
 
@@ -24,7 +24,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  // High risk over time (last 30 days) — IST
+  // High risk over time (last 30 days) - IST
   const now = nowIST();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const dailyMap: Record<string, number> = {};

@@ -1,4 +1,4 @@
-import QueryClient from "./QueryClient";
+﻿import QueryClient from "./QueryClient";
 
 export const dynamic = "force-dynamic";
 

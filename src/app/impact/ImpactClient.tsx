@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 interface SiteRow {
   site: string;
@@ -61,7 +61,7 @@ export default function ImpactClient({
         </div>
         <p className="text-sm text-[var(--color-ink)] leading-relaxed mb-3">
           For every serious injury, there are approximately <strong>300 near-misses</strong> that preceded it.
-          High-risk near-misses — the ones your team reports and you address — are the strongest early warning
+          High-risk near-misses - the ones your team reports and you address - are the strongest early warning
           signs. Resolving them before they escalate is how serious injuries get prevented.
         </p>
         <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed">
@@ -156,7 +156,7 @@ export default function ImpactClient({
           Impact by site
         </h2>
         <p className="text-xs text-[var(--color-ink-muted)] mb-4">
-          Ranked by escalation score — higher score means more high-risk activity
+          Ranked by escalation score - higher score means more high-risk activity
         </p>
 
         {siteBreakdown.length === 0 ? (

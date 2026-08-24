@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { formatDateIST } from "@/lib/helpers";
 
@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
     <tr><th>Site</th><th>Category</th><th>Reporter</th><th>Date</th><th>Status</th><th>Justification</th></tr>
     ${highReports.map((r) => `<tr>
       <td>${r.site}</td>
-      <td>${r.hazardCategory || "—"}</td>
+      <td>${r.hazardCategory || "-"}</td>
       <td>${r.reporterRole}</td>
       <td>${formatDateIST(r.reportedAt)}</td>
       <td class="high">${r.status}</td>
-      <td>${r.justification || "—"}</td>
+      <td>${r.justification || "-"}</td>
     </tr>`).join("")}
   </table>`}
 

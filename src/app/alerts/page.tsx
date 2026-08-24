@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import AlertsClient from "./AlertsClient";
 
 export const dynamic = "force-dynamic";

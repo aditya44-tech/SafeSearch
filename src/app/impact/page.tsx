@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import ImpactClient from "./ImpactClient";
 
 export const dynamic = "force-dynamic";

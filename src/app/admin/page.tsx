@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import AdminClient from "./AdminClient";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       orderBy: [{ hazardCategory: "asc" }, { createdAt: "desc" }],
     });
   } catch {
-    // Table may not exist yet — ignore
+    // Table may not exist yet - ignore
   }
 
   return (

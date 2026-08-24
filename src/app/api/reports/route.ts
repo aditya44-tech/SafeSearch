@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   callGroq,
@@ -16,7 +16,7 @@ import {
   type ExtractedTask,
 } from "@/lib/helpers";
 
-// ── Classification prompt (same as analyze route) ──────────────────────────
+// â”€â”€ Classification prompt (same as analyze route) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SAFETY_PROMPT = `You are a workplace safety analyst reviewing near-miss and unsafe-condition reports to detect early warning signs of a potential serious injury or fatality (SIF).
 
 Given the report below, respond with ONLY valid JSON in this exact format, no extra text:
@@ -132,7 +132,7 @@ async function generateTasks(
   return created;
 }
 
-// ── Main POST handler ──────────────────────────────────────────────────────
+// â”€â”€ Main POST handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // 2. Auto-analyze with AI (don't await — fire and let the response go back fast,
+  // 2. Auto-analyze with AI (don't await - fire and let the response go back fast,
   //    then finish analysis in background)
   const analysisPromise = (async () => {
     const apiKey = process.env.GROQ_API_KEY;
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       analysis.risk_level, analysis.hazard_category, apiKey, slaDeadline
     );
 
-    // 4. Send SMS for high risk — category-based recipients, fallback to SAFETY_OFFICER_PHONE
+    // 4. Send SMS for high risk - category-based recipients, fallback to SAFETY_OFFICER_PHONE
     let smsSent = false;
     let smsRecipients: string[] = [];
     if (analysis.risk_level === "high") {
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
             const textbee = new Textbee({ apiKey: textbeeApiKey });
             await textbee.sendSms({
               recipients: phoneNumbers,
-              message: `🚨 HIGH RISK ALERT: ${report.site} — ${analysis.hazard_category}. ${analysis.justification}`,
+              message: `ðŸš¨ HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}`,
             });
             smsSent = true;
             await prisma.safetyReport.update({ where: { id: report.id }, data: { smsSentAt: new Date() } });

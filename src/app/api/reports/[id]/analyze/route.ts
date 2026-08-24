@@ -230,7 +230,7 @@ export async function POST(
 
   const slaDeadline = getSLADeadline(analysis.risk_level);
 
-  // Save key phrases as JSON string — use Gemini output or fallback extraction
+  // Save key phrases as JSON string - use Gemini output or fallback extraction
   const rawPhrases = analysis.key_phrases && Array.isArray(analysis.key_phrases) && analysis.key_phrases.length > 0
     ? analysis.key_phrases.slice(0, 5)
     : extractKeyPhrases(report.reportText);
@@ -260,7 +260,7 @@ export async function POST(
   await recalculateSiteScore(prisma, report.site);
   const clusterId = await clusterReport(id, report.reportText);
 
-  // Send SMS alert for high-risk reports — category-based recipients, fallback to SAFETY_OFFICER_PHONE
+  // Send SMS alert for high-risk reports - category-based recipients, fallback to SAFETY_OFFICER_PHONE
   let smsSent = false;
   let smsRecipients: string[] = [];
   if (analysis.risk_level === "high") {
@@ -285,7 +285,7 @@ export async function POST(
         try {
           const { Textbee } = await import("@textbee/sdk");
           const textbee = new Textbee({ apiKey: textbeeApiKey });
-          const smsMessage = `🚨 HIGH RISK ALERT: ${report.site} — ${analysis.hazard_category}. ${analysis.justification}`;
+          const smsMessage = `🚨 HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}`;
           await textbee.sendSms({
             recipients: phoneNumbers,
             message: smsMessage,

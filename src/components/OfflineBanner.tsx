@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getQueuedCount, syncQueuedReports } from "@/lib/offline-queue";
@@ -61,7 +61,7 @@ export default function OfflineBanner() {
       }
       setTimeout(() => setSyncMessage(""), 3000);
     } catch {
-      setSyncMessage("Sync failed — will retry");
+      setSyncMessage("Sync failed - will retry");
       setTimeout(() => setSyncMessage(""), 3000);
     } finally {
       setSyncing(false);
@@ -85,7 +85,7 @@ export default function OfflineBanner() {
         style={{ background: isOnline ? "var(--color-safe)" : "var(--color-danger)" }}
       />
       {!isOnline && (
-        <span>You&apos;re offline — reports will be queued</span>
+        <span>You&apos;re offline - reports will be queued</span>
       )}
       {isOnline && queuedCount > 0 && (
         <>

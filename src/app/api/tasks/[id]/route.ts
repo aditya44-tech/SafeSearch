@@ -58,7 +58,7 @@ export async function PATCH(
             reportId: task.reportId,
             action: "auto_resolved",
             performedBy: "System",
-            details: "All tasks completed — report auto-resolved",
+            details: "All tasks completed - report auto-resolved",
           },
         });
       }

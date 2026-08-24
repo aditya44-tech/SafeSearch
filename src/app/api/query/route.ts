@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { callGroq, formatDateIST } from "@/lib/helpers";
 
-const QUERY_PROMPT = `You are a safety data assistant. You will be given a user's question and a JSON summary of safety reports (site, date, risk level, hazard category, status). Answer the question using ONLY the data provided — do not make up information. If the data doesn't contain enough information to answer, say so clearly. Keep your answer to 2-3 sentences, plain language, no jargon.
+const QUERY_PROMPT = `You are a safety data assistant. You will be given a user's question and a JSON summary of safety reports (site, date, risk level, hazard category, status). Answer the question using ONLY the data provided - do not make up information. If the data doesn't contain enough information to answer, say so clearly. Keep your answer to 2-3 sentences, plain language, no jargon.
 
 User question: {{userQuestion}}
 Report data: {{reportDataSummary}}`;

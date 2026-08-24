@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET — list all SMS recipients
+// GET - list all SMS recipients
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const orgId = searchParams.get("org") ? parseInt(searchParams.get("org")!, 10) : undefined;
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(recipients);
 }
 
-// POST — create SMS recipient
+// POST - create SMS recipient
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { hazardCategory, phone, name, organizationId } = body;
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(recipient, { status: 201 });
 }
 
-// DELETE — remove SMS recipient
+// DELETE - remove SMS recipient
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
