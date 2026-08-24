@@ -18,7 +18,7 @@ const t = {
   accentPink: "#ffd7f0",
 };
 
-const fontDisplay: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 400 };
+const fontDisplay: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500 };
 const tightHeading = (size: number, ls: number): React.CSSProperties => ({
   ...fontDisplay, fontSize: `${size}px`, letterSpacing: `${ls}px`, lineHeight: size >= 48 ? 1.0 : 1.1,
 });
@@ -51,7 +51,6 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 /* ─── Data ────────────────────────────────────────────────────────────── */
-const logos = ["L&T Construction", "Tata Projects", "Adani Group", "Reliance Infra", "Godrej Properties", "DLF Limited"];
 const features = [
   { tab: "Intelligence", title: "AI-powered risk analysis", desc: "Every safety report is classified in seconds using Groq LLM. Hazard categories, justifications, and key phrases extracted automatically.", color: t.accentCyan },
   { tab: "SMS Alerts", title: "Instant department alerts", desc: "High-risk reports trigger SMS to category-mapped departments via Textbee. No manual routing needed.", color: t.accentBlue },
@@ -113,7 +112,7 @@ export default function LandingClient() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "40px 32px 0", position: "relative", overflow: "hidden" }}>
+      <section style={{ background: t.canvas, padding: "32px 20px 0", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:pt-10">
         {/* Warm gradient bloom - left side */}
         <div style={{ position: "absolute", top: "0%", left: "-12%", width: 500, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentOrange}40 0%, ${t.accentPink}25 40%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: "25%", left: "3%", width: 250, height: 300, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentYellow}20 0%, transparent 60%)`, filter: "blur(40px)", pointerEvents: "none" }} />
@@ -127,20 +126,20 @@ export default function LandingClient() {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
 
-            {/* Headline with italic emphasis */}
-            <h1 style={{ ...tightHeading(52, -2.6), maxWidth: 700, marginBottom: 20 }}>
-              Step <em style={{ fontStyle: "italic" }}>into</em> the future
-              <br />of workplace safety
+            {/* Headline */}
+            <h1 style={{ ...tightHeading(56, -2.8), maxWidth: 700, marginBottom: 20, fontWeight: 400 }} className="text-[36px] sm:text-[56px]">
+              Prevent incidents
+              <br />before they happen
             </h1>
 
-            <p style={{ ...fontDisplay, fontSize: 18, lineHeight: 1.4, color: "#666", maxWidth: 460, letterSpacing: -0.3, marginBottom: 36 }}>
-              Empower your safety teams, catch early warning signs, and prevent serious incidents with an all-in-one AI platform.
+            <p style={{ ...fontDisplay, fontSize: 18, lineHeight: 1.4, color: "#666", maxWidth: 480, letterSpacing: -0.3, marginBottom: 32 }} className="text-[16px] sm:text-[18px] px-2">
+              Real-time AI analysis of every safety report. Automatic alerts to the right teams. Full resolution tracking.
             </p>
 
-            {/* Email capture + CTA */}
-            <div style={{ display: "flex", gap: 0, maxWidth: 460, width: "100%", marginBottom: 16 }}>
-              <input type="email" placeholder="Enter your company email" style={{ ...fontDisplay, fontSize: 15, color: t.ink, flex: 1, padding: "14px 20px", borderRadius: "10px 0 0 10px", border: `1px solid ${t.hairline}`, borderRight: "none", background: t.surfaceWhite, outline: "none" }} />
-              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "14px 28px", borderRadius: "0 10px 10px 0", background: t.ink, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>Get a demo</Link>
+            {/* CTA buttons */}
+            <div style={{ display: "flex", gap: 12, marginBottom: 40 }}>
+              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "14px 28px", borderRadius: 22, background: t.ink, display: "inline-block" }}>Get started</Link>
+              <a href="#features" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, display: "inline-block" }}>See how it works</a>
             </div>
 
             {/* Social proof */}
@@ -153,7 +152,7 @@ export default function LandingClient() {
           </div>
 
           {/* Line art illustration - right side */}
-          <div style={{ position: "absolute", right: "3%", top: "8%", pointerEvents: "none" }} className="hidden lg:block">
+          <div style={{ position: "absolute", right: "3%", top: "8%", pointerEvents: "none" }} className="hidden xl:block">
             <svg width="200" height="220" viewBox="0 0 200 220" fill="none" style={{ opacity: 0.1 }}>
               <path d="M100 20L30 50V110C30 160 60 200 100 210C140 200 170 160 170 110V50L100 20Z" stroke={t.ink} strokeWidth="1.5"/>
               <path d="M70 110L90 130L135 85" stroke={t.ink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -164,75 +163,67 @@ export default function LandingClient() {
 
           {/* Floating product mockup */}
           <Reveal delay={0.3}>
-            <div style={{ maxWidth: 880, margin: "0 auto", borderRadius: "16px 16px 0 0", overflow: "hidden", boxShadow: "0 -8px 50px rgba(17,17,17,0.1), 0 0 0 1px rgba(17,17,17,0.05)", background: t.surfaceWhite, transform: "translateY(30px)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderBottom: `1px solid ${t.hairline}`, background: "#fafafa" }}>
+            <div style={{ maxWidth: 860, margin: "0 auto", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(17,17,17,0.05)", background: t.surfaceWhite }}>
+              {/* Chrome bar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderBottom: `1px solid ${t.hairline}` }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff5f57" }} />
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#febc2e" }} />
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#28c840" }} />
-                <span style={{ marginLeft: 8, ...fontDisplay, fontSize: 12, color: "#999" }}>SafeSignal Dashboard</span>
+                <span style={{ marginLeft: 8, ...fontDisplay, fontSize: 12, color: "#999", fontWeight: 400 }}>SafeSignal Dashboard</span>
               </div>
-              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                {[{ label: "High Risk", value: "7", color: t.accentRed, bg: "#fff5f5" }, { label: "Active Tasks", value: "24", color: t.accentOrange, bg: "#fff7ed" }, { label: "Sites", value: "12", color: t.accentBlue, bg: "#eff6ff" }].map(s => (
-                  <div key={s.label} style={{ padding: 14, borderRadius: 10, background: s.bg, border: "inset 0 0 0 1px rgba(17,17,17,0.05)" }}>
-                    <div style={{ ...fontDisplay, fontSize: 11, color: "#888", marginBottom: 4 }}>{s.label}</div>
-                    <div style={{ ...fontDisplay, fontSize: 24, letterSpacing: -1, color: s.color }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "0 20px 20px" }}>
-                {[{ risk: "HIGH", site: "Tower Block A", cat: "Fall Hazard", color: t.accentRed, bg: "#fff5f5" }, { risk: "MEDIUM", site: "Warehouse C", cat: "Electrical", color: t.accentOrange, bg: "#fff7ed" }].map((r, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i > 0 ? `1px solid ${t.hairline}` : "none" }}>
-                    <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600, color: r.color, background: r.bg, letterSpacing: 0.5 }}>{r.risk}</span>
-                    <span style={{ ...fontDisplay, fontSize: 13, color: "#555" }}>{r.site}</span>
-                    <span style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>{r.cat}</span>
-                  </div>
-                ))}
+              {/* Dashboard content */}
+              <div style={{ padding: 12 }} className="sm:p-5">
+                {/* Top stats row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }} className="gap-2 sm:gap-3 sm:mb-4">
+                  {[{ label: "High Risk", value: "7", color: t.accentRed, bg: "#fff5f5" }, { label: "Active Tasks", value: "24", color: t.accentOrange, bg: "#fff7ed" }, { label: "Sites", value: "12", color: t.accentBlue, bg: "#eff6ff" }].map(s => (
+                    <div key={s.label} style={{ padding: 10, borderRadius: 8, background: s.bg }} className="sm:p-3.5 sm:rounded-[10px]">
+                      <div style={{ ...fontDisplay, fontSize: 10, color: "#888", marginBottom: 2, fontWeight: 400 }} className="sm:text-[11px] sm:mb-1">{s.label}</div>
+                      <div style={{ ...fontDisplay, fontSize: 20, letterSpacing: -0.8, color: s.color, fontWeight: 600 }} className="sm:text-2xl sm:tracking-[-1px]">{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Table rows */}
+                <div style={{ borderRadius: 8, border: `1px solid ${t.hairline}`, overflow: "hidden" }}>
+                  {[{ risk: "HIGH", site: "Tower Block A", cat: "Fall Hazard", color: t.accentRed, bg: "#fff5f5" }, { risk: "MEDIUM", site: "Warehouse C", cat: "Electrical", color: t.accentOrange, bg: "#fff7ed" }, { risk: "LOW", site: "Office Block", cat: "Procedural", color: "rgb(22,163,74)", bg: "#f0fdf4" }].map((r, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderTop: i > 0 ? `1px solid ${t.hairline}` : "none" }} className="sm:gap-3 sm:px-3.5 sm:py-2.5">
+                      <span style={{ padding: "1px 6px", borderRadius: 3, fontSize: 9, fontWeight: 600, color: r.color, background: r.bg, letterSpacing: 0.5, minWidth: 36, textAlign: "center" }} className="sm:text-[10px] sm:min-w-[48px] sm:px-2 sm:py-0.5 sm:rounded" >{r.risk}</span>
+                      <span style={{ ...fontDisplay, fontSize: 11, color: "#555", fontWeight: 400, flex: 1 }} className="sm:text-[13px]">{r.site}</span>
+                      <span style={{ ...fontDisplay, fontSize: 10, color: "#999", fontWeight: 400 }} className="sm:text-xs sm:block hidden">{r.cat}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ── Logo Wall ───────────────────────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "60px 32px 40px" }}>
-        <Reveal>
-          <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ ...fontDisplay, fontSize: 13, color: "#999", marginBottom: 24 }}>Trusted by industry leaders</p>
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 40, flexWrap: "wrap" }}>
-              {logos.map(name => (
-                <span key={name} style={{ ...fontDisplay, fontSize: 15, fontWeight: 600, color: "#bbb", letterSpacing: -0.3, whiteSpace: "nowrap" }}>{name}</span>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
       {/* ── Testimonial 1 ──────────────────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "20px 32px 60px" }}>
+      <section style={{ background: t.canvas, padding: "16px 20px 48px" }} className="sm:px-8 sm:py-16">
         <Reveal>
-          <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", gap: 24, alignItems: "flex-start" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 12, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 11, fontWeight: 700, color: t.ink, letterSpacing: -0.3 }}>
+          <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", gap: 16, alignItems: "flex-start" }} className="sm:gap-6">
+            <div style={{ width: 48, height: 48, borderRadius: 10, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 10, fontWeight: 700, color: t.ink, letterSpacing: -0.3 }} className="sm:w-16 sm:h-16 sm:text-xs">
               L&T
             </div>
             <div>
-              <p style={{ ...tightHeading(20, -0.4), marginBottom: 12, lineHeight: 1.4 }}>
+              <p style={{ ...tightHeading(18, -0.3), marginBottom: 10, lineHeight: 1.4 }} className="sm:text-xl sm:tracking-[-0.4px]">
                 &ldquo;SafeSignal is catching hazards for us 24/7. I wake up to classified risk reports and auto-routed alerts, saving our team hours on manual review every day.&rdquo;
               </p>
-              <p style={{ ...fontDisplay, fontSize: 13, color: "#999" }}>Safety Head at L&T Construction</p>
+              <p style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>Safety Head at L&T Construction</p>
             </div>
           </div>
         </Reveal>
       </section>
 
       {/* ── Dark Product Showcase ───────────────────────────────── */}
-      <section id="features" style={{ background: t.surfaceDark, padding: "80px 32px" }}>
+      <section id="features" style={{ background: "#000000", padding: "48px 20px" }} className="sm:px-8 sm:py-20">
         <Reveal>
           <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 22, border: "1px solid rgba(255,255,255,0.1)", marginBottom: 20 }}>
               <span style={{ ...fontDisplay, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, background: t.accentCyan, color: t.ink, padding: "2px 6px", borderRadius: 4 }}>New</span>
               <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Discover AI Safety Copilot</span>
             </div>
-            <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12 }}>Meet SafeSignal, the first AI Copilot for safety teams</h2>
+            <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Meet SafeSignal, the first AI Copilot for safety teams</h2>
             <p style={{ ...fontDisplay, fontSize: 16, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto 32px", letterSpacing: -0.2 }}>
               Classify risks in seconds, alert the right departments, and track every corrective action in one place.
             </p>
@@ -261,43 +252,38 @@ export default function LandingClient() {
       </section>
 
       {/* ── Testimonial 2 + CTA Card ───────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "80px 32px" }}>
+      <section style={{ background: t.canvas, padding: "48px 20px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
-            <div style={{ display: "flex", gap: 24, alignItems: "flex-start", marginBottom: 60 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 12, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 10, fontWeight: 700, color: t.ink }}>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 48 }} className="sm:gap-6 sm:mb-16">
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 9, fontWeight: 700, color: t.ink }} className="sm:w-14 sm:h-14 sm:text-[10px]">
                 Tata
               </div>
               <div>
-                <p style={{ ...tightHeading(20, -0.4), marginBottom: 12, lineHeight: 1.4 }}>
+                <p style={{ ...tightHeading(18, -0.3), marginBottom: 10, lineHeight: 1.4 }} className="sm:text-xl sm:tracking-[-0.4px]">
                   &ldquo;SafeSignal has everything you need for safety management in one place. The AI classification is incredibly accurate.&rdquo;
                 </p>
-                <p style={{ ...fontDisplay, fontSize: 13, color: "#999" }}>EHS Director at Tata Projects</p>
+                <p style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>EHS Director at Tata Projects</p>
               </div>
             </div>
           </Reveal>
 
           {/* CTA card */}
           <Reveal delay={0.1}>
-            <div style={{ background: t.surfaceWhite, borderRadius: 16, padding: "48px 40px", boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 40, flexWrap: "wrap" }}>
-              <div>
-                <h2 style={{ ...tightHeading(32, -1.2), marginBottom: 8 }}>Start your safety transformation</h2>
-                <p style={{ ...fontDisplay, fontSize: 15, color: "#666" }}>Deploy in under an hour. No hardware needed.</p>
-              </div>
-              <div style={{ display: "flex", gap: 0, minWidth: 340 }}>
-                <input type="email" placeholder="Enter your company email" style={{ ...fontDisplay, fontSize: 14, color: t.ink, flex: 1, padding: "12px 16px", borderRadius: "8px 0 0 8px", border: `1px solid ${t.hairline}`, borderRight: "none", background: t.canvas, outline: "none" }} />
-                <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 20px", borderRadius: "0 8px 8px 0", background: t.ink, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>Get a demo</Link>
-              </div>
+            <div style={{ background: t.surfaceWhite, borderRadius: 16, padding: "32px 24px", boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", textAlign: "center" }} className="sm:px-10 sm:py-12">
+              <h2 style={{ ...tightHeading(32, -1.2), marginBottom: 8 }}>Start your safety transformation</h2>
+              <p style={{ ...fontDisplay, fontSize: 15, color: "#666", marginBottom: 24 }}>Deploy in under an hour. No hardware needed.</p>
+              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 28px", borderRadius: 22, background: t.ink, display: "inline-block" }}>Get started</Link>
             </div>
           </Reveal>
         </div>
       </section>
 
       {/* ── Roles Section ───────────────────────────────────────── */}
-      <section id="roles" style={{ background: t.canvas, padding: "0 32px 80px" }}>
+      <section id="roles" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
-            <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 40 }}>Built for every safety role</h2>
+            <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 32 }} className="text-[28px] sm:text-[40px] sm:mb-10">Built for every safety role</h2>
           </Reveal>
           <Reveal delay={0.1}>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
@@ -325,10 +311,10 @@ export default function LandingClient() {
       </section>
 
       {/* ── Results Grid ────────────────────────────────────────── */}
-      <section id="results" style={{ background: t.canvas, padding: "0 32px 80px" }}>
+      <section id="results" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <Reveal>
-            <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 40 }}>Real results from real customers</h2>
+            <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 32 }} className="text-[28px] sm:text-[40px] sm:mb-10">Real results from real customers</h2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }} className="grid grid-cols-2 md:grid-cols-4">
             {results.map((r, i) => (
@@ -344,11 +330,11 @@ export default function LandingClient() {
       </section>
 
       {/* ── Compliance ─────────────────────────────────────────── */}
-      <section id="compliance" style={{ background: t.canvas, padding: "0 32px 80px" }}>
+      <section id="compliance" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <Reveal>
-            <h2 style={{ ...tightHeading(40, -2), marginBottom: 12 }}>Built for Indian regulatory standards</h2>
-            <p style={{ ...fontDisplay, fontSize: 17, color: "#666", maxWidth: 500, margin: "0 auto 40px", letterSpacing: -0.3 }}>Every hazard category mapped to the relevant Indian safety regulation.</p>
+            <h2 style={{ ...tightHeading(40, -2), marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Built for Indian regulatory standards</h2>
+            <p style={{ ...fontDisplay, fontSize: 16, color: "#666", maxWidth: 500, margin: "0 auto 32px", letterSpacing: -0.3 }} className="sm:text-lg sm:mb-10">Every hazard category mapped to the relevant Indian safety regulation.</p>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, maxWidth: 700, margin: "0 auto" }} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {[{ reg: "Factories Act, 1948", cat: "Structural" }, { reg: "IS 3786:1992", cat: "Fall Hazard" }, { reg: "Electricity Act, 2003", cat: "Electrical" }, { reg: "MSHCPE Rules, 2008", cat: "Chemical" }, { reg: "CMVR, 1989", cat: "Vehicle" }, { reg: "Petroleum Act, 1934", cat: "Confined Space" }].map((r, i) => (
@@ -364,17 +350,14 @@ export default function LandingClient() {
       </section>
 
       {/* ── Final CTA (dark) ────────────────────────────────────── */}
-      <section style={{ background: t.ink, padding: "80px 32px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <section style={{ background: t.ink, padding: "48px 20px", textAlign: "center", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:py-20">
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 500, height: 250, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentCyan}12, ${t.accentBlue}08, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
         <Reveal>
           <div style={{ position: "relative", zIndex: 1 }}>
-            <h2 style={{ ...tightHeading(44, -2.2), color: t.onDark, marginBottom: 12 }}>Unlock your safety superpowers</h2>
+            <h2 style={{ ...tightHeading(44, -2.2), color: t.onDark, marginBottom: 12 }} className="text-[28px] sm:text-[44px]">Unlock your safety superpowers</h2>
             <p style={{ ...fontDisplay, fontSize: 17, color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: "0 auto 32px", letterSpacing: -0.3 }}>Deploy in under an hour. No hardware. No special training.</p>
-            <div style={{ display: "flex", gap: 0, maxWidth: 420, margin: "0 auto 20px" }}>
-              <input type="email" placeholder="Enter your company email" style={{ ...fontDisplay, fontSize: 15, color: t.onDark, flex: 1, padding: "14px 20px", borderRadius: "10px 0 0 10px", border: "1px solid rgba(255,255,255,0.15)", borderRight: "none", background: "rgba(255,255,255,0.06)", outline: "none" }} />
-              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: "0 10px 10px 0", background: t.onDark, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>Get a demo</Link>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, background: t.onDark, display: "inline-block", marginBottom: 20 }}>Get started</Link>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
               <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(i => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}</div>
               <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>G Cool Vendor by <strong style={{ color: "rgba(255,255,255,0.6)" }}>Gartner</strong></span>
             </div>
@@ -383,7 +366,7 @@ export default function LandingClient() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────── */}
-      <footer style={{ background: t.ink, padding: "48px 40px 32px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <footer style={{ background: t.ink, padding: "32px 20px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }} className="sm:px-10 sm:py-12">
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 40 }} className="grid grid-cols-2 md:grid-cols-4">
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
