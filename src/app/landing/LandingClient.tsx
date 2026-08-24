@@ -151,10 +151,10 @@ export default function LandingClient() {
         <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", paddingTop: "6dvh" }}>
             {/* Pill badge */}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, marginBottom: 28 }}>
-              <span style={{ ...fontDisplay, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", background: t.ink, color: t.onDark, padding: "2px 8px", borderRadius: 4 }}>New</span>
-              <span style={{ ...fontDisplay, fontSize: 13, color: "#666" }}>Read our safety manifesto</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, marginBottom: 24 }}>
+              <span style={{ ...fontDisplay, fontSize: 10, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", background: t.ink, color: t.onDark, padding: "2px 6px", borderRadius: 4 }}>New</span>
+              <span style={{ ...fontDisplay, fontSize: 12, color: "#666" }}>Read our safety manifesto</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
 
             {/* Headline */}
@@ -168,17 +168,17 @@ export default function LandingClient() {
             </p>
 
             {/* CTA buttons */}
-            <div style={{ display: "flex", gap: 12, marginBottom: 40 }}>
-              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "14px 28px", borderRadius: 22, background: t.ink, display: "inline-block" }}>Get started</Link>
-              <a href="#features" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, display: "inline-block" }}>Explore features</a>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-3 w-full sm:w-auto" style={{ marginBottom: 32 }}>
+              <Link href="/reports" className="text-center" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 24px", borderRadius: 22, background: t.ink, display: "block" }}>Get started</Link>
+              <a href="#features" className="text-center" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "12px 24px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, display: "block" }}>Explore features</a>
             </div>
 
             {/* Social proof */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 40 }}>
               <div style={{ display: "flex", gap: 1 }}>
-                {[1,2,3,4,5].map(i => <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
+                {[1,2,3,4,5].map(i => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
               </div>
-              <span style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>G Cool Vendor by <strong style={{ color: "#666" }}>Gartner</strong></span>
+              <span style={{ ...fontDisplay, fontSize: 11, color: "#999" }}>G Cool Vendor by <strong style={{ color: "#666" }}>Gartner</strong></span>
             </div>
           </div>
 
@@ -245,10 +245,10 @@ export default function LandingClient() {
               {'for '}
               <span style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '1.05em' }}>safety teams</span>
             </h2>
-            <p style={{ ...fontDisplay, fontSize: 16, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto 32px", letterSpacing: -0.2 }}>
+            <p style={{ ...fontDisplay, fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto 28px", letterSpacing: -0.2 }} className="sm:text-base">
               Classify risks in seconds, alert the right departments, and track every corrective action in one place.
             </p>
-            <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "10px 24px", borderRadius: 22, background: t.onDark, display: "inline-block" }}>Explore SafeSignal</Link>
+            <Link href="/reports" style={{ ...fontDisplay, fontSize: 13, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "9px 20px", borderRadius: 22, background: t.onDark, display: "inline-block" }} className="sm:text-sm sm:px-6 sm:py-2.5">Explore SafeSignal</Link>
           </div>
         </Reveal>
 
@@ -258,7 +258,7 @@ export default function LandingClient() {
             <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
               {features.map((f, i) => (
                 <button key={f.tab} onClick={() => setActiveFeature(i)} style={{
-                  ...fontDisplay, fontSize: 13, fontWeight: 500, padding: "8px 16px", borderRadius: 22, border: "none", cursor: "pointer",
+                  ...fontDisplay, fontSize: 12, fontWeight: 500, padding: "7px 14px", borderRadius: 22, border: "none", cursor: "pointer",
                   background: activeFeature === i ? t.onDark : "rgba(255,255,255,0.08)", color: activeFeature === i ? t.ink : "rgba(255,255,255,0.5)",
                 }}>{f.tab}</button>
               ))}
@@ -369,8 +369,8 @@ export default function LandingClient() {
         <Reveal>
           <div style={{ position: "relative", zIndex: 1 }}>
             <h2 style={{ ...tightHeading(44, -2.2), color: t.onDark, marginBottom: 12 }} className="text-[28px] sm:text-[44px]">Unlock your safety superpowers</h2>
-            <p style={{ ...fontDisplay, fontSize: 17, color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: "0 auto 32px", letterSpacing: -0.3 }}>Deploy in under an hour. No hardware. No special training.</p>
-            <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, background: t.onDark, display: "inline-block", marginBottom: 20 }}>Get started</Link>
+            <p style={{ ...fontDisplay, fontSize: 15, color: "rgba(255,255,255,0.5)", maxWidth: 420, margin: "0 auto 28px", letterSpacing: -0.3 }} className="text-[13px] sm:text-[15px]">Deploy in under an hour. No hardware. No special training.</p>
+            <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "12px 24px", borderRadius: 22, background: t.onDark, display: "inline-block", marginBottom: 20 }} className="sm:text-[15px] sm:px-7 sm:py-3.5">Get started</Link>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
               <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(i => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={t.accentOrange}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}</div>
               <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>G Cool Vendor by <strong style={{ color: "rgba(255,255,255,0.6)" }}>Gartner</strong></span>
