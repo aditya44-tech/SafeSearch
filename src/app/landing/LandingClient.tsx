@@ -21,7 +21,9 @@ const fontDisplay: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans
 
 const tightHeading = (size: number, ls: number): React.CSSProperties => {
   let responsiveFontSize: string | number = `${size}px`;
-  if (size === 56) responsiveFontSize = "clamp(32px, 7vw, 56px)";
+  if (size === 64) responsiveFontSize = "clamp(36px, 8vw, 64px)";
+  else if (size === 56) responsiveFontSize = "clamp(32px, 7vw, 56px)";
+  else if (size === 48) responsiveFontSize = "clamp(30px, 6.5vw, 48px)";
   else if (size === 44) responsiveFontSize = "clamp(28px, 6vw, 44px)";
   else if (size === 40) responsiveFontSize = "clamp(26px, 5.5vw, 40px)";
   else if (size === 32) responsiveFontSize = "clamp(22px, 4vw, 32px)";
@@ -158,12 +160,12 @@ export default function LandingClient() {
             </div>
 
             {/* Headline */}
-            <h1 style={{ ...tightHeading(56, -2.8), maxWidth: 700, marginBottom: 20, fontWeight: 500 }} className="text-[36px] sm:text-[56px]">
+            <h1 style={{ ...tightHeading(64, -3.2), maxWidth: 700, marginBottom: 20, fontWeight: 500 }} className="text-[38px] sm:text-[64px]">
               Prevent incidents{' '}
               <em style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '0.95em' }}>before they happen.</em>
             </h1>
 
-            <p style={{ ...fontDisplay, fontSize: 18, lineHeight: 1.4, color: "#666", maxWidth: 480, letterSpacing: -0.3, marginBottom: 32 }} className="text-[16px] sm:text-[18px] px-2">
+            <p style={{ ...fontDisplay, fontSize: 14, lineHeight: 1.5, color: "#888", maxWidth: 420, letterSpacing: -0.2, marginBottom: 28 }} className="text-[13px] sm:text-[14px] px-2">
               Real-time AI analysis of every safety report. Automatic alerts to the right teams. Full resolution tracking.
             </p>
 
@@ -238,7 +240,7 @@ export default function LandingClient() {
               <span style={{ ...fontDisplay, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, background: t.accentCyan, color: t.ink, padding: "2px 6px", borderRadius: 4 }}>New</span>
               <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Discover AI Safety Copilot</span>
             </div>
-            <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12, fontWeight: 500 }} className="text-[28px] sm:text-[40px]">
+            <h2 style={{ ...tightHeading(48, -2.4), color: t.onDark, marginBottom: 12, fontWeight: 500 }} className="text-[30px] sm:text-[48px]">
               Meet{' '}
               <span style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '1.05em' }}>SafeSignal</span>{', the first AI Copilot'}
               <br />
