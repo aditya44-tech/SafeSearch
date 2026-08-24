@@ -17,11 +17,24 @@ const t = {
   accentRed: "#af051e",
   accentPink: "#ffd7f0",
 };
-
 const fontDisplay: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500 };
-const tightHeading = (size: number, ls: number): React.CSSProperties => ({
-  ...fontDisplay, fontSize: `${size}px`, letterSpacing: `${ls}px`, lineHeight: size >= 48 ? 1.0 : 1.1,
-});
+
+const tightHeading = (size: number, ls: number): React.CSSProperties => {
+  let responsiveFontSize: string | number = `${size}px`;
+  if (size === 56) responsiveFontSize = "clamp(32px, 7vw, 56px)";
+  else if (size === 44) responsiveFontSize = "clamp(28px, 6vw, 44px)";
+  else if (size === 40) responsiveFontSize = "clamp(26px, 5.5vw, 40px)";
+  else if (size === 32) responsiveFontSize = "clamp(22px, 4vw, 32px)";
+  else if (size === 24) responsiveFontSize = "clamp(18px, 3.5vw, 24px)";
+  else if (size === 18) responsiveFontSize = "clamp(15px, 2.5vw, 18px)";
+
+  return {
+    ...fontDisplay,
+    fontSize: responsiveFontSize,
+    letterSpacing: `${ls}px`,
+    lineHeight: size >= 48 ? 1.0 : 1.1,
+  };
+};
 
 /* ─── Scroll Reveal ──────────────────────────────────────────────────── */
 function useReveal(threshold = 0.01) {
@@ -84,7 +97,7 @@ export default function LandingClient() {
   }, []);
 
   return (
-    <div style={{ background: t.canvas, color: t.ink, minHeight: "100vh" }} className="-mx-4 sm:-mx-8 -mt-6 sm:-mt-8">
+    <div style={{ background: t.canvas, color: t.ink, minHeight: "100vh", zoom: 1.1 }}>
 
       {/* ── Navbar ──────────────────────────────────────────────── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: t.canvas }}>
@@ -130,7 +143,7 @@ export default function LandingClient() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "32px 20px 0", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:pt-10">
+      <section style={{ background: t.canvas, padding: "32px 20px 48px", position: "relative", overflow: "hidden" }} className="sm:px-8 sm:pt-10 sm:pb-16">
         {/* Warm gradient bloom - left side */}
         <div style={{ position: "absolute", top: "0%", left: "-12%", width: 500, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentOrange}40 0%, ${t.accentPink}25 40%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: "25%", left: "3%", width: 250, height: 300, borderRadius: "50%", background: `radial-gradient(ellipse, ${t.accentYellow}20 0%, transparent 60%)`, filter: "blur(40px)", pointerEvents: "none" }} />
@@ -181,32 +194,32 @@ export default function LandingClient() {
 
           {/* Floating product mockup */}
           <Reveal delay={0.3}>
-            <div style={{ maxWidth: 860, margin: "0 auto", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(17,17,17,0.05)", background: t.surfaceWhite }}>
+            <div style={{ maxWidth: 900, margin: "0 auto", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(17,17,17,0.06)", background: t.surfaceWhite }}>
               {/* Chrome bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderBottom: `1px solid ${t.hairline}` }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff5f57" }} />
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#febc2e" }} />
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#28c840" }} />
-                <span style={{ marginLeft: 8, ...fontDisplay, fontSize: 12, color: "#999", fontWeight: 400 }}>SafeSignal Dashboard</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 18px", borderBottom: `1px solid ${t.hairline}`, background: "#fafaf9" }}>
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f57" }} />
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#febc2e" }} />
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#28c840" }} />
+                <span style={{ marginLeft: 10, ...fontDisplay, fontSize: 14, color: "#888", fontWeight: 500, letterSpacing: -0.2 }}>SafeSignal Dashboard</span>
               </div>
               {/* Dashboard content */}
-              <div style={{ padding: 12 }} className="sm:p-5">
+              <div style={{ padding: 14 }} className="sm:p-6">
                 {/* Top stats row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }} className="gap-2 sm:gap-3 sm:mb-4">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }} className="sm:gap-3 sm:mb-5">
                   {[{ label: "High Risk", value: "7", color: t.accentRed, bg: "#fff5f5" }, { label: "Active Tasks", value: "24", color: t.accentOrange, bg: "#fff7ed" }, { label: "Sites", value: "12", color: t.accentBlue, bg: "#eff6ff" }].map(s => (
-                    <div key={s.label} style={{ padding: 10, borderRadius: 8, background: s.bg }} className="sm:p-3.5 sm:rounded-[10px]">
-                      <div style={{ ...fontDisplay, fontSize: 10, color: "#888", marginBottom: 2, fontWeight: 400 }} className="sm:text-[11px] sm:mb-1">{s.label}</div>
-                      <div style={{ ...fontDisplay, fontSize: 20, letterSpacing: -0.8, color: s.color, fontWeight: 600 }} className="sm:text-2xl sm:tracking-[-1px]">{s.value}</div>
+                    <div key={s.label} style={{ padding: 12, borderRadius: 10, background: s.bg }} className="sm:p-4">
+                      <div style={{ ...fontDisplay, fontSize: 11, color: "#888", marginBottom: 4, fontWeight: 400 }} className="sm:text-xs">{s.label}</div>
+                      <div style={{ ...fontDisplay, fontSize: 24, letterSpacing: -1, color: s.color, fontWeight: 600 }} className="sm:text-3xl">{s.value}</div>
                     </div>
                   ))}
                 </div>
                 {/* Table rows */}
-                <div style={{ borderRadius: 8, border: `1px solid ${t.hairline}`, overflow: "hidden" }}>
+                <div style={{ borderRadius: 10, border: `1px solid ${t.hairline}`, overflow: "hidden" }}>
                   {[{ risk: "HIGH", site: "Tower Block A", cat: "Fall Hazard", color: t.accentRed, bg: "#fff5f5" }, { risk: "MEDIUM", site: "Warehouse C", cat: "Electrical", color: t.accentOrange, bg: "#fff7ed" }, { risk: "LOW", site: "Office Block", cat: "Procedural", color: "rgb(22,163,74)", bg: "#f0fdf4" }].map((r, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderTop: i > 0 ? `1px solid ${t.hairline}` : "none" }} className="sm:gap-3 sm:px-3.5 sm:py-2.5">
-                      <span style={{ padding: "1px 6px", borderRadius: 3, fontSize: 9, fontWeight: 600, color: r.color, background: r.bg, letterSpacing: 0.5, minWidth: 36, textAlign: "center" }} className="sm:text-[10px] sm:min-w-[48px] sm:px-2 sm:py-0.5 sm:rounded" >{r.risk}</span>
-                      <span style={{ ...fontDisplay, fontSize: 11, color: "#555", fontWeight: 400, flex: 1 }} className="sm:text-[13px]">{r.site}</span>
-                      <span style={{ ...fontDisplay, fontSize: 10, color: "#999", fontWeight: 400 }} className="sm:text-xs sm:block hidden">{r.cat}</span>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderTop: i > 0 ? `1px solid ${t.hairline}` : "none" }} className="sm:gap-4 sm:px-4 sm:py-3">
+                      <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, color: r.color, background: r.bg, letterSpacing: 0.5, minWidth: 48, textAlign: "center" }}>{r.risk}</span>
+                      <span style={{ ...fontDisplay, fontSize: 13, color: "#444", fontWeight: 400, flex: 1 }}>{r.site}</span>
+                      <span style={{ ...fontDisplay, fontSize: 12, color: "#aaa", fontWeight: 400 }} className="hidden sm:block">{r.cat}</span>
                     </div>
                   ))}
                 </div>
@@ -216,22 +229,6 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* ── Testimonial 1 ──────────────────────────────────────── */}
-      <section style={{ background: t.canvas, padding: "16px 20px 48px" }} className="sm:px-8 sm:py-16">
-        <Reveal>
-          <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", gap: 16, alignItems: "flex-start" }} className="sm:gap-6">
-            <div style={{ width: 48, height: 48, borderRadius: 10, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...fontDisplay, fontSize: 10, fontWeight: 700, color: t.ink, letterSpacing: -0.3 }} className="sm:w-16 sm:h-16 sm:text-xs">
-              L&T
-            </div>
-            <div>
-              <p style={{ ...tightHeading(18, -0.3), marginBottom: 10, lineHeight: 1.4 }} className="sm:text-xl sm:tracking-[-0.4px]">
-                &ldquo;SafeSignal is catching hazards for us 24/7. I wake up to classified risk reports and auto-routed alerts, saving our team hours on manual review every day.&rdquo;
-              </p>
-              <p style={{ ...fontDisplay, fontSize: 12, color: "#999" }}>Safety Head at L&T Construction</p>
-            </div>
-          </div>
-        </Reveal>
-      </section>
 
       {/* ── Dark Product Showcase ───────────────────────────────── */}
       <section id="features" style={{ background: "#000000", padding: "48px 20px" }} className="sm:px-8 sm:py-20">
@@ -243,8 +240,10 @@ export default function LandingClient() {
             </div>
             <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12, fontWeight: 500 }} className="text-[28px] sm:text-[40px]">
               Meet{' '}
-              <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: '1.15em' }}>SafeSignal</span>{', the first AI Copilot for '}
-              <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: '1.15em' }}>safety teams</span>
+              <span style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '1.05em' }}>SafeSignal</span>{', the first AI Copilot'}
+              <br />
+              {'for '}
+              <span style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '1.05em' }}>safety teams</span>
             </h2>
             <p style={{ ...fontDisplay, fontSize: 16, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto 32px", letterSpacing: -0.2 }}>
               Classify risks in seconds, alert the right departments, and track every corrective action in one place.
@@ -264,7 +263,7 @@ export default function LandingClient() {
                 }}>{f.tab}</button>
               ))}
             </div>
-            <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 16, padding: 32, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="p-5 sm:p-8" style={{ background: "rgba(255,255,255,0.04)", borderRadius: 20, border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
               <div style={{ width: 28, height: 3, borderRadius: 2, background: features[activeFeature].color, marginBottom: 16 }} />
               <h3 style={{ ...tightHeading(24, -0.5), color: t.onDark, marginBottom: 8 }}>{features[activeFeature].title}</h3>
               <p style={{ ...fontDisplay, fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>{features[activeFeature].desc}</p>
@@ -309,7 +308,7 @@ export default function LandingClient() {
                 }}>{r.role}</button>
               ))}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2" style={{ background: t.surfaceWhite, borderRadius: 16, padding: 32, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", gap: 32, alignItems: "center" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 p-5 sm:p-8 gap-6 md:gap-8" style={{ background: t.surfaceWhite, borderRadius: 16, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", alignItems: "center" }}>
               <div>
                 <h3 style={{ ...tightHeading(24, -0.5), marginBottom: 8 }}>{roles[activeRole].role}</h3>
                 <p style={{ ...fontDisplay, fontSize: 15, color: "#666", lineHeight: 1.5, marginBottom: 16 }}>{roles[activeRole].desc}</p>
@@ -382,7 +381,7 @@ export default function LandingClient() {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer style={{ background: t.ink, padding: "32px 20px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }} className="sm:px-10 sm:py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4" style={{ maxWidth: 1200, margin: "0 auto", gap: 40 }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10" style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 28, height: 28, borderRadius: 6, background: t.onDark, display: "flex", alignItems: "center", justifyContent: "center" }}>
