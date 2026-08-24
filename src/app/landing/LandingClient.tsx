@@ -75,38 +75,56 @@ export default function LandingClient() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeRole, setActiveRole] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   return (
     <div style={{ background: t.canvas, color: t.ink, minHeight: "100vh" }} className="-mx-4 sm:-mx-8 -mt-6 sm:-mt-8">
 
       {/* ── Navbar ──────────────────────────────────────────────── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: t.canvas }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill={t.ink}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span style={{ ...fontDisplay, fontWeight: 600, fontSize: 20, letterSpacing: -0.8, color: t.ink }}>SafeSignal</span>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, padding: "0 20px" }} className="sm:px-10">
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: t.ink, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.onDark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <span style={{ ...fontDisplay, fontWeight: 700, fontSize: 20, letterSpacing: -0.8, color: t.ink }}>SafeSignal</span>
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 32 }} className="hidden md:flex">
-            <a href="#features" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Product</a>
-            <a href="#how-it-works" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>How it works</a>
-            <a href="#roles" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Customers</a>
-            <a href="#compliance" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Compliance</a>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="hidden md:flex">
-            <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "10px 20px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite }}>Open app</Link>
-            <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "10px 20px", borderRadius: 22, background: t.ink }}>Get a demo</Link>
-          </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden" style={{ background: "none", border: "none", cursor: "pointer", padding: 8 }} aria-label="Menu">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={t.ink} strokeWidth="2" strokeLinecap="round">
-              {mobileMenuOpen ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
-            </svg>
-          </button>
+          {!isMobile && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+                <a href="#features" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Product</a>
+                <a href="#roles" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Customers</a>
+                <a href="#compliance" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none" }}>Compliance</a>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "10px 20px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite }}>Open app</Link>
+                <Link href="/reports" style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "10px 20px", borderRadius: 22, background: t.ink }}>Get started</Link>
+              </div>
+            </>
+          )}
+          {isMobile && (
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background: "none", border: "none", cursor: "pointer", padding: 8 }} aria-label="Menu">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={t.ink} strokeWidth="2" strokeLinecap="round">
+                {mobileMenuOpen ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
+              </svg>
+            </button>
+          )}
         </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden" style={{ borderTop: `1px solid ${t.hairline}`, padding: "16px 40px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {isMobile && mobileMenuOpen && (
+          <div style={{ borderTop: `1px solid ${t.hairline}`, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
             <a href="#features" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 15, color: t.ink, textDecoration: "none" }}>Product</a>
-            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 15, color: t.ink, textDecoration: "none" }}>How it works</a>
-            <Link href="/reports" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 20px", borderRadius: 22, background: t.ink, textAlign: "center", marginTop: 4 }}>Get a demo</Link>
+            <a href="#roles" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 15, color: t.ink, textDecoration: "none" }}>Customers</a>
+            <a href="#compliance" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 15, color: t.ink, textDecoration: "none" }}>Compliance</a>
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <Link href="/reports" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "12px 20px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, textAlign: "center", flex: 1 }}>Open app</Link>
+              <Link href="/reports" onClick={() => setMobileMenuOpen(false)} style={{ ...fontDisplay, fontSize: 14, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 20px", borderRadius: 22, background: t.ink, textAlign: "center", flex: 1 }}>Get started</Link>
+            </div>
           </div>
         )}
       </nav>
@@ -127,9 +145,9 @@ export default function LandingClient() {
             </div>
 
             {/* Headline */}
-            <h1 style={{ ...tightHeading(56, -2.8), maxWidth: 700, marginBottom: 20, fontWeight: 400 }} className="text-[36px] sm:text-[56px]">
-              Prevent incidents
-              <br />before they happen
+            <h1 style={{ ...tightHeading(56, -2.8), maxWidth: 700, marginBottom: 20, fontWeight: 500 }} className="text-[36px] sm:text-[56px]">
+              Prevent incidents{' '}
+              <em style={{ fontStyle: "italic", fontFamily: "'Newsreader', Georgia, serif", fontWeight: 400, fontSize: '0.95em' }}>before they happen.</em>
             </h1>
 
             <p style={{ ...fontDisplay, fontSize: 18, lineHeight: 1.4, color: "#666", maxWidth: 480, letterSpacing: -0.3, marginBottom: 32 }} className="text-[16px] sm:text-[18px] px-2">
@@ -139,7 +157,7 @@ export default function LandingClient() {
             {/* CTA buttons */}
             <div style={{ display: "flex", gap: 12, marginBottom: 40 }}>
               <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "14px 28px", borderRadius: 22, background: t.ink, display: "inline-block" }}>Get started</Link>
-              <a href="#features" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, display: "inline-block" }}>See how it works</a>
+              <a href="#features" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.ink, textDecoration: "none", padding: "14px 28px", borderRadius: 22, border: `1px solid ${t.hairline}`, background: t.surfaceWhite, display: "inline-block" }}>Explore features</a>
             </div>
 
             {/* Social proof */}
@@ -223,7 +241,11 @@ export default function LandingClient() {
               <span style={{ ...fontDisplay, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, background: t.accentCyan, color: t.ink, padding: "2px 6px", borderRadius: 4 }}>New</span>
               <span style={{ ...fontDisplay, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Discover AI Safety Copilot</span>
             </div>
-            <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Meet SafeSignal, the first AI Copilot for safety teams</h2>
+            <h2 style={{ ...tightHeading(40, -2), color: t.onDark, marginBottom: 12, fontWeight: 500 }} className="text-[28px] sm:text-[40px]">
+              Meet{' '}
+              <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: '1.15em' }}>SafeSignal</span>{', the first AI Copilot for '}
+              <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: '1.15em' }}>safety teams</span>
+            </h2>
             <p style={{ ...fontDisplay, fontSize: 16, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto 32px", letterSpacing: -0.2 }}>
               Classify risks in seconds, alert the right departments, and track every corrective action in one place.
             </p>
@@ -268,14 +290,7 @@ export default function LandingClient() {
             </div>
           </Reveal>
 
-          {/* CTA card */}
-          <Reveal delay={0.1}>
-            <div style={{ background: t.surfaceWhite, borderRadius: 16, padding: "32px 24px", boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", textAlign: "center" }} className="sm:px-10 sm:py-12">
-              <h2 style={{ ...tightHeading(32, -1.2), marginBottom: 8 }}>Start your safety transformation</h2>
-              <p style={{ ...fontDisplay, fontSize: 15, color: "#666", marginBottom: 24 }}>Deploy in under an hour. No hardware needed.</p>
-              <Link href="/reports" style={{ ...fontDisplay, fontSize: 15, fontWeight: 500, color: t.onDark, textDecoration: "none", padding: "12px 28px", borderRadius: 22, background: t.ink, display: "inline-block" }}>Get started</Link>
-            </div>
-          </Reveal>
+
         </div>
       </section>
 
@@ -370,8 +385,10 @@ export default function LandingClient() {
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 40 }} className="grid grid-cols-2 md:grid-cols-4">
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill={t.onDark}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span style={{ ...fontDisplay, fontWeight: 600, fontSize: 16, color: t.onDark }}>SafeSignal</span>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: t.onDark, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.ink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <span style={{ ...fontDisplay, fontWeight: 700, fontSize: 16, color: t.onDark }}>SafeSignal</span>
             </div>
             <p style={{ ...fontDisplay, fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>AI-powered workplace safety early warning system.</p>
           </div>

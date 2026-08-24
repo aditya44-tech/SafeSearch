@@ -24,29 +24,34 @@ export default function Navbar() {
   if (pathname === "/") return null;
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--color-surface-overlay)] border-b border-[var(--color-border)]">
+    <nav className="sticky top-0 z-50 border-b border-[var(--color-border)]" style={{ background: "#f6f5f3" }}>
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8">
         <div className="flex items-center justify-between h-14">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)] flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 group no-underline">
+            <div className="w-8 h-8 rounded-lg bg-[#111111] flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
             </div>
-            <span className="font-heading font-semibold text-[15px] tracking-tight text-[var(--color-ink)]">SafeSignal</span>
+            <span className="font-semibold text-[16px] tracking-tight" style={{ color: "#111111", fontFamily: "'Inter', sans-serif" }}>SafeSignal</span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-0.5">
+          <div className="hidden md:flex items-center gap-1">
             {links.map((link) => {
               const active = pathname === link.href || pathname.startsWith(link.href + "/");
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={
-                    active
-                      ? "px-3 py-1.5 rounded-md text-sm font-medium bg-[var(--color-accent)] text-white transition-all duration-200"
-                      : "px-3 py-1.5 rounded-md text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-sunken)] transition-all duration-200"
-                  }
+                  className="px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200"
+                  style={{
+                    color: active ? "#111111" : "#666666",
+                    background: active ? "rgba(17,17,17,0.06)" : "transparent",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
                 >
                   {link.label}
                 </Link>
@@ -60,7 +65,13 @@ export default function Navbar() {
               <select
                 value={selectedOrgId ?? ""}
                 onChange={(e) => setSelectedOrgId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink)] cursor-pointer hover:border-[var(--color-accent)] transition-colors"
+                className="text-xs font-medium px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors"
+                style={{
+                  border: "1px solid #dddddd",
+                  background: "#ffffff",
+                  color: "#111111",
+                  fontFamily: "'Inter', sans-serif",
+                }}
               >
                 <option value="">All Organizations</option>
                 {orgs.map((org) => (
@@ -73,10 +84,11 @@ export default function Navbar() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-[var(--color-surface-sunken)] transition-colors"
+            className="md:hidden p-2 rounded-lg transition-colors"
+            style={{ background: "transparent" }}
             aria-label="Toggle menu"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {menuOpen ? (
                 <>
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -96,7 +108,7 @@ export default function Navbar() {
 
       {/* Mobile dropdown menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-[var(--color-border)] bg-[var(--color-surface-overlay)] backdrop-blur-xl">
+        <div className="md:hidden border-t" style={{ borderColor: "#dddddd", background: "#f6f5f3" }}>
           <div className="px-4 py-2 space-y-0.5">
             {links.map((link) => {
               const active = pathname === link.href || pathname.startsWith(link.href + "/");
@@ -105,12 +117,12 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className={
-                    "block px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 " +
-                    (active
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-sunken)]")
-                  }
+                  className="block px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    color: active ? "#111111" : "#666666",
+                    background: active ? "rgba(17,17,17,0.06)" : "transparent",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
                 >
                   {link.label}
                 </Link>
@@ -118,11 +130,17 @@ export default function Navbar() {
             })}
             {/* Mobile org selector */}
             {!loading && orgs.length > 0 && (
-              <div className="pt-2 mt-2 border-t border-[var(--color-border)]">
+              <div className="pt-2 mt-2 border-t" style={{ borderColor: "#dddddd" }}>
                 <select
                   value={selectedOrgId ?? ""}
                   onChange={(e) => setSelectedOrgId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                  className="w-full text-xs font-medium px-3 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink)] cursor-pointer"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-lg cursor-pointer"
+                  style={{
+                    border: "1px solid #dddddd",
+                    background: "#ffffff",
+                    color: "#111111",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
                 >
                   <option value="">All Organizations</option>
                   {orgs.map((org) => (
