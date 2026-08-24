@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ overflowX: "hidden" }}>
+    <html lang="en" style={{ overflowX: "hidden" }} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#f6f5f3" />
       </head>
-      <body className="noise-overlay" style={{ background: "#f6f5f3", overflowX: "hidden" }}>
+      <body className="noise-overlay" style={{ background: "#f6f5f3", overflowX: "hidden" }} suppressHydrationWarning>
         <OrgProvider>
           <a href="#main-content" className="skip-link">Skip to content</a>
           <AppLayoutWrapper>

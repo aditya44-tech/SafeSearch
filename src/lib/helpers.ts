@@ -161,41 +161,121 @@ export function extractJson<T = unknown>(text: string): T {
 
 export function fallbackAnalysis(reportText: string): AnalysisResult {
   const text = reportText.toLowerCase();
-  if (
-    text.includes("fall") || text.includes("unguarded") || text.includes("edge") ||
-    text.includes("trench") || text.includes("scaffold") || text.includes("crane") ||
-    text.includes("live electrical") || text.includes("exposed wiring") ||
-    text.includes("confined space") || text.includes("no guard") ||
-    (text.includes("forklift") && text.includes("pedestrian")) ||
+
+  // --- HIGH RISK: credible path to serious injury or death ---
+  const highRiskKeywords = [
+    // Fall / height hazards
+    "fall", "falling", "fell", "unguarded", "edge", "trench", "scaffold",
+    "scaffolding", "harness", "guardrail", "heights", "roof", "elevated",
+    "working at height", "ladder", "platform", "excavation", "pit",
+    // Electrical hazards
+    "live electrical", "exposed wiring", "electrical shock", "electrocution",
+    "short circuit", "electric arc", "burn", "electrical", "wiring",
+    "power line", "high voltage", "panel", "overloaded",
+    // Structural / collapse
+    "collapse", "crumbling", "unstable", "struct", "damaged struct",
+    "cave-in", "demolition", "underpinning",
+    // Chemical / gas / fire
+    "chemical spill", "gas leak", "toxic", "fume", "hazardous material",
+    "flammable", "fire", "explosion", "smoke", "gas detection",
+    "asbestos", "radiation", "confined space", "oxygen deficiency",
+    // Vehicle / traffic
+    "forklift", "vehicle", "struck by", "crush", "run over", "truck",
+    "heavy machinery", "moving equipment", "traffic",
+    // Equipment / machinery
+    "unguarded machinery", "moving parts", "pinch point", "entanglement",
+    "crane", "hoist", "load", "equipment failure", "malfunction",
+    "no guard", "guard removed", "removed guard", "bypassed safety",
+    // Near-miss / incident indicators
+    "almost hit", "almost fell", "near miss", "near-miss", "close call",
+    "dropped", "snapped", "broke", "burst", "ruptured",
+    // General severity indicators
+    "serious", "injury", "hospitalized", "unconscious", "bleeding",
+    "fracture", "broken bone", "amputation", "fatality", "death",
+    "entrapment", "drowning", "struck", "hit by",
+    // Missing safety measures
+    "no ppe", "without protection", "no safety", "missing safety",
+    "failed safety", "safety bypass",
+  ];
+
+  const isHighRisk = highRiskKeywords.some((kw) => text.includes(kw)) ||
+    // Compound conditions
     (text.includes("removed") && text.includes("guard")) ||
-    (text.includes("almost") && (text.includes("hit") || text.includes("dropped"))) ||
-    text.includes("loose") || text.includes("wobbly") || text.includes("harness")
-  ) {
+    (text.includes("no") && text.includes("guard")) ||
+    (text.includes("not") && text.includes("wearing") && (text.includes("harness") || text.includes("ppe") || text.includes("hard hat"))) ||
+    (text.includes("loose") && (text.includes("bolt") || text.includes("nut") || text.includes("connection") || text.includes("scaffold"))) ||
+    (text.includes("wobbly") && (text.includes("scaffold") || text.includes("ladder") || text.includes("platform"))) ||
+    (text.includes("near") && text.includes("miss")) ||
+    (text.includes("almost") && (text.includes("hit") || text.includes("fell") || text.includes("dropped") || text.includes("struck"))) ||
+    (text.includes("no") && (text.includes("harness") || text.includes("guardrail") || text.includes("barrier"))) ||
+    (text.includes("exposed") && (text.includes("wire") || text.includes("cable") || text.includes("conductor"))) ||
+    (text.includes("blocked") && (text.includes("exit") || text.includes("egress") || text.includes("fire"))) ||
+    (text.includes("leak") && (text.includes("gas") || text.includes("chemical") || text.includes("pipe"))) ||
+    (text.includes("spill") && (text.includes("chemical") || text.includes("oil") || text.includes("fuel"))) ||
+    (text.includes("overloaded") && (text.includes("circuit") || text.includes("wire") || text.includes("crane"))) ||
+    (text.includes("hot") && (text.includes("work") || text.includes("surface"))) ||
+    (text.includes("underground") && (text.includes("cable") || text.includes("pipe") || text.includes("wire"))) ||
+    (text.includes("collapse") || text.includes("cave in") || text.includes("cave-in")) ||
+    (text.includes("fire") || text.includes("smoke") || text.includes("burn")) ||
+    (text.includes("gas") && (text.includes("leak") || text.includes("detection") || text.includes("hazard"))) ||
+    (text.includes("confined") && text.includes("space"));
+
+  if (isHighRisk) {
+    const category =
+      text.includes("fall") || text.includes("scaffold") || text.includes("trench") || text.includes("guardrail") || text.includes("harness") || text.includes("height") || text.includes("roof") || text.includes("excavation") ? "Structural" :
+      text.includes("electrical") || text.includes("wiring") || text.includes("short circuit") || text.includes("power line") || text.includes("shock") || text.includes("voltage") || text.includes("panel") ? "Electrical" :
+      text.includes("forklift") || text.includes("vehicle") || text.includes("truck") || text.includes("traffic") || text.includes("struck by") ? "Vehicle/Traffic" :
+      text.includes("confined") || text.includes("chemical") || text.includes("toxic") || text.includes("gas") || text.includes("asbestos") || text.includes("fume") ? "Chemical Exposure" :
+      text.includes("fire") || text.includes("smoke") || text.includes("burn") || text.includes("flammable") || text.includes("explosion") ? "Fire/Explosion" :
+      text.includes("crane") || text.includes("equipment") || text.includes("machinery") || text.includes("hoist") || text.includes("malfunction") ? "Equipment Failure" :
+      "Structural";
     return {
       risk_level: "high",
-      hazard_category:
-        text.includes("fall") || text.includes("scaffold") || text.includes("trench") || text.includes("guardrail") || text.includes("harness") ? "Structural" :
-        text.includes("electrical") || text.includes("wiring") || text.includes("short circuit") ? "Electrical" :
-        text.includes("forklift") || text.includes("vehicle") ? "Vehicle/Traffic" :
-        text.includes("confined") || text.includes("chemical") ? "Chemical Exposure" :
-        text.includes("crane") || text.includes("equipment") ? "Equipment Failure" : "Structural",
+      hazard_category: category,
       justification: "Report describes conditions with a credible path to serious injury or death if left unaddressed.",
     };
   }
-  if (
-    text.includes("not wearing") || text.includes("missing") || text.includes("damaged") ||
-    text.includes("spill kit") || text.includes("ventilation") ||
-    (text.includes("exit") && text.includes("block"))
-  ) {
+
+  // --- MEDIUM RISK: real hazard but lower severity or partially mitigated ---
+  const mediumRiskKeywords = [
+    "not wearing", "missing ppe", "damaged", "wear and tear",
+    "spill kit", "ventilation", "blocked", "obstruction",
+    "minor injury", "first aid", "bruise", "cut", "scrape",
+    "cracked", "bent", "worn", "degraded", "deteriorated",
+    "slippery", "wet floor", "uneven", "debris", "clutter",
+    "noise", "dust", "poor lighting", "inadequate",
+    "missing label", "unlabeled", "expired",
+    "training", "procedure not followed", "shortcut",
+  ];
+
+  const isMediumRisk = mediumRiskKeywords.some((kw) => text.includes(kw)) ||
+    (text.includes("exit") && text.includes("block")) ||
+    (text.includes("not") && text.includes("wearing")) ||
+    (text.includes("missing") && (text.includes("guard") || text.includes("cap") || text.includes("cover") || text.includes("light"))) ||
+    (text.includes("damaged") && (text.includes("equipment") || text.includes("tool") || text.includes("scaffold") || text.includes("harness"))) ||
+    (text.includes("no") && (text.includes("lighting") || text.includes("ventilation") || text.includes("sign"))) ||
+    (text.includes("slip") || text.includes("trip") || text.includes("slippery")) ||
+    (text.includes("unstable") && !text.includes("collapse")) ||
+    (text.includes("cracked") || text.includes("broken") || text.includes("bent"));
+
+  if (isMediumRisk) {
+    const category =
+      text.includes("hard hat") || text.includes("ppe") || text.includes("wearing") || text.includes("safety glasses") || text.includes("gloves") ? "Procedural Gap" :
+      text.includes("spill") || text.includes("chemical") || text.includes("ventilation") || text.includes("dust") || text.includes("fume") ? "Chemical Exposure" :
+      text.includes("exit") || text.includes("blocked") || text.includes("fire") ? "Procedural Gap" :
+      text.includes("electrical") || text.includes("wire") ? "Electrical" :
+      text.includes("equipment") || text.includes("tool") || text.includes("machinery") ? "Equipment Failure" :
+      text.includes("noise") || text.includes("lighting") ? "Procedural Gap" :
+      text.includes("slip") || text.includes("trip") || text.includes("floor") ? "Structural" :
+      "Procedural Gap";
     return {
       risk_level: "medium",
-      hazard_category:
-        text.includes("hard hat") || text.includes("wearing") ? "Procedural Gap" :
-        text.includes("spill") || text.includes("chemical") || text.includes("ventilation") ? "Chemical Exposure" :
-        text.includes("exit") ? "Procedural Gap" : "Equipment Failure",
+      hazard_category: category,
       justification: "Real hazard exists but is either partially mitigated or lower in severity.",
     };
   }
+
+  // --- LOW RISK: minor/procedural issue ---
   return {
     risk_level: "low",
     hazard_category: "Procedural Gap",

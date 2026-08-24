@@ -9,19 +9,22 @@ import {
   textSimilarity,
   autoAssignDept,
   fallbackTaskExtraction,
+  fallbackAnalysis,
   extractKeyPhrases,
   TASK_EXTRACTION_PROMPT,
   type AnalysisResult,
   type ExtractedTask,
 } from "@/lib/helpers";
 
-const SAFETY_PROMPT = `You are a workplace safety analyst reviewing near-miss and unsafe-condition reports to detect early warning signs of a potential serious injury or fatality (SIF).
+const SAFETY_PROMPT = `You are a workplace safety analyst for a construction/industrial safety system. Your job is to detect early warning signs of potential serious injury or fatality (SIF) from near-miss and unsafe-condition reports.
+
+CRITICAL: When in doubt between risk levels, ALWAYS choose the HIGHER level. Under-classifying a safety hazard is far more dangerous than over-classifying it. A missed high-risk report can lead to injury or death.
 
 Given the report below, respond with ONLY valid JSON in this exact format, no extra text:
 
 {
   "risk_level": "high" | "medium" | "low",
-  "hazard_category": "<short category, e.g. Fall Hazard, Electrical, Equipment Failure, Chemical Exposure, Vehicle/Traffic, Structural, Procedural Gap>",
+  "hazard_category": "<short category, e.g. Fall Hazard, Electrical, Equipment Failure, Chemical Exposure, Vehicle/Traffic, Structural, Fire/Explosion, Procedural Gap>",
   "justification": "<one sentence explaining why this risk level was assigned>",
   "key_phrases": ["<exact substring from the report text that influenced the risk rating>", ...]
 }
@@ -32,10 +35,33 @@ Rules for key_phrases:
 - Use the exact wording from the report, preserving original capitalization
 - Do not paraphrase or invent phrases that are not in the text
 
-Guidance:
-- "high" = credible path to serious injury or death if unaddressed
-- "medium" = real hazard but lower severity or already partially mitigated
-- "low" = minor/procedural issue unlikely to cause serious harm
+Risk classification guidance:
+
+"high" - Assign when ANY of these apply:
+- Any fall hazard (unguarded edges, working at height, scaffold issues, no harness, excavation, trench)
+- Any electrical hazard (exposed wiring, live electrical, short circuit, overloaded circuits, shock risk)
+- Any fire/explosion risk (smoke, flammable materials, gas leak, burn risk)
+- Any chemical hazard (toxic fumes, gas leak, chemical spill, confined space, asbestos)
+- Any vehicle/machinery hazard (forklift near pedestrian, struck-by risk, crane operations, heavy equipment)
+- Any collapse or structural failure risk
+- Any near-miss involving potential serious injury (almost fell, almost hit, close call, near miss)
+- Missing critical safety guards or barriers on dangerous equipment
+- Any report mentioning injury, hospitalization, unconsciousness, bleeding, or fracture
+- Reports from construction sites with words like dangerous, unsafe, hazard, risk, emergency
+
+"medium" - Assign when:
+- PPE violations (not wearing hard hat, safety glasses, gloves, harness)
+- Damaged but not immediately dangerous equipment
+- Slip/trip hazards, wet floors, poor lighting
+- Minor injuries (cuts, bruises, first aid cases)\n- Blocked exits or obstructed pathways
+- Procedural shortcuts or training gaps
+- Expired or missing safety labels
+
+"low" - Assign ONLY when:
+- Purely administrative or documentation issues
+- Cosmetic damage with no safety impact
+- Minor housekeeping issues
+- Suggestions for improvement with no immediate hazard
 
 Report:
 Site: {{site}}
@@ -59,49 +85,6 @@ function buildTaskPrompt(report: {
     .replace("{{reportText}}", report.reportText);
 }
 
-function fallbackAnalysis(reportText: string): AnalysisResult {
-  const text = reportText.toLowerCase();
-  if (
-    text.includes("fall") || text.includes("unguarded") || text.includes("edge") ||
-    text.includes("trench") || text.includes("scaffold") || text.includes("crane") ||
-    text.includes("live electrical") || text.includes("exposed wiring") ||
-    text.includes("confined space") || text.includes("no guard") ||
-    (text.includes("forklift") && text.includes("pedestrian")) ||
-    (text.includes("removed") && text.includes("guard")) ||
-    (text.includes("almost") && (text.includes("hit") || text.includes("dropped"))) ||
-    text.includes("loose") || text.includes("wobbly") || text.includes("harness")
-  ) {
-    return {
-      risk_level: "high",
-      hazard_category:
-        text.includes("fall") || text.includes("scaffold") || text.includes("trench") || text.includes("guardrail") || text.includes("harness") ? "Structural" :
-        text.includes("electrical") || text.includes("wiring") || text.includes("short circuit") ? "Electrical" :
-        text.includes("forklift") || text.includes("vehicle") ? "Vehicle/Traffic" :
-        text.includes("confined") || text.includes("chemical") ? "Chemical Exposure" :
-        text.includes("crane") || text.includes("equipment") ? "Equipment Failure" : "Structural",
-      justification: "Report describes conditions with a credible path to serious injury or death if left unaddressed.",
-    };
-  }
-  if (
-    text.includes("not wearing") || text.includes("missing") || text.includes("damaged") ||
-    text.includes("spill kit") || text.includes("ventilation") ||
-    (text.includes("exit") && text.includes("block"))
-  ) {
-    return {
-      risk_level: "medium",
-      hazard_category:
-        text.includes("hard hat") || text.includes("wearing") ? "Procedural Gap" :
-        text.includes("spill") || text.includes("chemical") || text.includes("ventilation") ? "Chemical Exposure" :
-        text.includes("exit") ? "Procedural Gap" : "Equipment Failure",
-      justification: "Real hazard exists but is either partially mitigated or lower in severity.",
-    };
-  }
-  return {
-    risk_level: "low",
-    hazard_category: "Procedural Gap",
-    justification: "Minor or procedural issue unlikely to cause serious physical harm.",
-  };
-}
 
 async function clusterReport(reportId: number, reportText: string): Promise<string | null> {
   const hash = semanticHash(reportText);

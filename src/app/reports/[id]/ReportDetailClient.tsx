@@ -198,6 +198,15 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                 Override risk
               </button>
             )}
+            <button onClick={async () => {
+              if (!confirm("Are you sure you want to delete this report? This cannot be undone.")) return;
+              const res = await fetch("/api/reports/" + report.id, { method: "DELETE" });
+              if (res.ok) router.push("/reports");
+            }}
+              className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
+              style={{ background: "var(--color-danger-light)", color: "var(--color-danger)", border: "1px solid rgba(220,38,38,0.15)" }}>
+              Delete
+            </button>
           </div>
         </div>
 

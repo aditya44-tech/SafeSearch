@@ -312,12 +312,24 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                               <span className="font-semibold">Override:</span> Risk changed to {r.humanOverrideRiskLevel} by human reviewer
                             </p>
                           )}
-                          <Link href={"/reports/" + r.id}
-                            className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
-                            style={{ color: "var(--color-accent)" }}>
-                            View full details
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                          </Link>
+                          <div className="flex items-center gap-3">
+                            <Link href={"/reports/" + r.id}
+                              className="inline-flex items-center gap-1 text-sm font-medium transition-colors duration-200"
+                              style={{ color: "var(--color-accent)" }}>
+                              View full details
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </Link>
+                            <button onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm("Delete this report? This cannot be undone.")) return;
+                              const res = await fetch("/api/reports/" + r.id, { method: "DELETE" });
+                              if (res.ok) setReports(reports.filter((rep) => rep.id !== r.id));
+                            }}
+                              className="text-xs font-medium px-2 py-1 rounded transition-colors duration-200 hover:opacity-80"
+                              style={{ color: "var(--color-danger)", background: "var(--color-danger-light)" }}>
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </td></tr>
                     )}

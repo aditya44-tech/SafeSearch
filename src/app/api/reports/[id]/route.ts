@@ -48,3 +48,23 @@ export async function PATCH(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: rawId } = await params;
+  const id = parseInt(rawId, 10);
+
+  const report = await prisma.safetyReport.findUnique({ where: { id } });
+  if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Delete related records first
+  await prisma.auditLog.deleteMany({ where: { reportId: id } });
+  await prisma.task.deleteMany({ where: { reportId: id } });
+  await prisma.safetyReport.delete({ where: { id } });
+
+  await recalculateSiteScore(prisma, report.site);
+
+  return NextResponse.json({ success: true });
+}
