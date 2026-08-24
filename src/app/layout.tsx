@@ -1,7 +1,6 @@
 ﻿import type { Metadata } from "next";
 import "./globals.css";
 import OfflineBanner from "@/components/OfflineBanner";
-import { OrgProvider } from "@/lib/org-context";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 
 export const metadata: Metadata = {
@@ -20,13 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#f6f5f3" />
       </head>
       <body className="noise-overlay" style={{ background: "#f6f5f3", overflowX: "hidden" }} suppressHydrationWarning>
-        <OrgProvider>
-          <a href="#main-content" className="skip-link">Skip to content</a>
-          <AppLayoutWrapper>
-            {children}
-          </AppLayoutWrapper>
-          <OfflineBanner />
-        </OrgProvider>
+        <a href="#main-content" className="skip-link">Skip to content</a>
+        <AppLayoutWrapper>
+          {children}
+        </AppLayoutWrapper>
+        <OfflineBanner />
       </body>
     </html>
   );

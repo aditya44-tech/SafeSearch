@@ -3,12 +3,8 @@ import MapClient from "./MapClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function MapPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
-  const params = await searchParams;
-  const orgId = params.org ? parseInt(params.org, 10) : undefined;
-
+export default async function MapPage() {
   const reports = await prisma.safetyReport.findMany({
-    where: orgId ? { organizationId: orgId } : undefined,
     orderBy: { reportedAt: "desc" },
     select: {
       id: true, site: true, riskLevel: true, hazardCategory: true,

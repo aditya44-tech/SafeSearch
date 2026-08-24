@@ -3,14 +3,9 @@ import ImpactClient from "./ImpactClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ImpactPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
-  const params = await searchParams;
-  const orgId = params.org ? parseInt(params.org, 10) : undefined;
-
-  const where = orgId ? { organizationId: orgId } : {};
-
+export default async function ImpactPage() {
   const reports = await prisma.safetyReport.findMany({
-    where: { ...where, riskLevel: { not: null } },
+    where: { riskLevel: { not: null } },
     select: { site: true, riskLevel: true, status: true, reportedAt: true },
   });
 

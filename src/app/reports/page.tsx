@@ -3,12 +3,8 @@ import ReportsClient from "./ReportsClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
-  const params = await searchParams;
-  const orgId = params.org ? parseInt(params.org, 10) : undefined;
-
+export default async function ReportsPage() {
   const reports = await prisma.safetyReport.findMany({
-    where: orgId ? { organizationId: orgId } : undefined,
     orderBy: [{ riskLevel: "asc" }, { reportedAt: "desc" }],
   });
 
@@ -20,9 +16,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     if (aVal !== bVal) return aVal - bVal;
     return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
   });
-  // Get unique sites for the dropdown
+  // Get ALL unique sites for the dropdown (not filtered by org)
   const siteRows = await prisma.safetyReport.findMany({
-    where: orgId ? { organizationId: orgId } : undefined,
     select: { site: true },
     distinct: ["site"],
     orderBy: { site: "asc" },

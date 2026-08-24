@@ -2,12 +2,8 @@
 import { prisma } from "@/lib/prisma";
 
 // GET - list all SMS recipients
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const orgId = searchParams.get("org") ? parseInt(searchParams.get("org")!, 10) : undefined;
-
+export async function GET() {
   const recipients = await prisma.smsRecipient.findMany({
-    where: orgId ? { organizationId: orgId } : undefined,
     orderBy: [{ hazardCategory: "asc" }, { createdAt: "desc" }],
   });
   return NextResponse.json(recipients);
@@ -16,7 +12,7 @@ export async function GET(req: NextRequest) {
 // POST - create SMS recipient
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { hazardCategory, phone, name, organizationId } = body;
+  const { hazardCategory, phone, name } = body;
 
   if (!hazardCategory || !phone) {
     return NextResponse.json({ error: "hazardCategory and phone are required" }, { status: 400 });
@@ -32,7 +28,6 @@ export async function POST(req: NextRequest) {
       hazardCategory,
       phone,
       name: name || null,
-      organizationId: organizationId || null,
     },
   });
   return NextResponse.json(recipient, { status: 201 });

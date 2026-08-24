@@ -4,15 +4,11 @@ import { dateToISTString, nowIST } from "@/lib/helpers";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
-  const params = await searchParams;
-  const orgId = params.org ? parseInt(params.org, 10) : undefined;
-  const where = orgId ? { organizationId: orgId } : {};
-
+export default async function DashboardPage() {
   const reports = await prisma.safetyReport.findMany({
-    where: { ...where, riskLevel: { not: null } },
+    where: { riskLevel: { not: null } },
   });
-  const allReports = await prisma.safetyReport.findMany({ where });
+  const allReports = await prisma.safetyReport.findMany();
 
   // Hazard category frequency
   const categoryMap: Record<string, number> = {};

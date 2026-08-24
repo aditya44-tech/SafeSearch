@@ -28,10 +28,21 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     const urlOrg = params.get("org");
     if (urlOrg) setSelectedOrgId(parseInt(urlOrg, 10));
 
-    fetch("/api/organizations")
-      .then((r) => r.json())
-      .then((data) => { setOrgs(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    const fetchOrgs = () => {
+      fetch("/api/organizations")
+        .then((r) => r.json())
+        .then((data) => { setOrgs(data); setLoading(false); })
+        .catch(() => setLoading(false));
+    };
+
+    fetchOrgs();
+
+    // Re-fetch orgs when page becomes visible (e.g. after navigating back)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchOrgs();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   const handleSetOrg = (id: number | null) => {
@@ -41,7 +52,12 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     else params.delete("org");
     const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
     window.history.replaceState({}, "", newUrl);
-    // Trigger a refresh by reloading
+    // Re-fetch orgs to get updated report counts
+    fetch("/api/organizations")
+      .then((r) => r.json())
+      .then((data) => setOrgs(data))
+      .catch(() => {});
+    // Trigger a full page reload to re-fetch server data with new org filter
     window.location.reload();
   };
 
