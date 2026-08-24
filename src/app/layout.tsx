@@ -18,15 +18,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f776e" />
+        <meta name="theme-color" content="#f6f5f3" />
       </head>
-      <body className="noise-overlay">
+      <body className="noise-overlay" style={{ background: "#f6f5f3" }}>
         <OrgProvider>
           <a href="#main-content" className="skip-link">Skip to content</a>
           <Suspense fallback={null}>
             <Navbar />
           </Suspense>
-          <main id="main-content" className="max-w-[1400px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
+          <main id="main-content" className="max-w-[1400px] mx-auto px-4 sm:px-8 py-6 sm:py-8" style={{ fontFamily: "'Inter', sans-serif" }}>
             {children}
           </main>
           <OfflineBanner />

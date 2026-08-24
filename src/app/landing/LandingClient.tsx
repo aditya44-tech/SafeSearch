@@ -58,10 +58,10 @@ const features = [
   { tab: "Offline", title: "File reports without internet", desc: "IndexedDB stores reports locally. Auto-syncs when connectivity returns. No report is ever lost.", color: t.accentYellow },
 ];
 const results = [
-  { value: "< 2s", label: "Risk classification", bg: "#fff5f5" },
-  { value: "24/7", label: "Offline capable", bg: "#f0fdf4" },
-  { value: "7", label: "Hazard categories", bg: "#eff6ff" },
-  { value: "Auto", label: "SMS routing", bg: "#fff7ed" },
+  { value: "< 2s", label: "Risk classification", bg: t.surfaceWhite },
+  { value: "24/7", label: "Offline capable", bg: t.surfaceWhite },
+  { value: "7", label: "Hazard categories", bg: t.surfaceWhite },
+  { value: "Auto", label: "SMS routing", bg: t.surfaceWhite },
 ];
 const roles = [
   { role: "Safety Officers", desc: "Get real-time risk classification and automated SMS alerts the moment a high-risk report is filed.", highlight: "Reduce response time by 80%" },
@@ -309,11 +309,11 @@ export default function LandingClient() {
                 }}>{r.role}</button>
               ))}
             </div>
-            <div style={{ background: t.surfaceWhite, borderRadius: 16, padding: 32, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "center" }} className="grid grid-cols-1 md:grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2" style={{ background: t.surfaceWhite, borderRadius: 16, padding: 32, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", gap: 32, alignItems: "center" }}>
               <div>
                 <h3 style={{ ...tightHeading(24, -0.5), marginBottom: 8 }}>{roles[activeRole].role}</h3>
                 <p style={{ ...fontDisplay, fontSize: 15, color: "#666", lineHeight: 1.5, marginBottom: 16 }}>{roles[activeRole].desc}</p>
-                <span style={{ ...fontDisplay, fontSize: 13, fontWeight: 500, color: t.accentBlue }}>{roles[activeRole].highlight}</span>
+                <span style={{ ...fontDisplay, fontSize: 13, fontWeight: 600, color: t.ink }}>{roles[activeRole].highlight}</span>
               </div>
               <div style={{ background: t.canvas, borderRadius: 12, padding: 24, minHeight: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: t.surfaceWhite, border: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -331,10 +331,10 @@ export default function LandingClient() {
           <Reveal>
             <h2 style={{ ...tightHeading(40, -2), textAlign: "center", marginBottom: 32 }} className="text-[28px] sm:text-[40px] sm:mb-10">Real results from real customers</h2>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }} className="grid grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 12 }}>
             {results.map((r, i) => (
               <Reveal key={r.label} delay={i * 0.06}>
-                <div style={{ padding: 24, borderRadius: 12, background: r.bg, textAlign: "center" }}>
+                <div style={{ padding: 24, borderRadius: 12, background: r.bg, textAlign: "center", boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.06)" }}>
                   <div style={{ ...tightHeading(32, -1.5), color: t.ink, marginBottom: 4 }}>{r.value}</div>
                   <div style={{ ...fontDisplay, fontSize: 12, color: "#666" }}>{r.label}</div>
                 </div>
@@ -351,7 +351,7 @@ export default function LandingClient() {
             <h2 style={{ ...tightHeading(40, -2), marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Built for Indian regulatory standards</h2>
             <p style={{ ...fontDisplay, fontSize: 16, color: "#666", maxWidth: 500, margin: "0 auto 32px", letterSpacing: -0.3 }} className="sm:text-lg sm:mb-10">Every hazard category mapped to the relevant Indian safety regulation.</p>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, maxWidth: 700, margin: "0 auto" }} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3" style={{ gap: 12, maxWidth: 700, margin: "0 auto" }}>
             {[{ reg: "Factories Act, 1948", cat: "Structural" }, { reg: "IS 3786:1992", cat: "Fall Hazard" }, { reg: "Electricity Act, 2003", cat: "Electrical" }, { reg: "MSHCPE Rules, 2008", cat: "Chemical" }, { reg: "CMVR, 1989", cat: "Vehicle" }, { reg: "Petroleum Act, 1934", cat: "Confined Space" }].map((r, i) => (
               <Reveal key={r.reg} delay={i * 0.05}>
                 <div style={{ padding: 16, borderRadius: 12, background: t.surfaceWhite, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", textAlign: "left" }}>
@@ -382,7 +382,7 @@ export default function LandingClient() {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer style={{ background: t.ink, padding: "32px 20px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }} className="sm:px-10 sm:py-12">
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 40 }} className="grid grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-2 md:grid-cols-4" style={{ maxWidth: 1200, margin: "0 auto", gap: 40 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 28, height: 28, borderRadius: 6, background: t.onDark, display: "flex", alignItems: "center", justifyContent: "center" }}>
