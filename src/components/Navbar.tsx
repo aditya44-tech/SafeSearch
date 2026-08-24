@@ -20,6 +20,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { orgs, selectedOrgId, setSelectedOrgId, loading } = useOrg();
 
+  // Hide navbar on landing page (has its own)
+  if (pathname === "/") return null;
+
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--color-surface-overlay)] border-b border-[var(--color-border)]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8">

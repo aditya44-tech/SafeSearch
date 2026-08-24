@@ -1,2 +1,5 @@
-import { redirect } from "next/navigation";
-export default function Home() { redirect("/reports"); }
+import LandingClient from "./landing/LandingClient";
+
+export default function Home() {
+  return <LandingClient />;
+}
