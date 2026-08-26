@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   callGroq,
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
             const textbee = new Textbee({ apiKey: textbeeApiKey });
             await textbee.sendSms({
               recipients: phoneNumbers,
-              message: `ðŸš¨ HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}`,
+              message: `🚨 HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}`,
             });
             smsSent = true;
             await prisma.safetyReport.update({ where: { id: report.id }, data: { smsSentAt: new Date() } });

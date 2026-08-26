@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 
 // â”€â”€ IST Date Formatting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -497,13 +497,13 @@ export const HAZARD_CATEGORIES = [
 // â”€â”€ Departments (shared across admin + detail pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEPARTMENTS: { name: string; icon: string; categories: string[] }[] = [
-  { name: "Electrical", icon: "âš¡", categories: ["Electrical"] },
-  { name: "Structural", icon: "ðŸ-ï¸", categories: ["Structural", "Fall Hazard"] },
-  { name: "Chemical Safety", icon: "â˜¢ï¸", categories: ["Chemical Exposure"] },
-  { name: "Mechanical", icon: "âš™ï¸", categories: ["Equipment Failure"] },
-  { name: "Traffic & Vehicles", icon: "ðŸš-", categories: ["Vehicle/Traffic"] },
-  { name: "General Maintenance", icon: "ðŸ”§", categories: ["Procedural Gap", "Confined Space"] },
-  { name: "Safety Compliance", icon: "ðŸ›¡ï¸", categories: [] },
+  { name: "Electrical", icon: "⚡", categories: ["Electrical"] },
+  { name: "Structural", icon: "🏗️", categories: ["Structural", "Fall Hazard"] },
+  { name: "Chemical Safety", icon: "☣️", categories: ["Chemical Exposure"] },
+  { name: "Mechanical", icon: "⚙️", categories: ["Equipment Failure"] },
+  { name: "Traffic & Vehicles", icon: "🚗", categories: ["Vehicle/Traffic"] },
+  { name: "General Maintenance", icon: "🔧", categories: ["Procedural Gap", "Confined Space"] },
+  { name: "Safety Compliance", icon: "🛡️", categories: [] },
 ];
 
 export function autoAssignDept(category: string | null): string {
@@ -513,7 +513,7 @@ export function autoAssignDept(category: string | null): string {
 }
 
 export function getDeptIcon(dept: string): string {
-  return DEPARTMENTS.find((d) => d.name === dept)?.icon || "ðŸ“‹";
+  return DEPARTMENTS.find((d) => d.name === dept)?.icon || "📋";
 }
 
 // â”€â”€ Fallback Task Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
