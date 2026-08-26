@@ -81,7 +81,7 @@ const results = [
 const roles = [
   { role: "Safety Officers", desc: "Get real-time risk classification and automated SMS alerts the moment a high-risk report is filed.", highlight: "Reduce response time by 80%" },
   { role: "Site Managers", desc: "Track corrective tasks through a kanban board. Heinrich scoring watches for escalation patterns.", highlight: "Full resolution visibility" },
-  { role: "Compliance Teams", desc: "Every hazard category mapped to Indian regulatory standards. Automatic cross-reference on classification.", highlight: "Always audit-ready" },
+  { role: "Compliance Teams", desc: "Curated regulatory knowledge base for upstream oil & gas. Activity-aware mapping to applicable standards and regulations.", highlight: "Always audit-ready" },
   { role: "Executive Leadership", desc: "Dashboard with anomaly detection, site scorecards, and trend analysis across all locations.", highlight: "Data-driven safety decisions" },
 ];
 
@@ -323,11 +323,11 @@ export default function LandingClient() {
       <section id="compliance" style={{ background: t.canvas, padding: "0 20px 48px" }} className="sm:px-8 sm:py-20">
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <Reveal>
-            <h2 style={{ ...tightHeading(40, -2), marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Built for Indian regulatory standards</h2>
-            <p style={{ ...fontDisplay, fontSize: 16, color: "#666", maxWidth: 500, margin: "0 auto 32px", letterSpacing: -0.3 }} className="sm:text-lg sm:mb-10">Every hazard category mapped to the relevant Indian safety regulation.</p>
+            <h2 style={{ ...tightHeading(40, -2), marginBottom: 12 }} className="text-[28px] sm:text-[40px]">Regulatory & Safety Standards Mapping</h2>
+            <p style={{ ...fontDisplay, fontSize: 16, color: "#666", maxWidth: 500, margin: "0 auto 32px", letterSpacing: -0.3 }} className="sm:text-lg sm:mb-10">Curated knowledge base for upstream oil & gas. Activity-aware mapping to applicable standards.</p>
           </Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3" style={{ gap: 12, maxWidth: 700, margin: "0 auto" }}>
-            {[{ reg: "Factories Act, 1948", cat: "Structural" }, { reg: "IS 3786:1992", cat: "Fall Hazard" }, { reg: "Electricity Act, 2003", cat: "Electrical" }, { reg: "MSHCPE Rules, 2008", cat: "Chemical" }, { reg: "CMVR, 1989", cat: "Vehicle" }, { reg: "Petroleum Act, 1934", cat: "Confined Space" }].map((r, i) => (
+            {[{ reg: "Oil Mines Regulations, 2017", cat: "Drilling/Production" }, { reg: "OISD-116", cat: "Storage/Fire Safety" }, { reg: "OISD-GN-26", cat: "Drilling Operations" }, { reg: "Mines Act, 1952", cat: "Worker Safety" }, { reg: "OISD-STD-182", cat: "Confined Space" }, { reg: "Factories Act, 1948", cat: "Factory/Refinery" }].map((r, i) => (
               <Reveal key={r.reg} delay={i * 0.05}>
                 <div style={{ padding: 16, borderRadius: 12, background: t.surfaceWhite, boxShadow: "inset 0 0 0 1px rgba(17,17,17,0.05)", textAlign: "left" }}>
                   <div style={{ ...fontDisplay, fontSize: 13, fontWeight: 500, color: t.ink, marginBottom: 6 }}>{r.reg}</div>

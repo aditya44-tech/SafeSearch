@@ -30,9 +30,10 @@ interface Anomaly {
 }
 
 interface ComplianceSummary {
-  category: string;
-  count: number;
-  regulations: string[];
+  categories: { category: string; count: number; regulations: string[]; kbEntries: number; dbEntries: number; verifiedCount: number }[];
+  totalFrameworks: number;
+  totalKBEntries: number;
+  totalDBEntries: number;
 }
 
 const CLASSIFICATION_STYLE: Record<string, { bg: string; text: string; border: string; label: string }> = {
@@ -44,7 +45,7 @@ const CLASSIFICATION_STYLE: Record<string, { bg: string; text: string; border: s
 export default function DashboardClient({ categoryData, timeData, recurringSites, stats, sifDistribution, highSifNearMisses, sifTimeData }: Props) {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [escalation, setEscalation] = useState<EscalationSite[]>([]);
-  const [complianceSummary, setComplianceSummary] = useState<ComplianceSummary[]>([]);
+  const [complianceData, setComplianceData] = useState<ComplianceSummary | null>(null);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
       .catch(() => {});
     fetch("/api/compliance/summary")
       .then((r) => r.json())
-      .then((d) => setComplianceSummary(d || []))
+      .then((d) => setComplianceData(d))
       .catch(() => {});
   }, []);
 
@@ -190,17 +191,22 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
         </div>
       )}
 
-      {/* Compliance Summary */}
-      {complianceSummary.length > 0 && (
+      {/* Regulatory & Safety Standards Mapping */}
+      {complianceData && complianceData.categories && complianceData.categories.length > 0 && (
         <div className="mb-6 sm:mb-8 rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
-          <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)] mb-1">
-            Regulatory compliance flags
-          </h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)]">
+              Regulatory & Safety Standards Mapping
+            </h2>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+              {complianceData.totalKBEntries} KB entries
+            </span>
+          </div>
           <p className="text-xs text-[var(--color-ink-muted)] mb-4">
-            Active hazard categories and their applicable regulations
+            Curated regulatory knowledge base with activity-aware hazard mapping
           </p>
           <div className="space-y-2">
-            {complianceSummary.map((item) => (
+            {complianceData.categories.map((item) => (
               <div key={item.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-2 px-3.5 rounded-lg" style={{ background: "var(--color-surface-sunken)" }}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span className="text-sm font-medium text-[var(--color-ink)]">{item.category}</span>
@@ -218,6 +224,9 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
               </div>
             ))}
           </div>
+          <p className="mt-3 text-[9px] text-[var(--color-ink-faint)]">
+            Regulatory references are provided as safety/compliance guidance and should be verified by qualified HSE/compliance personnel.
+          </p>
         </div>
       )}
 

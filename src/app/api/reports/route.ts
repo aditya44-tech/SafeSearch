@@ -15,6 +15,10 @@ import {
   type AnalysisResult,
   type ExtractedTask,
 } from "@/lib/helpers";
+import {
+  detectActivityContext,
+  getApplicableRegulations,
+} from "@/lib/regulatory-kb";
 
 // â”€â”€ Classification prompt (same as analyze route) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SAFETY_PROMPT = `You are a workplace safety analyst for a construction/industrial safety system. Your job is to detect early warning signs of potential serious injury or fatality (SIF) from near-miss and unsafe-condition reports.
@@ -259,7 +263,53 @@ export async function POST(request: NextRequest) {
     analysis.risk_level, analysis.hazard_category, apiKey, slaDeadline
   );
 
-  // 4. Send SMS for high risk OR high SIF potential - configurable escalation
+  // 4. Auto-create compliance mappings from knowledge base
+  const activities = detectActivityContext(report.reportText);
+  const regulations = getApplicableRegulations([analysis.hazard_category], activities);
+  const dbRefs = await prisma.complianceReference.findMany({
+    where: { hazardCategory: analysis.hazard_category },
+  });
+
+  let complianceCount = 0;
+  for (const reg of regulations) {
+    await prisma.complianceMapping.create({
+      data: {
+        reportId: report.id,
+        aiActivityContext: activities.join(", "),
+        aiExplanation: `Applicable based on ${analysis.hazard_category} hazard in ${activities.join("/")} context. Requirements: ${reg.requirements.slice(0, 2).join("; ")}.`,
+        aiRecommendedControl: reg.requirements[0] || "Implement standard controls for this hazard category.",
+        disclaimerShown: true,
+      },
+    });
+    complianceCount++;
+  }
+
+  for (const ref of dbRefs) {
+    await prisma.complianceMapping.create({
+      data: {
+        reportId: report.id,
+        referenceId: ref.id,
+        aiActivityContext: activities.join(", "),
+        aiExplanation: `${ref.regulationName} ${ref.sectionReference} applies to ${analysis.hazard_category} hazards. ${ref.description}`,
+        aiRecommendedControl: ref.description,
+        disclaimerShown: true,
+      },
+    });
+    complianceCount++;
+  }
+
+  if (complianceCount > 0) {
+    await prisma.auditLog.create({
+      data: {
+        reportId: report.id,
+        action: "compliance_mapped",
+        performedBy: usedFallback ? "Fallback Classifier" : "Groq AI",
+        details: `Auto-mapped ${complianceCount} regulatory reference(s) for ${analysis.hazard_category}`,
+      },
+    });
+  }
+
+  // 5. Send SMS for high risk OR high SIF potential - configurable escalation
   const shouldEscalate =
     analysis.risk_level === "high" ||
     analysis.sif_potential === "SIF-High Potential" ||

@@ -54,6 +54,7 @@ model SafetyReport {
 
   auditLogs              AuditLog[]
   tasks                  Task[]
+  complianceMappings     ComplianceMapping[]
 
   @@index([status])
   @@index([riskLevel])
@@ -147,11 +148,51 @@ model SmsRecipient {
 }
 
 model ComplianceReference {
-  id              Int    @id @default(autoincrement())
-  hazardCategory  String
-  regulationName  String
-  sectionReference String
-  description     String
+  id                 Int      @id @default(autoincrement())
+  hazardCategory     String
+  regulationName     String
+  sectionReference   String
+  description        String
+  framework          String?  // e.g. "Oil Mines Regulations, 2017", "OISD-116"
+  standardCode       String?  // e.g. "OMR-2017-R34", "OISD-116"
+  title              String?  // Full title of the regulation/standard
+  applicableActivity String?  // e.g. "Drilling", "Production", "Pipeline Operations"
+  requirements       String?  // JSON array of specific requirements
+  source             String?  // e.g. "Ministry of Labour & Employment"
+  lastVerified       DateTime?
+  isVerified         Boolean  @default(false)
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime?
+
+  mappings           ComplianceMapping[]
 
   @@index([hazardCategory])
+  @@index([framework])
+  @@index([applicableActivity])
+}
+
+model ComplianceMapping {
+  id                  Int      @id @default(autoincrement())
+  reportId            Int
+  report              SafetyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  referenceId         Int?
+  reference           ComplianceReference? @relation(fields: [referenceId], references: [id], onDelete: SetNull)
+  aiSuggestedRefId    Int?
+  aiActivityContext   String?  // AI-detected activity/facility type
+  aiExplanation       String?  // AI explanation of why this regulation applies
+  aiRecommendedControl String? // AI-recommended control measure
+  verifiedMappingId   Int?     // Admin-verified reference (if different from AI)
+  verifiedBy          String?
+  verifiedAt          DateTime?
+  correctionHistory   String?  // JSON array of past corrections
+  disclaimerShown     Boolean @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([reportId])
+  @@index([referenceId])
+  @@index([verifiedMappingId])
 }

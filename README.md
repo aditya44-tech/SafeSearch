@@ -10,7 +10,7 @@ AI-powered workplace safety early-warning system. Every safety report is classif
 - **Offline Reporting** — IndexedDB stores reports locally when there is no connectivity and auto-syncs once the network returns.
 - **Task Management** — Corrective tasks are auto-generated from high-risk reports and tracked through open → in-progress → resolved states.
 - **Dashboard & Analytics** — Real-time dashboards with anomaly detection, site scorecards, trend analysis, and Recharts-powered visualizations.
-- **Indian Regulatory Compliance** — Every hazard category is mapped to relevant Indian safety regulations (Factories Act 1948, IS 3786, Electricity Act 2003, etc.).
+- **Regulatory & Safety Standards Mapping** — Curated knowledge base for upstream oil & gas. Activity-aware mapping to applicable standards (Oil Mines Regulations, OISD standards, Mines Act, etc.).
 - **Audit Logging** — Every action on a report is recorded with timestamps and user attribution.
 
 ## Tech Stack
@@ -121,7 +121,7 @@ Key models:
 - **SiteScore** — Heinrich's Law scoring per site based on report frequency and severity.
 - **Organization** — Multi-tenant support with per-org SMS recipients and site scores.
 - **SmsRecipient** — Category-mapped phone numbers for automated SMS alerts.
-- **ComplianceReference** — Indian regulatory standards mapped to hazard categories.
+- **ComplianceReference** — Curated regulatory knowledge base with activity-aware hazard mapping for upstream oil & gas operations.
 - **AuditLog** — Full action history on every report.
 
 ## License

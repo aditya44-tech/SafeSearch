@@ -29,7 +29,7 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string; border: string
 };
 
 export default function AdminClient({ reports, tasks, smsRecipients: initialRecipients, stats }: { reports: Report[]; tasks: Task[]; smsRecipients: SmsRecipient[]; stats: { total: number; pending: number; overdueTasks: number } }) {
-  const [tab, setTab] = useState<"board" | "reports" | "sms">("board");
+  const [tab, setTab] = useState<"board" | "reports" | "sms" | "compliance">("board");
   const [smsRecipients, setSmsRecipients] = useState(initialRecipients);
   const [newRecipient, setNewRecipient] = useState({ hazardCategory: "", phone: "", name: "" });
   const [creatingRecipient, setCreatingRecipient] = useState(false);
@@ -40,6 +40,10 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
   const [taskForm, setTaskForm] = useState({ title: "", description: "", assignedTo: "", priority: "high" });
   const [creating, setCreating] = useState(false);
   const [taskList, setTaskList] = useState(tasks);
+  const [complianceRefs, setComplianceRefs] = useState<any[]>([]);
+  const [loadingCompliance, setLoadingCompliance] = useState(false);
+  const [newRef, setNewRef] = useState({ framework: "", standardCode: "", title: "", hazardCategory: "", applicableActivity: "", description: "", source: "", requirements: "" });
+  const [creatingRef, setCreatingRef] = useState(false);
 
   const sites = [...new Set(reports.map((r) => r.site))];
   const depts = [...new Set(taskList.map((t) => t.assignedTo))];
@@ -122,10 +126,10 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 sm:mb-6 border-b" style={{ borderColor: "var(--color-border)" }}>
-        {([["board", "Task Board"], ["reports", "Reports"], ["sms", "SMS Recipients"]] as const).map(([key, label]) => (
+      <div className="flex gap-1 mb-4 sm:mb-6 border-b overflow-x-auto" style={{ borderColor: "var(--color-border)" }}>
+        {([["board", "Task Board"], ["reports", "Reports"], ["sms", "SMS Recipients"], ["compliance", "Regulatory KB"]] as const).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
-            className="px-3 sm:px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px]"
+            className="px-3 sm:px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px] whitespace-nowrap"
             style={{
               color: tab === key ? "var(--color-accent)" : "var(--color-ink-muted)",
               borderColor: tab === key ? "var(--color-accent)" : "transparent",
@@ -361,6 +365,111 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compliance Knowledge Base */}
+      {tab === "compliance" && (
+        <div>
+          <p className="text-sm text-[var(--color-ink-muted)] mb-4">
+            Manage the regulatory knowledge base. These curated references are used to map hazard categories to applicable regulations and standards for Indian oil & gas upstream operations.
+          </p>
+          <div className="mb-4 p-3 rounded-lg text-xs" style={{ background: "var(--color-accent-light)", border: "1px solid rgba(15,118,110,0.15)", color: "var(--color-accent)" }}>
+            <span className="font-semibold">Important:</span> Regulatory references must be verified by qualified HSE/compliance personnel. The AI uses this knowledge base to suggest applicable regulations — it does NOT fabricate regulation numbers.
+          </div>
+
+          {/* Load knowledge base */}
+          {!complianceRefs.length && !loadingCompliance && (
+            <button onClick={async () => {
+              setLoadingCompliance(true);
+              try {
+                const res = await fetch("/api/compliance?text=drilling+fire+safety");
+                if (res.ok) {
+                  const data = await res.json();
+                  setComplianceRefs(data);
+                }
+              } finally { setLoadingCompliance(false); }
+            }}
+              className="mb-4 px-4 py-2 text-sm font-medium text-white rounded-lg"
+              style={{ background: "var(--color-accent)" }}>
+              Load Knowledge Base
+            </button>
+          )}
+
+          {loadingCompliance && (
+            <p className="text-sm text-[var(--color-ink-muted)]">Loading...</p>
+          )}
+
+          {/* References table */}
+          {complianceRefs.length > 0 && (
+            <div className="rounded-xl overflow-hidden" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+              <div className="overflow-x-auto">
+                <table className="min-w-[700px] w-full">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      {["Framework", "Code", "Category", "Activity", "Status", "Actions"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complianceRefs.map((ref: any, i: number) => (
+                      <tr key={ref.id || i} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-medium text-[var(--color-ink)]">{ref.framework || ref.regulationName}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                            {ref.standardCode || ref.sectionReference}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[var(--color-ink-muted)]">{ref.hazardCategory}</td>
+                        <td className="px-4 py-3 text-xs text-[var(--color-ink-muted)]">{ref.applicableActivity || "\u2014"}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded" style={{
+                            background: ref.isVerified ? "var(--color-safe-light)" : "var(--color-warning-light)",
+                            color: ref.isVerified ? "var(--color-safe)" : "var(--color-warning)",
+                          }}>
+                            {ref.isVerified ? "Verified" : "Unverified"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {!ref.isVerified && (
+                            <button onClick={async () => {
+                              const res = await fetch("/api/compliance", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "verify", id: ref.id, verifiedBy: "Admin" }),
+                              });
+                              if (res.ok) {
+                                setComplianceRefs(complianceRefs.map((r: any) =>
+                                  r.id === ref.id ? { ...r, isVerified: true, verifiedBy: "Admin", verifiedAt: new Date().toISOString() } : r
+                                ));
+                              }
+                            }}
+                              className="text-xs font-medium px-2 py-1 rounded transition-all hover:opacity-80"
+                              style={{ background: "var(--color-safe)", color: "white" }}>
+                              Verify
+                            </button>
+                          )}
+                          {ref.isVerified && (
+                            <span className="text-[10px] text-[var(--color-ink-faint)]">
+                              {ref.verifiedBy ? `by ${ref.verifiedBy}` : "Verified"}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimer */}
+          <div className="mt-4 p-3 rounded-lg text-xs" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)", color: "var(--color-ink-faint)" }}>
+            Regulatory references are provided as safety/compliance guidance and should be verified by the organization's qualified HSE/compliance personnel.
           </div>
         </div>
       )}

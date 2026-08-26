@@ -28,7 +28,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
   const [showClusters, setShowClusters] = useState(false);
   const [sortDropdown, setSortDropdown] = useState(false);
   const [sifFilter, setSifFilter] = useState<string>("all");
-  const [reanalyzing, setReanalyzing] = useState(false);
+
 
   // Close sort dropdown on outside click
   const sortRef = React.useRef<HTMLDivElement>(null);
@@ -152,23 +152,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
             style={{ color: "var(--color-ink-muted)", background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
             Upload CSV
           </button>
-          <button onClick={async () => {
-            if (!confirm("Re-analyze all reports that are missing SIF assessment? This will update risk levels and generate new tasks.")) return;
-            setReanalyzing(true);
-            try {
-              const res = await fetch("/api/reports/reanalyze-all", { method: "POST" });
-              if (res.ok) {
-                const data = await res.json();
-                alert(`Done! ${data.message}`);
-                window.location.reload();
-              }
-            } finally { setReanalyzing(false); }
-          }}
-            disabled={reanalyzing}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
-            style={{ background: "var(--color-warning)" }}>
-            {reanalyzing ? "Analyzing..." : "Add SIF to all"}
-          </button>
+
           <button onClick={() => setShowNewForm(!showNewForm)}
             className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
             style={{ background: "var(--color-accent)" }}>

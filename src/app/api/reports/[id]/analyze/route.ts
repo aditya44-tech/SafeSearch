@@ -15,6 +15,10 @@ import {
   type AnalysisResult,
   type ExtractedTask,
 } from "@/lib/helpers";
+import {
+  detectActivityContext,
+  getApplicableRegulations,
+} from "@/lib/regulatory-kb";
 
 const SAFETY_PROMPT = `You are a workplace safety analyst for a construction/industrial safety system. Your job is to detect early warning signs of potential serious injury or fatality (SIF) from near-miss and unsafe-condition reports.
 
@@ -345,6 +349,52 @@ export async function POST(
     apiKey,
     slaDeadline
   );
+
+  // Auto-create compliance mappings from knowledge base
+  const activities = detectActivityContext(report.reportText);
+  const regulations = getApplicableRegulations([analysis.hazard_category], activities);
+  const dbRefs = await prisma.complianceReference.findMany({
+    where: { hazardCategory: analysis.hazard_category },
+  });
+
+  let complianceCount = 0;
+  for (const reg of regulations) {
+    await prisma.complianceMapping.create({
+      data: {
+        reportId: id,
+        aiActivityContext: activities.join(", "),
+        aiExplanation: `Applicable based on ${analysis.hazard_category} hazard in ${activities.join("/")} context. Requirements: ${reg.requirements.slice(0, 2).join("; ")}.`,
+        aiRecommendedControl: reg.requirements[0] || "Implement standard controls for this hazard category.",
+        disclaimerShown: true,
+      },
+    });
+    complianceCount++;
+  }
+
+  for (const ref of dbRefs) {
+    await prisma.complianceMapping.create({
+      data: {
+        reportId: id,
+        referenceId: ref.id,
+        aiActivityContext: activities.join(", "),
+        aiExplanation: `${ref.regulationName} ${ref.sectionReference} applies to ${analysis.hazard_category} hazards. ${ref.description}`,
+        aiRecommendedControl: ref.description,
+        disclaimerShown: true,
+      },
+    });
+    complianceCount++;
+  }
+
+  if (complianceCount > 0) {
+    await prisma.auditLog.create({
+      data: {
+        reportId: id,
+        action: "compliance_mapped",
+        performedBy: usedFallback ? "Fallback Classifier" : "Groq AI",
+        details: `Auto-mapped ${complianceCount} regulatory reference(s) for ${analysis.hazard_category}`,
+      },
+    });
+  }
 
   return NextResponse.json({
     ...updated,

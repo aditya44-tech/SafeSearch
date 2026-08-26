@@ -8,11 +8,22 @@ import StatusBadge from "@/components/StatusBadge";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateTimeIST, formatDateIST } from "@/lib/helpers";
 
 interface ComplianceRef {
-  id: number;
+  id: number | null;
+  framework: string;
+  standardCode: string;
+  title: string;
   hazardCategory: string;
-  regulationName: string;
   sectionReference: string;
   description: string;
+  applicableActivity?: string;
+  source?: string;
+  isVerified?: boolean;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  requirements?: string[];
+  source_type?: string;
+  detectedActivities?: string[];
+  detectedCategories?: string[];
 }
 
 interface Report {
@@ -41,6 +52,8 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [tasks, setTasks] = useState(report.tasks || []);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [complianceRefs, setComplianceRefs] = useState<ComplianceRef[]>([]);
+  const [expandedRefs, setExpandedRefs] = useState<Set<number | string>>(new Set());
+  const [expandAll, setExpandAll] = useState(false);
   const [taskForm, setTaskForm] = useState({
     title: "", description: "",
     assignedTo: autoAssignDept(report.hazardCategory),
@@ -427,30 +440,110 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           </div>
         </div>
 
-        {/* Regulatory Compliance Reference */}
+        {/* Regulatory & Safety Standards Mapping */}
         {complianceRefs.length > 0 && (
           <div className="mb-5">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>
-              Regulatory compliance
-              <span className="ml-2 text-[9px] font-normal normal-case tracking-normal" style={{ color: "var(--color-ink-faint)" }}>
-                ({complianceRefs.length} regulation{complianceRefs.length !== 1 ? "s" : ""} matched from report text)
-              </span>
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-muted)" }}>
+                Regulatory & Safety Standards
+                <span className="ml-2 text-[9px] font-normal normal-case tracking-normal" style={{ color: "var(--color-ink-faint)" }}>
+                  ({complianceRefs.length} reference{complianceRefs.length !== 1 ? "s" : ""} matched)
+                </span>
+              </h3>
+              <button onClick={() => {
+                if (expandAll) {
+                  setExpandedRefs(new Set());
+                } else {
+                  setExpandedRefs(new Set(complianceRefs.map((ref, i) => ref.id || ref.standardCode || i)));
+                }
+                setExpandAll(!expandAll);
+              }} className="text-[10px] font-medium px-2 py-1 rounded transition-all duration-200 hover:opacity-80"
+                style={{ color: "var(--color-accent)", background: "var(--color-accent-light)" }}>
+                {expandAll ? "Collapse all" : "Expand all"}
+              </button>
+            </div>
             <div className="space-y-2">
-              {complianceRefs.map((ref: any) => (
-                <div key={ref.id} className="p-3 rounded-lg" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs font-semibold text-[var(--color-ink)]">{ref.regulationName}</span>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
-                      {ref.sectionReference}
-                    </span>
-                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-faint)", border: "1px solid var(--color-border)" }}>
-                      {ref.hazardCategory}
-                    </span>
+              {complianceRefs.map((ref: any, index: number) => {
+                const refKey = ref.id || ref.standardCode || index;
+                const isExpanded = expandedRefs.has(refKey) || expandAll;
+                return (
+                  <div key={refKey} className="rounded-lg overflow-hidden" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+                    {/* Collapsed header - always visible */}
+                    <button onClick={() => {
+                      const next = new Set(expandedRefs);
+                      if (next.has(refKey)) next.delete(refKey);
+                      else next.add(refKey);
+                      setExpandedRefs(next);
+                    }} className="w-full p-3 flex items-center gap-2 text-left transition-all duration-200 hover:bg-[var(--color-surface-sunken)]"
+                      style={{ background: isExpanded ? "var(--color-surface-sunken)" : "transparent" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        className="flex-shrink-0 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">{ref.framework || ref.regulationName}</span>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                        {ref.standardCode || ref.sectionReference}
+                      </span>
+                      {ref.isVerified && (
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-safe-light)", color: "var(--color-safe)" }}>
+                          Verified
+                        </span>
+                      )}
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded ml-auto" style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-faint)", border: "1px solid var(--color-border)" }}>
+                        {ref.hazardCategory}
+                      </span>
+                    </button>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-0 space-y-2" style={{ borderTop: "1px solid var(--color-border)" }}>
+                        {/* Activity Context */}
+                        {ref.applicableActivity && (
+                          <div className="mt-2">
+                            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-faint)" }}>Activity</span>
+                            <p className="text-xs font-medium text-[var(--color-ink)] mt-0.5">{ref.applicableActivity}</p>
+                          </div>
+                        )}
+
+                        {/* Title */}
+                        {ref.title && (
+                          <div>
+                            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-faint)" }}>Title</span>
+                            <p className="text-xs text-[var(--color-ink)] mt-0.5">{ref.title}</p>
+                          </div>
+                        )}
+
+                        {/* Requirements */}
+                        {ref.requirements && ref.requirements.length > 0 && (
+                          <div>
+                            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-faint)" }}>Requirements</span>
+                            <ul className="mt-1 space-y-1">
+                              {ref.requirements.map((req: string, i: number) => (
+                                <li key={i} className="text-xs text-[var(--color-ink-muted)] leading-relaxed flex items-start gap-1.5">
+                                  <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                                  <span>{req}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Source */}
+                        {ref.source && (
+                          <div className="pt-1">
+                            <span className="text-[9px] text-[var(--color-ink-faint)]">Source: {ref.source}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed">{ref.description}</p>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="mt-3 p-2 rounded text-[9px] leading-relaxed" style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-faint)", border: "1px solid var(--color-border)" }}>
+              Regulatory references are provided as safety/compliance guidance and should be verified by the organization's qualified HSE/compliance personnel.
             </div>
           </div>
         )}
