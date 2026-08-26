@@ -20,48 +20,75 @@ const SAFETY_PROMPT = `You are a workplace safety analyst for a construction/ind
 
 CRITICAL: When in doubt between risk levels, ALWAYS choose the HIGHER level. Under-classifying a safety hazard is far more dangerous than over-classifying it. A missed high-risk report can lead to injury or death.
 
+You must produce TWO independent assessments:
+1. INCIDENT SEVERITY - How serious was the actual reported outcome/event?
+2. SIF POTENTIAL - Could this situation realistically have resulted in a Serious Injury or Fatality?
+
+IMPORTANT: These are INDEPENDENT assessments. A near miss with no injury can have Low Incident Severity but High SIF Potential. Do NOT automatically equate them.
+
 Given the report below, respond with ONLY valid JSON in this exact format, no extra text:
 
 {
-  "risk_level": "high" | "medium" | "low",
+  "incident_severity": "low" | "medium" | "high",
   "hazard_category": "<short category, e.g. Fall Hazard, Electrical, Equipment Failure, Chemical Exposure, Vehicle/Traffic, Structural, Fire/Explosion, Procedural Gap>",
-  "justification": "<one sentence explaining why this risk level was assigned>",
-  "key_phrases": ["<exact substring from the report text that influenced the risk rating>", ...]
+  "justification": "<one sentence explaining why this incident severity was assigned>",
+  "key_phrases": ["<exact substring from the report text that influenced the rating>", ...],
+  "sif_potential": "SIF-Unlikely" | "SIF-Potential" | "SIF-High Potential" | "SIF-Critical / Hi-Po",
+  "sif_reasoning": "<1-2 sentences explaining the SIF potential assessment>",
+  "sif_confidence": <number 0.0-1.0>
 }
 
 Rules for key_phrases:
 - List 2-5 exact substrings that appear verbatim in the original report text
-- These are the specific words/phrases that directly drove the risk classification
+- These are the specific words/phrases that directly drove the classification
 - Use the exact wording from the report, preserving original capitalization
 - Do not paraphrase or invent phrases that are not in the text
 
-Risk classification guidance:
+INCIDENT SEVERITY classification (how serious was the actual outcome):
 
-"high" - Assign when ANY of these apply:
-- Any fall hazard (unguarded edges, working at height, scaffold issues, no harness, excavation, trench)
-- Any electrical hazard (exposed wiring, live electrical, short circuit, overloaded circuits, shock risk)
-- Any fire/explosion risk (smoke, flammable materials, gas leak, burn risk)
-- Any chemical hazard (toxic fumes, gas leak, chemical spill, confined space, asbestos)
-- Any vehicle/machinery hazard (forklift near pedestrian, struck-by risk, crane operations, heavy equipment)
-- Any collapse or structural failure risk
-- Any near-miss involving potential serious injury (almost fell, almost hit, close call, near miss)
-- Missing critical safety guards or barriers on dangerous equipment
-- Any report mentioning injury, hospitalization, unconsciousness, bleeding, or fracture
-- Reports from construction sites with words like dangerous, unsafe, hazard, risk, emergency
+"high" - Assign when the actual outcome was serious:
+- Any report mentioning injury, hospitalization, unconsciousness, bleeding, fracture, amputation
+- Fire/explosion that caused actual damage or injury
+- Collapse that caused actual harm
+- Any actual serious physical harm occurred
 
-"medium" - Assign when:
-- PPE violations (not wearing hard hat, safety glasses, gloves, harness)
-- Damaged but not immediately dangerous equipment
-- Slip/trip hazards, wet floors, poor lighting
-- Minor injuries (cuts, bruises, first aid cases)\n- Blocked exits or obstructed pathways
-- Procedural shortcuts or training gaps
-- Expired or missing safety labels
+"medium" - Assign when the actual outcome was moderate:
+- Minor injuries (cuts, bruises, first aid cases)
+- PPE violations that were caught but no injury
+- Damaged equipment with no injury
+- Slip/trip with minor consequence
+- Blocked exits, procedural gaps that were identified
 
-"low" - Assign ONLY when:
+"low" - Assign when the actual outcome was minor or non-existent:
+- Near misses with no injury
 - Purely administrative or documentation issues
 - Cosmetic damage with no safety impact
 - Minor housekeeping issues
-- Suggestions for improvement with no immediate hazard
+- Suggestions for improvement
+
+SIF POTENTIAL classification (could this have caused serious injury/fatality?):
+
+"SIF-Critical / Hi-Po" - Assign when:
+- Actual serious injury or fatality occurred
+- Situation had extremely high likelihood of SIF without intervention
+- Multiple SIF precursors present simultaneously
+
+"SIF-High Potential" - Assign when:
+- Near-miss with credible SIF pathway (almost fell from height, almost hit by vehicle, etc.)
+- Missing critical safety controls on high-energy hazards
+- Unprotected exposure to lethal hazards (live electrical, confined space, fall from height)
+- The situation COULD realistic have resulted in death or serious injury
+
+"SIF-Potential" - Assign when:
+- Some SIF precursors present but partially mitigated
+- Hazard exists but safety controls were partially in place
+- Lower energy level but still credible SIF pathway
+
+"SIF-Unlikely" - Assign when:
+- No credible pathway to serious injury or fatality
+- Only minor or procedural issues
+- All safety controls in place
+- Low-energy hazards with no realistic SIF pathway
 
 Report:
 Site: {{site}}
@@ -229,6 +256,9 @@ export async function POST(
       analyzedAt: new Date(),
       slaDeadline,
       keyPhrases,
+      sifPotential: analysis.sif_potential,
+      sifReasoning: analysis.sif_reasoning,
+      sifConfidence: analysis.sif_confidence ?? null,
     },
   });
 
@@ -243,10 +273,14 @@ export async function POST(
   await recalculateSiteScore(prisma, report.site);
   const clusterId = await clusterReport(id, report.reportText);
 
-  // Send SMS alert for high-risk reports - category-based recipients, fallback to SAFETY_OFFICER_PHONE
+  // Send SMS alert for high-risk reports OR high SIF potential - configurable escalation
+  const shouldEscalate =
+    analysis.risk_level === "high" ||
+    analysis.sif_potential === "SIF-High Potential" ||
+    analysis.sif_potential === "SIF-Critical / Hi-Po";
   let smsSent = false;
   let smsRecipients: string[] = [];
-  if (analysis.risk_level === "high") {
+  if (shouldEscalate) {
     const textbeeApiKey = process.env.TEXTBEE_API_KEY;
     if (textbeeApiKey) {
       const categoryRecipients = await prisma.smsRecipient.findMany({
@@ -268,7 +302,7 @@ export async function POST(
         try {
           const { Textbee } = await import("@textbee/sdk");
           const textbee = new Textbee({ apiKey: textbeeApiKey });
-          const smsMessage = `🚨 HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}`;
+          const smsMessage = `🚨 HIGH RISK ALERT: ${report.site} - ${analysis.hazard_category}. ${analysis.justification}${analysis.sif_potential !== "SIF-Unlikely" ? ` [SIF: ${analysis.sif_potential}]` : ""}`;
           await textbee.sendSms({
             recipients: phoneNumbers,
             message: smsMessage,

@@ -45,6 +45,10 @@ model SafetyReport {
   keyPhrases             String?  // JSON array of key phrases that drove the risk assessment
   smsSentAt              DateTime?
 
+  sifPotential           String?
+  sifReasoning           String?
+  sifConfidence          Float?
+
   organizationId         Int?
   organization           Organization? @relation(fields: [organizationId], references: [id])
 

@@ -3,6 +3,7 @@ import React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import RiskBadge from "@/components/RiskBadge";
+import SifBadge from "@/components/SifBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDateIST } from "@/lib/helpers";
 
@@ -12,6 +13,7 @@ interface Report {
   hazardCategory: string | null; justification: string | null;
   clusterId: string | null; slaDeadline: string | null;
   humanOverrideRiskLevel: string | null; isAnonymous: boolean;
+  sifPotential?: string | null;
 }
 
 export default function ReportsClient({ reports: initial, sites = [] }: { reports: Report[]; sites?: string[] }) {
@@ -25,6 +27,8 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
   const [newReport, setNewReport] = useState({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
   const [showClusters, setShowClusters] = useState(false);
   const [sortDropdown, setSortDropdown] = useState(false);
+  const [sifFilter, setSifFilter] = useState<string>("all");
+  const [reanalyzing, setReanalyzing] = useState(false);
 
   // Close sort dropdown on outside click
   const sortRef = React.useRef<HTMLDivElement>(null);
@@ -37,7 +41,14 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
     return () => document.removeEventListener("mousedown", handler);
   }, [sortDropdown]);
 
-  const sorted = [...reports].sort((a, b) => {
+  // Apply SIF filter
+  const filtered = sifFilter === "all"
+    ? reports
+    : sifFilter === "high-sif"
+      ? reports.filter((r) => r.sifPotential === "SIF-High Potential" || r.sifPotential === "SIF-Critical / Hi-Po")
+      : reports.filter((r) => r.sifPotential === sifFilter);
+
+  const sorted = [...filtered].sort((a, b) => {
     const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
     if (sortField === "riskLevel") {
       const aVal = a.riskLevel ? (order[a.riskLevel] ?? 3) : 3;
@@ -141,11 +152,41 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
             style={{ color: "var(--color-ink-muted)", background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
             Upload CSV
           </button>
+          <button onClick={async () => {
+            if (!confirm("Re-analyze all reports that are missing SIF assessment? This will update risk levels and generate new tasks.")) return;
+            setReanalyzing(true);
+            try {
+              const res = await fetch("/api/reports/reanalyze-all", { method: "POST" });
+              if (res.ok) {
+                const data = await res.json();
+                alert(`Done! ${data.message}`);
+                window.location.reload();
+              }
+            } finally { setReanalyzing(false); }
+          }}
+            disabled={reanalyzing}
+            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
+            style={{ background: "var(--color-warning)" }}>
+            {reanalyzing ? "Analyzing..." : "Add SIF to all"}
+          </button>
           <button onClick={() => setShowNewForm(!showNewForm)}
             className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
             style={{ background: "var(--color-accent)" }}>
             + New report
           </button>
+          <select
+            value={sifFilter}
+            onChange={(e) => setSifFilter(e.target.value)}
+            className="px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200"
+            style={{ color: "var(--color-ink-muted)", background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
+          >
+            <option value="all">All SIF levels</option>
+            <option value="high-sif">High SIF potential</option>
+            <option value="SIF-Critical / Hi-Po">SIF-Critical</option>
+            <option value="SIF-High Potential">SIF-High</option>
+            <option value="SIF-Potential">SIF-Potential</option>
+            <option value="SIF-Unlikely">SIF-Unlikely</option>
+          </select>
           <div className="relative" ref={sortRef}>
             <button onClick={() => setSortDropdown(!sortDropdown)}
               className="px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97] flex items-center gap-1.5"
@@ -247,6 +288,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
                 <th className="hidden md:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SIF</th>
                 <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Date</th>
               </tr>
             </thead>
@@ -292,12 +334,15 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                             : `Due ${formatDateIST(r.slaDeadline)}`
                           : "\u2014"}
                       </td>
+                      <td className="hidden lg:table-cell px-4 py-3">
+                        <SifBadge level={r.sifPotential} />
+                      </td>
                       <td className="hidden lg:table-cell px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
                         {formatDateIST(r.reportedAt)}
                       </td>
                     </tr>
                     {expandedId === r.id && (
-                      <tr key={r.id + "-exp"}><td colSpan={7} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
+                      <tr key={r.id + "-exp"}><td colSpan={8} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
                         <div className="max-w-3xl">
                           <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
                             <span className="font-semibold">Report:</span> {r.reportText}

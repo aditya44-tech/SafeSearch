@@ -57,12 +57,48 @@ export default async function DashboardPage() {
     (r) => r.riskLevel === "high" && (r.status === "pending" || r.status === "acknowledged")
   ).length;
 
+  // SIF Potential distribution
+  const sifMap: Record<string, number> = {};
+  allReports.forEach((r) => {
+    const sif = r.sifPotential || "No SIF data";
+    sifMap[sif] = (sifMap[sif] || 0) + 1;
+  });
+  const sifDistribution = Object.entries(sifMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // High-SIF near misses (near-miss reports with high SIF potential but low incident severity)
+  const highSifNearMisses = allReports.filter(
+    (r) => (r.sifPotential === "SIF-High Potential" || r.sifPotential === "SIF-Critical / Hi-Po") &&
+      (r.riskLevel === "low" || r.riskLevel === "medium")
+  ).length;
+
+  // SIF trend over time (last 30 days)
+  const sifTimeMap: Record<string, number> = {};
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+    sifTimeMap[dateToISTString(d)] = 0;
+  }
+  allReports
+    .filter((r) => r.sifPotential === "SIF-High Potential" || r.sifPotential === "SIF-Critical / Hi-Po")
+    .forEach((r) => {
+      const date = dateToISTString(new Date(r.reportedAt));
+      if (sifTimeMap[date] !== undefined) sifTimeMap[date]++;
+    });
+  const sifTimeData = Object.entries(sifTimeMap).map(([date, count]) => ({
+    date: date.slice(0, 5),
+    count,
+  }));
+
   return (
     <DashboardClient
       categoryData={categoryData}
       timeData={timeData}
       recurringSites={recurringSites}
       stats={{ totalReports, highCount, pendingHigh }}
+      sifDistribution={sifDistribution}
+      highSifNearMisses={highSifNearMisses}
+      sifTimeData={sifTimeData}
     />
   );
 }

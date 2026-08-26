@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import RiskBadge from "@/components/RiskBadge";
+import SifBadge from "@/components/SifBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateTimeIST, formatDateIST } from "@/lib/helpers";
 
@@ -21,6 +22,7 @@ interface Report {
   photoUrl: string | null; humanOverrideRiskLevel: string | null;
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
   keyPhrases?: string | null; isAnonymous?: boolean; smsSentAt?: string | null;
+  sifPotential?: string | null; sifReasoning?: string | null; sifConfidence?: number | null;
   auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
   tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
@@ -29,6 +31,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [status, setStatus] = useState(report.status);
 
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [reanalyzing, setReanalyzing] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
   const [overrideLevel, setOverrideLevel] = useState("high");
   const [overrideReason, setOverrideReason] = useState("");
@@ -117,6 +120,14 @@ export default function ReportDetailClient({ report }: { report: Report }) {
     return parts;
   })();
 
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const res = await fetch("/api/reports/" + report.id + "/analyze", { method: "POST" });
+      if (res.ok) { router.refresh(); }
+    } finally { setReanalyzing(false); }
+  };
+
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
 
   const handleCreateTask = async () => {
@@ -175,6 +186,7 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             </h1>
             <div className="flex items-center gap-2.5 flex-wrap">
               <RiskBadge level={report.riskLevel} />
+              <SifBadge level={report.sifPotential ?? null} />
               <StatusBadge status={status} />
               {report.hazardCategory && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-medium"
@@ -191,6 +203,13 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {!report.riskLevel && (
+              <button onClick={handleReanalyze} disabled={reanalyzing}
+                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97] disabled:opacity-50"
+                style={{ background: "var(--color-accent)" }}>
+                {reanalyzing ? "Analyzing..." : "Analyze with AI"}
+              </button>
+            )}
             {report.riskLevel && (
               <button onClick={() => setShowOverride(!showOverride)}
                 className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
@@ -371,6 +390,42 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             <p className="text-sm italic leading-relaxed rounded-lg p-4" style={{ background: "var(--color-warning-light)", color: "var(--color-ink)" }}>{report.justification}</p>
           </div>
         )}
+
+        {/* SIF Potential Assessment */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-muted)" }}>
+              SIF Potential
+            </h3>
+            <div className="group relative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div className="absolute left-0 top-6 z-10 w-72 p-3 rounded-lg text-xs leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)", color: "var(--color-ink-muted)" }}>
+                <strong style={{ color: "var(--color-ink)" }}>Incident Severity</strong> describes how serious the actual reported outcome was.<br/>
+                <strong style={{ color: "var(--color-ink)" }}>SIF Potential</strong> describes whether the situation could realistically have resulted in a Serious Injury or Fatality, even if no serious injury occurred.<br/><br/>
+                <em style={{ color: "var(--color-ink-faint)", fontSize: "10px" }}>This is an AI-assisted assessment requiring human review.</em>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg p-4" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+            <div className="flex items-center gap-3 mb-2">
+              <SifBadge level={report.sifPotential ?? null} />
+              {report.sifConfidence != null && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
+                  Confidence: {Math.round(report.sifConfidence * 100)}%
+                </span>
+              )}
+            </div>
+            {report.sifReasoning && (
+              <p className="text-sm italic leading-relaxed" style={{ color: "var(--color-ink)" }}>{report.sifReasoning}</p>
+            )}
+            {!report.sifPotential && (
+              <p className="text-xs" style={{ color: "var(--color-ink-faint)", fontStyle: "italic" }}>
+                SIF assessment not available. Re-analyze this report to generate a SIF Potential assessment.
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Regulatory Compliance Reference */}
         {complianceRefs.length > 0 && (

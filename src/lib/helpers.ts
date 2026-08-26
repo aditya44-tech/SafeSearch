@@ -58,11 +58,17 @@ export const GROQ_MODELS = [
 
 // No vision model available on Groq - photo cross-check will use text-only fallback
 
+export type SifPotentialValue = "SIF-Unlikely" | "SIF-Potential" | "SIF-High Potential" | "SIF-Critical / Hi-Po";
+
 export interface AnalysisResult {
   risk_level: string;
+  incident_severity?: string;
   hazard_category: string;
   justification: string;
   key_phrases?: string[];
+  sif_potential: SifPotentialValue;
+  sif_reasoning: string;
+  sif_confidence?: number;
 }
 
 export interface ExtractedTask {
@@ -229,10 +235,28 @@ export function fallbackAnalysis(reportText: string): AnalysisResult {
       text.includes("fire") || text.includes("smoke") || text.includes("burn") || text.includes("flammable") || text.includes("explosion") ? "Fire/Explosion" :
       text.includes("crane") || text.includes("equipment") || text.includes("machinery") || text.includes("hoist") || text.includes("malfunction") ? "Equipment Failure" :
       "Structural";
+
+    // Determine SIF potential independently from severity
+    let sifPotential: SifPotentialValue = "SIF-High Potential";
+    let sifReasoning = "Report describes conditions with a credible path to serious injury or death.";
+    // Near-misses with no actual injury = high SIF potential but not necessarily high severity
+    if (text.includes("near miss") || text.includes("near-miss") || text.includes("almost") || text.includes("close call")) {
+      sifPotential = "SIF-High Potential";
+      sifReasoning = "Near-miss event with credible pathway to serious injury or fatality, despite no reported injury.";
+    }
+    // If there IS an actual serious injury
+    if (text.includes("hospitalized") || text.includes("unconscious") || text.includes("amputation") || text.includes("fatality") || text.includes("death") || text.includes("fracture") || text.includes("broken bone") || text.includes("bleeding")) {
+      sifPotential = "SIF-Critical / Hi-Po";
+      sifReasoning = "Report indicates actual serious injury occurred — high SIF realization potential.";
+    }
+
     return {
       risk_level: "high",
       hazard_category: category,
       justification: "Report describes conditions with a credible path to serious injury or death if left unaddressed.",
+      sif_potential: sifPotential,
+      sif_reasoning: sifReasoning,
+      sif_confidence: 0.75,
     };
   }
 
@@ -268,10 +292,21 @@ export function fallbackAnalysis(reportText: string): AnalysisResult {
       text.includes("noise") || text.includes("lighting") ? "Procedural Gap" :
       text.includes("slip") || text.includes("trip") || text.includes("floor") ? "Structural" :
       "Procedural Gap";
+
+    // Medium severity = lower SIF unless near-miss
+    let sifPotential: SifPotentialValue = "SIF-Potential";
+    let sifReasoning = "Hazard present but partially mitigated or lower in severity. Some SIF pathway possible.";
+    if (text.includes("near miss") || text.includes("near-miss") || text.includes("almost") || text.includes("close call")) {
+      sifPotential = "SIF-High Potential";
+      sifReasoning = "Near-miss with credible SIF pathway, though current outcome was minor.";
+    }
     return {
       risk_level: "medium",
       hazard_category: category,
       justification: "Real hazard exists but is either partially mitigated or lower in severity.",
+      sif_potential: sifPotential,
+      sif_reasoning: sifReasoning,
+      sif_confidence: 0.6,
     };
   }
 
@@ -280,6 +315,9 @@ export function fallbackAnalysis(reportText: string): AnalysisResult {
     risk_level: "low",
     hazard_category: "Procedural Gap",
     justification: "Minor or procedural issue unlikely to cause serious physical harm.",
+    sif_potential: "SIF-Unlikely",
+    sif_reasoning: "Minor or procedural issue with no credible pathway to serious injury or fatality.",
+    sif_confidence: 0.5,
   };
 }
 

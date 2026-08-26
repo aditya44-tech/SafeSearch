@@ -18,6 +18,9 @@ interface Props {
   timeData: { date: string; count: number }[];
   recurringSites: [string, number][];
   stats: { totalReports: number; highCount: number; pendingHigh: number };
+  sifDistribution: { name: string; count: number }[];
+  highSifNearMisses: number;
+  sifTimeData: { date: string; count: number }[];
 }
 
 interface Anomaly {
@@ -38,7 +41,7 @@ const CLASSIFICATION_STYLE: Record<string, { bg: string; text: string; border: s
   Normal: { bg: "var(--color-safe-light)", text: "var(--color-safe)", border: "rgba(22,163,74,0.15)", label: "Normal" },
 };
 
-export default function DashboardClient({ categoryData, timeData, recurringSites, stats }: Props) {
+export default function DashboardClient({ categoryData, timeData, recurringSites, stats, sifDistribution, highSifNearMisses, sifTimeData }: Props) {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [escalation, setEscalation] = useState<EscalationSite[]>([]);
   const [complianceSummary, setComplianceSummary] = useState<ComplianceSummary[]>([]);
@@ -121,6 +124,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
         {[
           { label: "Total reports", value: stats.totalReports, color: "var(--color-ink)" },
           { label: "High risk", value: stats.highCount, color: "var(--color-danger)" },
+          { label: "High SIF near misses", value: highSifNearMisses, color: "#c2410c" },
           { label: "Pending action", value: stats.pendingHigh, color: "var(--color-warning)" },
         ].map((card) => (
           <div
@@ -216,6 +220,65 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
           </div>
         </div>
       )}
+
+      {/* SIF Potential Distribution + SIF Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
+        <div className="rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)]">
+              SIF Potential distribution
+            </h2>
+            <div className="group relative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div className="absolute left-0 top-6 z-10 w-72 p-3 rounded-lg text-xs leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)", color: "var(--color-ink-muted)" }}>
+                AI-assisted assessment of whether each situation could realistically have resulted in a Serious Injury or Fatality. Requires human review.
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-ink-muted)] mb-4">
+            AI-assisted SIF potential assessment across all reports
+          </p>
+          {sifDistribution.length > 0 ? (
+            <div className="space-y-2">
+              {sifDistribution.map((item) => {
+                const pct = stats.totalReports > 0 ? Math.round((item.count / stats.totalReports) * 100) : 0;
+                const sifColor = item.name.includes("Critical") ? "#991b1b" : item.name.includes("High") ? "#c2410c" : item.name.includes("Potential") && !item.name.includes("Unlikely") ? "#a16207" : "#166534";
+                return (
+                  <div key={item.name} className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-[var(--color-ink)] min-w-[110px] truncate">{item.name}</span>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--color-surface-sunken)" }}>
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: sifColor }} />
+                    </div>
+                    <span className="text-xs font-heading font-bold min-w-[50px] text-right" style={{ color: sifColor, fontVariantNumeric: "tabular-nums" }}>
+                      {item.count} ({pct}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--color-ink-muted)]">No SIF data available yet.</p>
+          )}
+        </div>
+
+        <div className="rounded-xl p-5" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+          <h2 className="text-sm font-heading font-semibold text-[var(--color-ink)] mb-4">
+            High-SIF-potential reports (last 30 days)
+          </h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={sifTimeData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--color-ink-muted)", fontFamily: "var(--font-body)" }} interval={4} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-ink-muted)", fontFamily: "var(--font-body)" }} />
+              <Tooltip
+                contentStyle={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "13px", fontFamily: "var(--font-body)" }}
+              />
+              <Line type="monotone" dataKey="count" stroke="#c2410c" strokeWidth={2} dot={{ r: 3, fill: "#c2410c" }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
