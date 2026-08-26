@@ -1,40 +1,129 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SafeSignal
+
+AI-powered workplace safety early-warning system. Every safety report is classified in seconds, the right departments are alerted via SMS, and corrective actions are tracked through to resolution — all in one place.
+
+## Features
+
+- **AI Risk Classification** — Reports are analyzed in under 2 seconds using Groq LLM, assigning risk levels (high / medium / low), hazard categories, justifications, and key phrases automatically.
+- **Instant SMS Alerts** — High-risk reports trigger SMS notifications to category-mapped departments via Textbee. No manual routing required.
+- **Heinrich's Law Scoring** — Site scores follow the industry-standard escalation model. Critical patterns surface before incidents occur.
+- **Offline Reporting** — IndexedDB stores reports locally when there is no connectivity and auto-syncs once the network returns.
+- **Task Management** — Corrective tasks are auto-generated from high-risk reports and tracked through open → in-progress → resolved states.
+- **Dashboard & Analytics** — Real-time dashboards with anomaly detection, site scorecards, trend analysis, and Recharts-powered visualizations.
+- **Indian Regulatory Compliance** — Every hazard category is mapped to relevant Indian safety regulations (Factories Act 1948, IS 3786, Electricity Act 2003, etc.).
+- **Audit Logging** — Every action on a report is recorded with timestamps and user attribution.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Database | PostgreSQL (Neon serverless) |
+| ORM | Prisma 7 with Neon driver adapter |
+| AI | Groq LLM (OpenAI-compatible API) |
+| SMS | Textbee SDK |
+| Styling | Tailwind CSS 4 |
+| Charts | Recharts |
+| PWA | Serwist (service worker) |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A Neon PostgreSQL database (or any PostgreSQL instance)
+- Groq API key
+- Textbee API key (for SMS alerts)
+
+### Setup
 
 ```bash
+# Clone the repository
+git clone <repo-url>
+cd sif-watch
+
+# Install dependencies
+npm install
+
+# Copy environment file (contains DATABASE_URL, GEMINI_API_KEY, etc.)
+cp ../.env .env
+
+# Generate Prisma client
+npx prisma generate
+
+# Push schema to database
+npx prisma db push
+
+# (Optional) Seed sample data
+npx tsx prisma/seed.ts
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Generate Prisma client and build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+sif-watch/
+├── prisma/
+│   ├── schema.prisma        # Database schema (SafetyReport, Task, SiteScore, etc.)
+│   ├── seed.ts              # Sample data seeder
+│   └── seed-data.json       # Seed data
+├── src/
+│   ├── app/
+│   │   ├── page.tsx         # Landing page
+│   │   ├── reports/         # Report list & detail views
+│   │   ├── dashboard/       # Analytics dashboard
+│   │   ├── admin/           # Admin panel (task management)
+│   │   ├── alerts/          # SMS alert configuration
+│   │   ├── map/             # Site map view
+│   │   ├── scoreboard/      # Site scoring
+│   │   ├── impact/          # Impact analysis
+│   │   ├── query/           # Natural language query
+│   │   ├── landing/         # Marketing landing page
+│   │   └── api/             # API routes (report creation, analysis, SMS)
+│   ├── components/          # Shared UI components (Navbar, RiskBadge, StatusBadge)
+│   ├── lib/
+│   │   ├── helpers.ts       # Department mapping, SLA calculation, scoring logic
+│   │   ├── prisma.ts        # Prisma client singleton
+│   │   ├── offline-queue.ts # IndexedDB offline report queue
+│   │   └── org-context.tsx  # Organization context provider
+│   └── generated/prisma/    # Auto-generated Prisma client
+├── public/                  # Static assets
+└── package.json
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon pooler) |
+| `GEMINI_API_KEY` | API key for AI risk classification |
 
-## Deploy on Vercel
+## Database Schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Key models:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# SIH-Demo
->>>>>>> d47a35121b6e5f84527e9bcac3e9e041d319daea
+- **SafetyReport** — Core entity with report text, site, risk level, hazard category, status, SLA deadline, and audit trail.
+- **Task** — Corrective actions auto-generated from high-risk reports, assigned to departments.
+- **SiteScore** — Heinrich's Law scoring per site based on report frequency and severity.
+- **Organization** — Multi-tenant support with per-org SMS recipients and site scores.
+- **SmsRecipient** — Category-mapped phone numbers for automated SMS alerts.
+- **ComplianceReference** — Indian regulatory standards mapped to hazard categories.
+- **AuditLog** — Full action history on every report.
+
+## License
+
+Private — SIH Demo
