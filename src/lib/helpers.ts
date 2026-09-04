@@ -163,6 +163,369 @@ export function extractJson<T = unknown>(text: string): T {
   return JSON.parse(cleaned) as T;
 }
 
+// ── Shared Safety Classification Prompt ─────────────────────────────
+
+export const HOT_WORK_CATEGORY = "Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release";
+
+// Ignition-source work (welding/cutting/torches...) and fuel context (tanks/valves/lines...).
+// Used internally to keep the hot-work CONTEXT (OISD-STD-227 mapping, justification, SIF)
+// while the report's hazard CATEGORY stays a real category like "Fire/Explosion".
+const FUEL_CONTEXT_RE = /\b(?:tank|valve|hydrocarbon|fuel|petroleum|crude|gasoline|diesel|kerosene|lpg|pipeline|vessel|drum|storage|refinery|flowline|separator|wellhead|oil)\b/i;
+const HOT_WORK_RE = /\b(?:weld|welding|hot work|torch|grinding|grinder|brazing|cutter|cutting|oxy|arc)\b/i;
+
+/** True when the report describes ignition-source work happening near fuel (hot-work context). */
+export function hasHotWorkContext(reportText: string): boolean {
+  const t = reportText.toLowerCase();
+  return HOT_WORK_RE.test(t) && FUEL_CONTEXT_RE.test(t);
+}
+
+const RISK_LEVELS = ["high", "medium", "low"];
+const SIF_LEVELS = ["SIF-Unlikely", "SIF-Potential", "SIF-High Potential", "SIF-Critical / Hi-Po"];
+const CATEGORY_ALIASES: Record<string, string> = {
+  "fire/explosion": "Fire/Explosion",
+  "fire": "Fire/Explosion",
+  "hot work": "Fire/Explosion",
+  "hotwork": "Fire/Explosion",
+  "hot work / uncontrolled ignition source near hydrocarbon release": "Fire/Explosion",
+  "chemical": "Chemical Exposure",
+  "fall": "Fall Hazard",
+  "fall hazard": "Fall Hazard",
+  "vehicle": "Vehicle/Traffic",
+  "equipment": "Equipment Failure",
+  "confined space": "Confined Space",
+  "procedural": "Procedural Gap",
+};
+
+/** Split a string into trimmed sentences on [. ! ?] */
+function splitSentences(t: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  for (const ch of t) {
+    cur += ch;
+    if (/[.!?]/.test(ch)) {
+      out.push(cur.trim());
+      cur = "";
+    }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+/** Keep prose short so it renders in 2-3 lines (~340 chars / 3 sentences). */
+export function condenseProse(
+  text: string | null | undefined,
+  maxSentences = 3,
+  maxChars = 340
+): string {
+  if (!text) return "";
+  let t = text.trim().replace(/\s+/g, " ");
+  if (t.length <= maxChars && splitSentences(t).length <= maxSentences) return t;
+  const sentences = splitSentences(t);
+  const kept: string[] = [];
+  let total = 0;
+  for (const s of sentences) {
+    if (kept.length >= maxSentences) break;
+    if (total + s.length > maxChars && kept.length > 0) break;
+    kept.push(s);
+    total += s.length;
+  }
+  return kept.join(" ");
+}
+
+/**
+ * Operational priority used for SLA / task generation / escalation.
+ * Risk level (stored severity) is the actual outcome; a low-severity near
+ * miss can still be SIF-Critical and must not be left with a 7-day SLA or
+ * zero corrective tasks.
+ */
+export function deriveOpsRisk(analysis: {
+  risk_level?: string | null;
+  sif_potential?: string | null;
+}): "high" | "medium" | "low" {
+  const r = analysis.risk_level;
+  const s = analysis.sif_potential;
+  if (r === "high" || r === "medium") return r;
+  if (s === "SIF-Critical / Hi-Po") return "high";
+  if (s === "SIF-High Potential") return "medium";
+  return "low";
+}
+
+/**
+ * Make an AI (Groq) analysis result safe to persist:
+ * - risk_level is derived from incident_severity (the AI schema emits severity, the app stores it as risk)
+ * - short plain justification / SIF reasoning (2-3 lines)
+ * - hazard category mapped to a known category
+ */
+export function normalizeAnalysis(
+  raw: Partial<AnalysisResult> | null | undefined,
+  reportText: string
+): AnalysisResult {
+  const base = classifyReport(reportText);
+
+  const severity = RISK_LEVELS.includes(raw?.risk_level ?? "")
+    ? raw!.risk_level!
+    : RISK_LEVELS.includes(raw?.incident_severity ?? "")
+      ? raw!.incident_severity!
+      : base.risk_level;
+
+  const rawCategory = (raw?.hazard_category || "").trim();
+  const category = HAZARD_CATEGORIES.includes(rawCategory) || rawCategory === "Fire/Explosion"
+    ? rawCategory
+    : CATEGORY_ALIASES[rawCategory.toLowerCase()] || base.hazard_category;
+
+  const sif = SIF_LEVELS.includes(raw?.sif_potential ?? "")
+    ? (raw!.sif_potential as SifPotentialValue)
+    : base.sif_potential;
+
+  const justification = condenseProse(raw?.justification, 3) || base.justification;
+  const sifReasoning = condenseProse(raw?.sif_reasoning, 2, 300) || base.sif_reasoning;
+
+  return {
+    risk_level: severity,
+    incident_severity: severity,
+    hazard_category: category,
+    justification,
+    key_phrases:
+      Array.isArray(raw?.key_phrases) && raw!.key_phrases!.length > 0
+        ? raw!.key_phrases!.slice(0, 5)
+        : undefined,
+    sif_potential: sif,
+    sif_reasoning: sifReasoning,
+    sif_confidence:
+      typeof raw?.sif_confidence === "number" && raw!.sif_confidence! >= 0 && raw!.sif_confidence! <= 1
+        ? raw!.sif_confidence
+        : base.sif_confidence,
+  };
+}
+
+// ── Smart Fallback Classifier (when AI unavailable) ──────────────────
+// Negation-aware risk classification that mirrors the AI prompt:
+//   risk (incident severity) = how serious the ACTUAL outcome was
+//   SIF potential          = what COULD have happened
+// Justification & SIF reasoning are short (2-3 lines), plain language.
+
+export function classifyReport(reportText: string): AnalysisResult {
+  const text = reportText.toLowerCase();
+  const sentences = text
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const NEGATION_RE = /\b(?:no|not|never|nothing|nobody|no one|without|none|didn'?t|did not|hasn'?t|hadn'?t|wasn'?t|weren'?t)\b/;
+  const EVENT_WORD_RE = /\b(?:leak(?:s|ing|ed)?|fire|explosion|spill(?:s|ing|ed)?|smoke|injuri(?:es|ed|y)|damage|accident|incident|hazard)\b/;
+  const SAFETY_ITEM_RE = /\b(?:extinguisher|detector|alarm|hydrant|guard|rail|barrier|harness|ppe|label|permit|tagout|lockout|sign|cover|cap|helmet|gloves?|glasses|net|boots|suit|watch|escape|exit|assembly)\b/;
+
+  // Realized-event verbs: the fire/leak/collapse actually happened ("fire broke out",
+  // "valve leaked") - nearby "no injuries" must NOT turn this into a non-event.
+  const REALIZED_VERB_RE =
+    /\b(?:caught fire|broke out|burst into flames|was on fire|leaked|leaking|spilled|spill was|burst|ruptured|snapped|collapsed|blew up|explosion occurred|fell|slipped|tripped)\b/;
+
+  // Actual-outcome markers (declared here so the no-event check below can use them)
+  const SERIOUS_RE =
+    /\b(?:death|died|fatalit|unconscious|hospitali[sz]|amputat|fractur|broken bone|severe bleeding|electrocuted|explosion occurred|blew up|run over|crushed|entangled|struck by|hit by|taken to hospital)\b/;
+  const DAMAGE_OR_MINOR_RE =
+    /\b(?:caught fire|was on fire|broke out|burst into flames|fell|falling|leaking|leaked|spilled|spill was|burst|ruptured|snapped|broke|collapsed|damaged|bent|dented|tripped|slipped|pinched|bumped|caught in|hurt|cut|bruised|scraped|sprained|first aid|dizzy|nausea|headache)\b/;
+
+  // Sentence explicitly says the event did NOT happen (near miss), e.g. "no leak or fire occurred".
+  // A sentence that still reports real effects (dizzy, headache, cut, damaged...) is NOT a non-event.
+  const isNoEventSentence = (t: string) =>
+    NEGATION_RE.test(t) &&
+    EVENT_WORD_RE.test(t) &&
+    !SAFETY_ITEM_RE.test(t) &&
+    !REALIZED_VERB_RE.test(t) &&
+    !DAMAGE_OR_MINOR_RE.test(t);
+
+  // Sentences describing events that were avoided (almost / near-miss / prevented)
+  const AVOID_RE = /\b(?:almost|nearly|close call|near[- ]?miss|prevented|avoided|averted|didn'?t|did not|never)\b/;
+  const eventSentence = (t: string) =>
+    !!t && !isNoEventSentence(t) && !AVOID_RE.test(t);
+
+  const anySentence = (re: RegExp, filter?: (t: string) => boolean) =>
+    sentences.some((s) => (filter ? filter(s) : true) && re.test(s));
+
+  const hasNoEvent = sentences.some(isNoEventSentence);
+  const isNearMiss =
+    /\b(?:near[- ]?miss|close call|almost|nearly)\b/.test(text) || hasNoEvent;
+
+  // ── Actual outcome (severity) ──
+  const PROCEDURAL_RE =
+    /\b(?:housekeeping|documentation|paperwork|suggestion|training|signage|label|expired|administrative|procedure)\b/;
+  // Administrative-only report (template/checklist/paperwork change) with no real hazard content.
+  const pureProcedural =
+    /\b(?:suggest|paperwork|documentation|checklist|template|administrative|housekeeping|revise|policy|update the)\b/.test(text) &&
+    !/\b(?:leak|spill|fume|toxic|fire|flame|explosion|fall|fell|electrical|wire|voltage|machinery|guard|injur|damage|hazard|welding|confined)\b/.test(text);
+  const HIGH_ENERGY_CONDITION_RE =
+    /\b(?:live wire|exposed (?:wire|wiring|cable|conductor)|unguarded|working at height|open edge|no guardrail|hot work|welding|weld|confined space|gas leak|toxic|flammable|high voltage)\b/;
+
+  let risk: "high" | "medium" | "low";
+  const seriousHappened = anySentence(SERIOUS_RE, eventSentence);
+  const damageHappened = anySentence(DAMAGE_OR_MINOR_RE, eventSentence);
+
+  if (seriousHappened) {
+    risk = "high";
+  } else if (damageHappened) {
+    risk = "medium";
+  } else if (isNearMiss) {
+    risk = "low";
+  } else if (pureProcedural || (!anySentence(HIGH_ENERGY_CONDITION_RE) && anySentence(PROCEDURAL_RE))) {
+    risk = "low";
+  } else {
+    // Unsafe condition found during inspection, no actual event reported
+    risk = "medium";
+  }
+
+  // ── Hazard category ──
+  const FIRE_WORDS_RE = /\b(?:fire|flame|explosion|explosive|combustible|flammable|blowout|burning|smoke)\b/;
+
+  const fuelContext = FUEL_CONTEXT_RE.test(text);
+  const hotWork = HOT_WORK_RE.test(text);
+  const fireContext = anySentence(FIRE_WORDS_RE, (s) => !isNoEventSentence(s));
+
+  let category: string;
+  if (pureProcedural) {
+    category = "Procedural Gap";
+  } else if (hotWork && fuelContext) {
+    // Hot work near fuel is a Fire/Explosion hazard - the hot-work CONTEXT is kept
+    // separately (see hasHotWorkContext) for standards mapping / justification.
+    category = "Fire/Explosion";
+  } else if (fireContext) {
+    category = "Fire/Explosion";
+  } else if (/\b(?:fall|fell|scaffold|trench|height|roof|excavat|ladder|guardrail|open edge|platform)\b/.test(text)) {
+    category = "Structural";
+  } else if (/\b(?:electrical|wiring|wire|circuit|shock|electrocution|power line|voltage|panel|switchboard|short circuit)\b/.test(text)) {
+    category = "Electrical";
+  } else if (/\b(?:chemical|fume|toxic|gas|asbestos|hazardous|corrosive|solvent|acid|vapou?r|poison|smell|ventilation|dust)\b/.test(text)) {
+    category = "Chemical Exposure";
+  } else if (/\b(?:forklift|vehicle|truck|traffic|dumper|collision|pedestrian|reversing|run over)\b/.test(text)) {
+    category = "Vehicle/Traffic";
+  } else if (/\b(?:confined|trench|manhole|silo|underground|entrapment|poor ventilation|no fresh air)\b/.test(text)) {
+    category = "Confined Space";
+  } else if (/\b(?:equipment|machine|machinery|malfunction|guard|hydraulic|bearing|crane|hoist|tool|broken|damaged|wear)\b/.test(text)) {
+    category = "Equipment Failure";
+  } else {
+    category = "Procedural Gap";
+  }
+
+  // ── SIF potential (what COULD have happened) ──
+  const fuelObject = /\btank\b/.test(text) ? "a fuel tank" :
+    /\b(?:valve|pipeline|flowline|line)\b/.test(text) ? "a fuel line" :
+    "fuel or hydrocarbons";
+  const hasOpenUnlabeled =
+    /\b(?:open|unlabeled|not labeled|unlocked|left open|found open)\b/.test(text) &&
+    FUEL_CONTEXT_RE.test(text);
+  const missingSafeguard =
+    hasOpenUnlabeled || /\b(?:lockout|isolation|no permit|permit.*(?:not|missing)|no isolation)\b/.test(text);
+
+  let sifPotential: SifPotentialValue;
+  let sifReasoning: string;
+  let sifConfidence: number;
+
+  const isHotWorkFire =
+    category === HOT_WORK_CATEGORY || (hotWork && fuelContext);
+
+  if (risk === "high" || seriousHappened) {
+    sifPotential = "SIF-Critical / Hi-Po";
+    sifConfidence = 0.9;
+    sifReasoning =
+      "This could have caused (or has caused) a serious injury or death. The conditions for a worst-case outcome were present and should be treated as critical.";
+  } else if (isHotWorkFire) {
+    // Ignition source + potential fuel release + failed controls = multiple SIF precursors
+    sifPotential = "SIF-Critical / Hi-Po";
+    sifConfidence = 0.92;
+    sifReasoning =
+      `Even though nothing serious happened this time, this could easily have killed or seriously injured someone. A welding spark next to ${fuelObject} can ignite and cause a major fire or explosion.`;
+  } else if (isNearMiss && anySentence(HIGH_ENERGY_CONDITION_RE)) {
+    sifPotential = "SIF-High Potential";
+    sifConfidence = 0.85;
+    sifReasoning =
+      "No one was hurt, but this near miss could easily have become a serious injury or death. The right conditions for a worst-case event were present.";
+  } else if (category === "Electrical" && /\b(?:live|exposed|voltage|shock|electrocution)\b/.test(text)) {
+    sifPotential = "SIF-High Potential";
+    sifConfidence = 0.85;
+    sifReasoning = "Contact with live electrical energy can kill instantly. Anyone touching that wire or panel could have been electrocuted.";
+  } else if ((category === "Structural" || category === "Fall Hazard") && /\b(?:height|scaffold|roof|guardrail|fall|fell|trench|excavat)\b/.test(text)) {
+    sifPotential = "SIF-High Potential";
+    sifConfidence = 0.85;
+    sifReasoning = "A fall from that height onto the ground below can easily be fatal or cause permanent injury.";
+  } else if (category === "Confined Space") {
+    sifPotential = "SIF-High Potential";
+    sifConfidence = 0.85;
+    sifReasoning = "Confined spaces can quickly turn fatal through gas, lack of oxygen or entrapment.";
+  } else if (category === "Chemical Exposure" && /\b(?:leak|fumes?|toxic|gas)\b/.test(text)) {
+    sifPotential = "SIF-High Potential";
+    sifConfidence = 0.8;
+    sifReasoning = "Breathing or touching this substance could cause serious poisoning, burns or asphyxiation.";
+  } else if (damageHappened && !isNearMiss) {
+    sifPotential = "SIF-Potential";
+    sifConfidence = 0.65;
+    sifReasoning = "Some risk of serious injury exists, but safeguards or lower energy made a serious outcome less likely this time.";
+  } else {
+    sifPotential = "SIF-Unlikely";
+    sifConfidence = 0.45;
+    sifReasoning = "No realistic path to serious injury or fatality was found - this is a minor or procedural matter.";
+  }
+
+  // ── Plain 2-3 line justification ──
+  let outcomeLine: string;
+  if (risk === "high") {
+    outcomeLine = "A serious event actually happened - someone was hurt or a major fire, leak or collapse occurred - and this needs immediate attention.";
+  } else if (risk === "medium") {
+    outcomeLine = "A real hazard was found, and while nobody was seriously hurt this time, it needs fixing before it turns into something worse.";
+  } else if (hasNoEvent || /\b(?:near[- ]?miss|close call|almost|nearly)\b/.test(text)) {
+    outcomeLine = "No one was hurt and nothing actually happened, but this was a close call that was caught in time.";
+  } else {
+    outcomeLine = "A minor or paperwork-level issue was reported with no immediate danger to anyone.";
+  }
+
+  let dangerLine = "";
+  let safeguardLine = "";
+  if (sifPotential !== "SIF-Unlikely") {
+    if (isHotWorkFire) {
+      dangerLine = `Welding or sparks were right next to ${fuelObject}, and one spark could have caused a major fire or explosion.`;
+    } else if (category === "Structural" || category === "Fall Hazard") {
+      dangerLine = "Someone at that height could have fallen and been seriously injured or killed.";
+    } else if (category === "Electrical") {
+      dangerLine = "Anyone touching that live electrical energy could have been electrocuted.";
+    } else if (category === "Chemical Exposure") {
+      dangerLine = "Someone could have breathed in or touched the substance and been seriously poisoned or burned.";
+    } else if (category === "Confined Space") {
+      dangerLine = "Anyone entering could have been trapped, suffocated or overcome by gas.";
+    } else if (category === "Vehicle/Traffic") {
+      dangerLine = "Someone could have been run over or crushed by the moving vehicle or equipment.";
+    } else if (category === "Equipment Failure") {
+      dangerLine = "A hand or body could have been caught in the machinery or struck by failing equipment.";
+    } else if (category === "Fire/Explosion") {
+      dangerLine = "This could easily have turned into a serious fire or explosion.";
+    }
+    if (hasOpenUnlabeled && isHotWorkFire) {
+      safeguardLine = "The safeguard was missing - the fuel line stayed open and unlabeled instead of closed, locked and labeled.";
+    } else if (missingSafeguard && isHotWorkFire) {
+      safeguardLine = "The hot-work checks (gas-free test and isolation) should have been done before welding started.";
+    } else if (/\b(?:no guard|guard removed|unguarded|missing guard)\b/.test(text)) {
+      safeguardLine = "The machine guard that should have protected people was not in place.";
+    } else if (/\b(?:not wearing|no harness|no ppe|without harness|without ppe)\b/.test(text)) {
+      safeguardLine = "The required fall protection or PPE was not being used.";
+    }
+  }
+
+  const justification = condenseProse(
+    [outcomeLine, dangerLine, safeguardLine].filter(Boolean).join(" "),
+    3,
+    340
+  );
+
+  return {
+    risk_level: risk,
+    incident_severity: risk,
+    hazard_category: category,
+    justification,
+    sif_potential: sifPotential,
+    sif_reasoning: condenseProse(sifReasoning, 2, 300),
+    sif_confidence: sifConfidence,
+  };
+}
+
+
 // â”€â”€ Fallback Analysis (when AI unavailable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function fallbackAnalysis(reportText: string): AnalysisResult {
@@ -530,6 +893,7 @@ export const HAZARD_CATEGORIES = [
   "Vehicle/Traffic",
   "Procedural Gap",
   "Confined Space",
+  "Fire/Explosion",
 ];
 
 // â”€â”€ Departments (shared across admin + detail pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -576,7 +940,9 @@ export function fallbackTaskExtraction(
 
   // Immediate safety action for high/medium risk
   if (riskLevel === "high" || riskLevel === "medium") {
-    if (text.includes("electrical") || text.includes("wiring") || text.includes("circuit")) {
+    if (hazardCategory === HOT_WORK_CATEGORY || (text.includes("weld") && /tank|valve|fuel|pipeline|hydrocarbon/.test(text))) {
+      tasks.push({ title: "Verify isolation and hot work permit before welding resumes", description: "Keep welding stopped near the tank/line until the valve is closed, locked and labeled, the area is gas-free, and a valid hot work permit is issued.", priority: "urgent" });
+    } else if (text.includes("electrical") || text.includes("wiring") || text.includes("circuit")) {
       tasks.push({ title: "De-energize and lockout affected electrical system", description: "Immediately isolate the hazardous electrical area and apply lockout/tagout procedures until repairs are complete.", priority: "urgent" });
     } else if (text.includes("fall") || text.includes("height") || text.includes("scaffold") || text.includes("guardrail")) {
       tasks.push({ title: "Install temporary fall protection barriers", description: "Erect guardrails, safety nets, or personal fall arrest systems at the identified height hazard before any work resumes.", priority: "urgent" });

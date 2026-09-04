@@ -201,12 +201,6 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               <RiskBadge level={report.riskLevel} />
               <SifBadge level={report.sifPotential ?? null} />
               <StatusBadge status={status} />
-              {report.hazardCategory && (
-                <span className="px-2.5 py-1 rounded-md text-xs font-medium"
-                  style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-muted)", border: "1px solid var(--color-border)" }}>
-                  {report.hazardCategory}
-                </span>
-              )}
               {isOverdue && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-semibold"
                   style={{ background: "var(--color-danger-light)", color: "var(--color-danger)", border: "1px solid rgba(220,38,38,0.15)" }}>
@@ -400,7 +394,10 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         {report.justification && (
           <div className="mb-5">
             <h3 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>AI justification</h3>
-            <p className="text-sm italic leading-relaxed rounded-lg p-4" style={{ background: "var(--color-warning-light)", color: "var(--color-ink)" }}>{report.justification}</p>
+            <p className="text-sm italic leading-relaxed rounded-lg p-4" style={{
+              background: "var(--color-warning-light)", color: "var(--color-ink)",
+              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}>{report.justification}</p>
           </div>
         )}
 
@@ -430,7 +427,10 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               )}
             </div>
             {report.sifReasoning && (
-              <p className="text-sm italic leading-relaxed" style={{ color: "var(--color-ink)" }}>{report.sifReasoning}</p>
+              <p className="text-sm italic leading-relaxed" style={{
+                color: "var(--color-ink)",
+                display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>{report.sifReasoning}</p>
             )}
             {!report.sifPotential && (
               <p className="text-xs" style={{ color: "var(--color-ink-faint)", fontStyle: "italic" }}>

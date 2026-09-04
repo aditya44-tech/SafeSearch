@@ -332,7 +332,9 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                             <span className="font-semibold">Report:</span> {r.reportText}
                           </p>
                           {r.justification && (
-                            <p className="text-sm text-[var(--color-ink-muted)] italic mb-2">
+                            <p className="text-sm text-[var(--color-ink-muted)] italic mb-2" style={{
+                              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+                            }}>
                               <span className="font-semibold not-italic">AI assessment:</span> {r.justification}
                             </p>
                           )}

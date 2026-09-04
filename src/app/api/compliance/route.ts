@@ -38,22 +38,22 @@ export async function GET(request: NextRequest) {
     "Confined Space": ["confined", "trench", "excavat", "tunnel", "manhole", "tank", "silo", "below ground", "underground", "entrapment", "enclosed space", "enclosed area", "no fresh air", "poor ventilation", "booth"],
     "Procedural Gap": ["procedure", "training", "permit", "signage", "communication", "supervision", "protocol", "compliance", "policy", "documentation", "near miss", "not following"],
     "Fire/Explosion": ["fire", "explosion", "flame", "ignition", "combustible", "flammable", "smoke", "burn", "blowout"],
+    "Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release": ["welding", "weld", "hot work", "torch", "grinding", "spark", "arc", "cutting", "open flame", "ignition source"],
   };
 
   let detectedCategories: string[] = [];
 
-  if (reportText) {
+  // The report's stored hazard category is authoritative: only show standards
+  // related to it, rather than everything matching loose text keywords.
+  if (category) {
+    detectedCategories.push(category);
+  } else if (reportText) {
     const lower = reportText.toLowerCase();
     for (const [cat, keywords] of Object.entries(HAZARD_KEYWORDS)) {
       if (keywords.some((kw) => lower.includes(kw))) {
         detectedCategories.push(cat);
       }
     }
-    if (detectedCategories.length === 0 && category) {
-      detectedCategories.push(category);
-    }
-  } else if (category) {
-    detectedCategories.push(category);
   }
 
   if (detectedCategories.length === 0) {

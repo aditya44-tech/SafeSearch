@@ -246,6 +246,21 @@ export const REGULATORY_KB: RegulatoryEntry[] = [
     ],
     source: "Oil Industry Safety Directorate, Ministry of Petroleum & Natural Gas",
   },
+  {
+    framework: "OISD Standard",
+    standardCode: "OISD-STD-227",
+    title: "Emergency response & preparedness — hot work and permit-to-work requirements at petroleum installations",
+    applicableActivity: ["Storage", "Pipeline Operations", "Production", "Refinery"],
+    hazardCategories: ["Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release", "Fire/Explosion", "Chemical Exposure"],
+    requirements: [
+      "Hot work permit (permit-to-work) must be issued before welding, cutting, grinding, or any ignition-source work begins",
+      "Area must be certified gas-free and the hydrocarbon system positively isolated (valve closed, blind/spade, lockout) before hot work starts",
+      "Isolation valves and equipment must be clearly labeled/tagged and verified by the permit issuer before work commences",
+      "Emergency response plan, fire watch, and extinguishing equipment must be in place for the duration of hot work",
+      "Atmospheric monitoring must be continuous where flammable vapour could accumulate",
+    ],
+    source: "Oil Industry Safety Directorate, Ministry of Petroleum & Natural Gas",
+  },
 
   // ═══════════════════════════════════════════════════════════
   // FACTORIES ACT, 1948 (Applicable to factory/Refinery/Storage contexts)

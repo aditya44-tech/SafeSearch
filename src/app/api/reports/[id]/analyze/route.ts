@@ -9,7 +9,9 @@ import {
   textSimilarity,
   autoAssignDept,
   fallbackTaskExtraction,
-  fallbackAnalysis,
+  classifyReport,
+  normalizeAnalysis,
+  deriveOpsRisk,
   extractKeyPhrases,
   TASK_EXTRACTION_PROMPT,
   type AnalysisResult,
@@ -30,15 +32,19 @@ You must produce TWO independent assessments:
 
 IMPORTANT: These are INDEPENDENT assessments. A near miss with no injury can have Low Incident Severity but High SIF Potential. Do NOT automatically equate them.
 
+NEGATION RULE - read carefully:
+- "no fire occurred", "no leak", "nothing happened", "no one was hurt", "no injuries reported" mean the EVENT DID NOT HAPPEN.
+- Assign LOW incident severity to such near misses / unsafe conditions. Do NOT rate severity high just because the words fire/leak/explosion appear after "no" or "not". Let the SIF POTENTIAL assessment carry the danger instead.
+
 Given the report below, respond with ONLY valid JSON in this exact format, no extra text:
 
 {
   "incident_severity": "low" | "medium" | "high",
-  "hazard_category": "<short category, e.g. Fall Hazard, Electrical, Equipment Failure, Chemical Exposure, Vehicle/Traffic, Structural, Fire/Explosion, Procedural Gap>",
-  "justification": "<one sentence explaining why this incident severity was assigned>",
+  "hazard_category": "<one of: Fall Hazard, Structural, Electrical, Chemical Exposure, Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release, Fire/Explosion, Equipment Failure, Vehicle/Traffic, Confined Space, Procedural Gap>",
+  "justification": "<2-3 SHORT sentences in plain easy language explaining the risk level - write for a field worker, no jargon>",
   "key_phrases": ["<exact substring from the report text that influenced the rating>", ...],
   "sif_potential": "SIF-Unlikely" | "SIF-Potential" | "SIF-High Potential" | "SIF-Critical / Hi-Po",
-  "sif_reasoning": "<1-2 sentences explaining the SIF potential assessment>",
+  "sif_reasoning": "<1-2 SHORT sentences in plain language explaining the SIF potential>",
   "sif_confidence": <number 0.0-1.0>
 }
 
@@ -232,17 +238,20 @@ export async function POST(
         maxOutputTokens: 500,
         responseFormat: { type: "json_object" },
       });
-      analysis = extractJson<AnalysisResult>(text);
+      analysis = normalizeAnalysis(extractJson<AnalysisResult>(text), report.reportText);
     } catch {
-      analysis = fallbackAnalysis(report.reportText);
+      analysis = classifyReport(report.reportText);
       usedFallback = true;
     }
   } else {
-    analysis = fallbackAnalysis(report.reportText);
+    analysis = classifyReport(report.reportText);
     usedFallback = true;
   }
 
-  const slaDeadline = getSLADeadline(analysis.risk_level);
+  // Operational priority: severity (risk) drives SLA, but a low-severity
+  // SIF-critical near miss must still be handled fast (tasks + short SLA).
+  const opsRisk = deriveOpsRisk(analysis);
+  const slaDeadline = getSLADeadline(opsRisk);
 
   // Save key phrases as JSON string - use Gemini output or fallback extraction
   const rawPhrases = analysis.key_phrases && Array.isArray(analysis.key_phrases) && analysis.key_phrases.length > 0
@@ -344,13 +353,15 @@ export async function POST(
     id,
     report.reportText,
     report.site,
-    analysis.risk_level,
+    opsRisk,
     analysis.hazard_category,
     apiKey,
     slaDeadline
   );
 
-  // Auto-create compliance mappings from knowledge base
+  // Auto-create compliance mappings from knowledge base (clear old ones first
+  // so re-analysis does not accumulate duplicate mappings)
+  await prisma.complianceMapping.deleteMany({ where: { reportId: id } });
   const activities = detectActivityContext(report.reportText);
   const regulations = getApplicableRegulations([analysis.hazard_category], activities);
   const dbRefs = await prisma.complianceReference.findMany({
