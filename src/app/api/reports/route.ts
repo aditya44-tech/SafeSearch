@@ -13,6 +13,8 @@ import {
   classifyReport,
   normalizeAnalysis,
   deriveOpsRisk,
+  hasHotWorkContext,
+  HOT_WORK_CATEGORY,
   TASK_EXTRACTION_PROMPT,
   type AnalysisResult,
   type ExtractedTask,
@@ -41,7 +43,7 @@ Given the report below, respond with ONLY valid JSON in this exact format, no ex
 
 {
   "incident_severity": "low" | "medium" | "high",
-  "hazard_category": "<one of: Fall Hazard, Structural, Electrical, Chemical Exposure, Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release, Fire/Explosion, Equipment Failure, Vehicle/Traffic, Confined Space, Procedural Gap>",
+  "hazard_category": "<one of: Fall Hazard, Structural, Electrical, Chemical Exposure, Fire/Explosion, Equipment Failure, Vehicle/Traffic, Confined Space, Procedural Gap>",
   "justification": "<2-3 SHORT sentences in plain easy language explaining the risk level - write for a field worker, no jargon>",
   "key_phrases": ["<exact substring from the report text that influenced the rating>", ...],
   "sif_potential": "SIF-Unlikely" | "SIF-Potential" | "SIF-High Potential" | "SIF-Critical / Hi-Po",
@@ -273,10 +275,16 @@ export async function POST(request: NextRequest) {
   );
 
   // 4. Auto-create compliance mappings from knowledge base
+  //    Hazard category stays a real category (e.g. Fire/Explosion). When the text
+  //    has a hot-work context, look up the hot-work standard (OISD-STD-227) so
+  //    only the related standard is mapped.
   const activities = detectActivityContext(report.reportText);
-  const regulations = getApplicableRegulations([analysis.hazard_category], activities);
+  const mappingCategories = hasHotWorkContext(report.reportText)
+    ? [HOT_WORK_CATEGORY]
+    : [analysis.hazard_category];
+  const regulations = getApplicableRegulations(mappingCategories, activities);
   const dbRefs = await prisma.complianceReference.findMany({
-    where: { hazardCategory: analysis.hazard_category },
+    where: { hazardCategory: { in: mappingCategories } },
   });
 
   let complianceCount = 0;

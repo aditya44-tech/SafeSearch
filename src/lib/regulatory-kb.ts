@@ -251,7 +251,7 @@ export const REGULATORY_KB: RegulatoryEntry[] = [
     standardCode: "OISD-STD-227",
     title: "Emergency response & preparedness — hot work and permit-to-work requirements at petroleum installations",
     applicableActivity: ["Storage", "Pipeline Operations", "Production", "Refinery"],
-    hazardCategories: ["Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release", "Fire/Explosion", "Chemical Exposure"],
+    hazardCategories: ["Fire/Explosion", "Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release", "Chemical Exposure"],
     requirements: [
       "Hot work permit (permit-to-work) must be issued before welding, cutting, grinding, or any ignition-source work begins",
       "Area must be certified gas-free and the hydrocarbon system positively isolated (valve closed, blind/spade, lockout) before hot work starts",

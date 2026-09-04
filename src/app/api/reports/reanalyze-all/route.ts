@@ -30,7 +30,7 @@ Given the report below, respond with ONLY valid JSON in this exact format, no ex
 
 {
   "incident_severity": "low" | "medium" | "high",
-  "hazard_category": "<one of: Fall Hazard, Structural, Electrical, Chemical Exposure, Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release, Fire/Explosion, Equipment Failure, Vehicle/Traffic, Confined Space, Procedural Gap>",
+  "hazard_category": "<one of: Fall Hazard, Structural, Electrical, Chemical Exposure, Fire/Explosion, Equipment Failure, Vehicle/Traffic, Confined Space, Procedural Gap>",
   "justification": "<2-3 SHORT sentences in plain easy language explaining the risk level - write for a field worker, no jargon>",
   "key_phrases": ["<exact substring from the report text that influenced the rating>", ...],
   "sif_potential": "SIF-Unlikely" | "SIF-Potential" | "SIF-High Potential" | "SIF-Critical / Hi-Po",

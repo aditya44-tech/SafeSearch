@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { hasHotWorkContext, HOT_WORK_CATEGORY } from "@/lib/helpers";
 import {
   detectActivityContext,
   getApplicableRegulations,
@@ -35,10 +36,9 @@ export async function GET(request: NextRequest) {
     "Structural": ["structural", "crack", "collapse", "building", "beam", "column", "foundation", "wall", "roof", "ceiling", "concrete", "rebar", "bracing"],
     "Equipment Failure": ["equipment", "machine", "guard", "broken", "damaged", "malfunction", "wear", "tear", "bearing", "hydraulic", "pneumatic", "tool"],
     "Vehicle/Traffic": ["vehicle", "forklift", "crane", "traffic", "truck", "dumper", "loading", "unloading", "collision", "blind spot", "reversing", "pedestrian"],
-    "Confined Space": ["confined", "trench", "excavat", "tunnel", "manhole", "tank", "silo", "below ground", "underground", "entrapment", "enclosed space", "enclosed area", "no fresh air", "poor ventilation", "booth"],
+    "Confined Space": ["confined", "trench", "excavat", "tunnel", "manhole", "silo", "below ground", "underground", "entrapment", "enclosed space", "enclosed area", "no fresh air", "poor ventilation", "booth"],
     "Procedural Gap": ["procedure", "training", "permit", "signage", "communication", "supervision", "protocol", "compliance", "policy", "documentation", "near miss", "not following"],
-    "Fire/Explosion": ["fire", "explosion", "flame", "ignition", "combustible", "flammable", "smoke", "burn", "blowout"],
-    "Hot Work / Uncontrolled Ignition Source near Hydrocarbon Release": ["welding", "weld", "hot work", "torch", "grinding", "spark", "arc", "cutting", "open flame", "ignition source"],
+    "Fire/Explosion": ["fire", "explosion", "flame", "ignition", "combustible", "flammable", "smoke", "burn", "blowout", "welding", "weld", "hot work", "torch", "grinding", "spark", "arc", "cutting", "open flame"],
   };
 
   let detectedCategories: string[] = [];
@@ -60,12 +60,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json([]);
   }
 
+  // Hot work near fuel is reported under the Fire/Explosion CATEGORY, but the
+  // relevant standard is the hot-work standard (OISD-STD-227). Keep the lookup
+  // specific so only the related standard(s) show.
+  const kbCategories =
+    detectedCategories.includes("Fire/Explosion") && reportText && hasHotWorkContext(reportText)
+      ? detectedCategories.map((c) => (c === "Fire/Explosion" ? HOT_WORK_CATEGORY : c))
+      : detectedCategories;
+
   // Get regulations from the curated knowledge base
-  const kbMatches = getApplicableRegulations(detectedCategories, activities);
+  const kbMatches = getApplicableRegulations(kbCategories, activities);
 
   // Also get any verified DB references for these categories
   const dbRefs = await prisma.complianceReference.findMany({
-    where: { hazardCategory: { in: detectedCategories } },
+    where: { hazardCategory: { in: kbCategories } },
   });
 
   // Merge knowledge base entries with DB entries (DB takes precedence if verified)

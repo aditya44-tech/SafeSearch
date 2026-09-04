@@ -29,6 +29,54 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
   const [sortDropdown, setSortDropdown] = useState(false);
   const [sifFilter, setSifFilter] = useState<string>("all");
 
+  // Multilingual + voice input: text language is auto-detected on submit
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState("");
+  const [micSupported, setMicSupported] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translation, setTranslation] = useState<null | {
+    needsTranslation: boolean; detectedLanguage: string; translatedText: string | null; isEnglish: boolean; error?: string;
+  }>(null);
+  const micRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    setMicSupported(!!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition));
+    return () => { try { micRef.current?.stop?.(); } catch { /* noop */ } };
+  }, []);
+
+  const stopMic = () => {
+    try { micRef.current?.stop?.(); } catch { /* noop */ }
+    micRef.current = null; setListening(false); setInterim("");
+  };
+
+  const toggleMic = () => {
+    if (micRef.current) { stopMic(); return; }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    // No language picker: recognize speech (Hindi-first for field workers).
+    // The transcript is auto-detected / translated when the report is submitted.
+    rec.lang = "hi-IN";
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (ev: any) => {
+      let interimTxt = "";
+      let finalTxt = "";
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const tr = ev.results[i][0]?.transcript || "";
+        if (ev.results[i].isFinal) finalTxt += tr;
+        else interimTxt += tr;
+      }
+      if (finalTxt) {
+        setNewReport((p) => ({ ...p, reportText: (p.reportText ? p.reportText.trimEnd() + " " : "") + finalTxt.trim() }));
+      }
+      setInterim(interimTxt);
+    };
+    rec.onend = () => { micRef.current = null; setListening(false); setInterim(""); };
+    rec.onerror = () => { micRef.current = null; setListening(false); setInterim(""); };
+    try { rec.start(); micRef.current = rec; setListening(true); } catch { /* noop */ }
+  };
 
   // Close sort dropdown on outside click
   const sortRef = React.useRef<HTMLDivElement>(null);
@@ -44,9 +92,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
   // Apply SIF filter
   const filtered = sifFilter === "all"
     ? reports
-    : sifFilter === "high-sif"
-      ? reports.filter((r) => r.sifPotential === "SIF-High Potential" || r.sifPotential === "SIF-Critical / Hi-Po")
-      : reports.filter((r) => r.sifPotential === sifFilter);
+    : reports.filter((r) => r.sifPotential === sifFilter);
 
   const sorted = [...filtered].sort((a, b) => {
     const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -60,12 +106,15 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
 
   const [offlineQueued, setOfflineQueued] = useState(false);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault(); setCreating(true);
+  const handleCreate = async (textOverride?: string) => {
+    stopMic();
+    setCreating(true);
     try {
+      const reportText = (textOverride ?? newReport.reportText).trim();
+      if (!reportText) return;
       const payload = newReport.isAnonymous
-        ? { reportText: newReport.reportText, site: newReport.site, isAnonymous: true }
-        : newReport;
+        ? { reportText, site: newReport.site, isAnonymous: true }
+        : { ...newReport, reportText };
 
       // If offline, queue to IndexedDB
       if (!navigator.onLine) {
@@ -73,6 +122,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
         await enqueueReport(payload);
         setOfflineQueued(true);
         setNewReport({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
+        setTranslation(null);
         setShowNewForm(false);
         setTimeout(() => setOfflineQueued(false), 3000);
         return;
@@ -86,9 +136,44 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
         const report = await res.json();
         setReports([report, ...reports]);
         setNewReport({ reportText: "", site: "", reporterRole: "", isAnonymous: false });
+        setTranslation(null);
         setShowNewForm(false);
       }
     } finally { setCreating(false); }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = newReport.reportText.trim();
+    if (!text || creating || translating) return;
+
+    // Translation preview already shown -> create with translated (or original) text
+    if (translation) {
+      await handleCreate(translation.translatedText || text);
+      return;
+    }
+
+    // Auto-detect language: always ask the API. English reports are created
+    // as-is; Hindi / Marathi / Hinglish reports show an English preview first.
+    setTranslating(true);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data && data.isEnglish === false) {
+        setTranslation(data);
+      } else {
+        await handleCreate(data?.translatedText || text);
+      }
+    } catch {
+      setTranslation({
+        needsTranslation: true, detectedLanguage: "unknown",
+        translatedText: null, isEnglish: false,
+        error: "Could not detect the language or reach the translation service. Please try again or submit the report as-is.",
+      });
+    } finally { setTranslating(false); }
   };
 
   const handleCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +250,6 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
             style={{ color: "var(--color-ink-muted)", background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
           >
             <option value="all">All SIF levels</option>
-            <option value="high-sif">High SIF potential</option>
             <option value="SIF-Critical / Hi-Po">SIF-Critical</option>
             <option value="SIF-High Potential">SIF-High</option>
             <option value="SIF-Potential">SIF-Potential</option>
@@ -208,7 +292,7 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
       )}
 
       {showNewForm && (
-        <form onSubmit={handleCreate} className="mb-4 p-5 rounded-xl space-y-3" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+        <form onSubmit={handleSubmit} className="mb-4 p-5 rounded-xl space-y-3" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
           <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Site</label>
             <select required value={newReport.site} onChange={(e) => setNewReport({ ...newReport, site: e.target.value })}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2"
@@ -239,17 +323,70 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
               </label>
             </div>
           </div>
-          <div><label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Report Text</label>
-            <textarea required rows={3} value={newReport.reportText} onChange={(e) => setNewReport({ ...newReport, reportText: e.target.value })}
+          <div>
+            <label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Report Text</label>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <button type="button" onClick={toggleMic} disabled={!micSupported}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                style={{
+                  color: listening ? "white" : "var(--color-ink)",
+                  background: listening ? "var(--color-danger)" : "var(--color-surface-sunken)",
+                  border: "1px solid " + (listening ? "var(--color-danger)" : "var(--color-border)"),
+                }}>
+                {listening ? "\u23F9 Stop" : "\uD83C\uDFA4 Voice"}
+              </button>
+              <span className="text-[10px]" style={{ color: "var(--color-ink-faint)" }}>
+                {!micSupported
+                  ? "Voice input needs Chrome with mic permission"
+                  : "Type or speak in any language - English / हिन्दी / मराठी - auto-detected on submit"}
+              </span>
+              {listening && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium" style={{ color: "var(--color-danger)" }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)] animate-pulse" />
+                  Listening…
+                </span>
+              )}
+            </div>
+            <textarea required rows={3} value={newReport.reportText}
+              onChange={(e) => { setNewReport({ ...newReport, reportText: e.target.value }); setTranslation(null); }}
               className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200 focus:ring-2 resize-none"
-              style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} /></div>
-          <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={creating}
+              style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }} />
+            {interim && (
+              <p className="text-xs italic mt-1" style={{ color: "var(--color-ink-muted)" }}>
+                {interim}<span className="animate-pulse">…</span>
+              </p>
+            )}
+            {translation && translation.needsTranslation && (
+              <div className="mt-2 rounded-lg p-3" style={{ background: "var(--color-safe-light)", border: "1px solid rgba(22,163,74,0.25)" }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: translation.translatedText ? "var(--color-safe)" : "var(--color-warning)" }}>
+                  {translation.translatedText ? (
+                    <>🌐 Detected {translation.detectedLanguage === "hindi-or-marathi" ? "Hindi/Marathi" : translation.detectedLanguage} → English</>
+                  ) : (
+                    <>⚠️ Could not auto-detect or translate this text</>
+                  )}
+                </p>
+                {translation.translatedText ? (
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--color-ink)" }}>{translation.translatedText}</p>
+                ) : (
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--color-warning)" }}>{translation.error}</p>
+                )}
+                <p className="text-[10px] mt-1.5" style={{ color: "var(--color-ink-faint)" }}>
+                  The English version below is what gets analyzed (risk, SIF, tasks, safety standards).
+                </p>
+                <button type="button" onClick={() => setTranslation(null)}
+                  className="text-[10px] font-medium mt-1 underline" style={{ color: "var(--color-ink-muted)" }}>
+                  Edit or type more
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 pt-1 flex-wrap">
+            <button type="submit" disabled={creating || translating}
               className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
               style={{ background: "var(--color-accent)" }}>
-              {creating ? "Creating..." : "Create report"}
+              {translating ? "Detecting language\u2026" : creating ? "Creating..." : translation?.needsTranslation ? (translation.translatedText ? "Create report (in English)" : "Create report (as typed)") : "Create report"}
             </button>
-            <button type="button" onClick={() => setShowNewForm(false)}
+            <button type="button" onClick={() => { setShowNewForm(false); setTranslation(null); stopMic(); setInterim(""); }}
               className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 active:scale-[0.97]"
               style={{ color: "var(--color-ink-muted)", border: "1px solid var(--color-border)" }}>
               Cancel
@@ -272,7 +409,6 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Category</th>
                 <th className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Status</th>
                 <th className="hidden md:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SLA</th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>SIF</th>
                 <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-semibold tracking-wider uppercase" style={{ color: "var(--color-ink-muted)" }}>Date</th>
               </tr>
             </thead>
@@ -285,11 +421,14 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                       className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-sunken)]"
                       style={{ borderBottom: "1px solid var(--color-border)" }}>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <RiskBadge level={r.humanOverrideRiskLevel || r.riskLevel} />
-                          {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
-                            <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
-                          )}
+                        <div className="flex flex-col items-start gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <RiskBadge level={r.humanOverrideRiskLevel || r.riskLevel} />
+                            {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
+                              <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+                            )}
+                          </div>
+                          <SifBadge level={r.sifPotential} />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-ink)] max-w-[220px] truncate" title={r.reportText}>
@@ -318,15 +457,12 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                             : `Due ${formatDateIST(r.slaDeadline)}`
                           : "\u2014"}
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
-                        <SifBadge level={r.sifPotential} />
-                      </td>
                       <td className="hidden lg:table-cell px-4 py-3 text-sm text-[var(--color-ink-faint)]" suppressHydrationWarning style={{ fontVariantNumeric: "tabular-nums" }}>
                         {formatDateIST(r.reportedAt)}
                       </td>
                     </tr>
                     {expandedId === r.id && (
-                      <tr key={r.id + "-exp"}><td colSpan={8} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
+                      <tr key={r.id + "-exp"}><td colSpan={7} className="px-5 py-5" style={{ background: "var(--color-surface-sunken)" }}>
                         <div className="max-w-3xl">
                           <p className="text-sm text-[var(--color-ink)] mb-2 leading-relaxed">
                             <span className="font-semibold">Report:</span> {r.reportText}
