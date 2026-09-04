@@ -11,7 +11,6 @@ const links = [
   { href: "/impact", label: "Impact" },
   { href: "/query", label: "Query" },
   { href: "/admin", label: "Admin" },
-  { href: "/alerts", label: "Alerts" },
 ];
 
 export default function Navbar() {

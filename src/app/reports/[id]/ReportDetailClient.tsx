@@ -6,6 +6,7 @@ import RiskBadge from "@/components/RiskBadge";
 import SifBadge from "@/components/SifBadge";
 import StatusBadge from "@/components/StatusBadge";
 import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateTimeIST, formatDateIST } from "@/lib/helpers";
+import { LIFE_SAVING_RULES, lifeSavingRulesForHazard } from "@/lib/life-saving-rules";
 
 interface ComplianceRef {
   id: number | null;
@@ -54,6 +55,8 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [complianceRefs, setComplianceRefs] = useState<ComplianceRef[]>([]);
   const [expandedRefs, setExpandedRefs] = useState<Set<number | string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
+  const [lsrExpanded, setLsrExpanded] = useState<Set<number>>(new Set());
+  const [lsrExpandAll, setLsrExpandAll] = useState(false);
   const [taskForm, setTaskForm] = useState({
     title: "", description: "",
     assignedTo: autoAssignDept(report.hazardCategory),
@@ -142,6 +145,12 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   };
 
   const isOverdue = report.slaDeadline && new Date(report.slaDeadline) < new Date() && status !== "resolved";
+
+  const lifeSavingRules = lifeSavingRulesForHazard(report.hazardCategory);
+  const lsrRuleList = lifeSavingRules.length > 0 ? lifeSavingRules : LIFE_SAVING_RULES;
+  const lifeSavingNote = lifeSavingRules.length === 0
+    ? "No hazard classification yet — showing all rules. Re-analyze this report to map the specific rules that apply."
+    : `${lifeSavingRules.length} of ${LIFE_SAVING_RULES.length} rules apply to ${report.hazardCategory}.`;
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) return;
@@ -437,6 +446,77 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                 SIF assessment not available. Re-analyze this report to generate a SIF Potential assessment.
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Life Saving Rules */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-muted)" }}>
+                Life Saving Rules
+              </h3>
+              <div className="group relative">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div className="absolute left-0 top-6 z-10 w-80 p-3 rounded-lg text-xs leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                  style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)", color: "var(--color-ink-muted)" }}>
+                  <strong style={{ color: "var(--color-ink)" }}>Life-Saving Rules (IOGP-aligned)</strong> target the high-risk activities where a single failure can cause a serious injury or fatality. The rules below are matched to this report's hazard category.
+                </div>
+              </div>
+              <span className="text-[10px]" style={{ color: "var(--color-ink-faint)" }}>{lifeSavingNote}</span>
+            </div>
+            <button onClick={() => {
+              if (lsrExpandAll) {
+                setLsrExpanded(new Set());
+              } else {
+                setLsrExpanded(new Set(lsrRuleList.map((r) => r.id)));
+              }
+              setLsrExpandAll(!lsrExpandAll);
+            }} className="text-[10px] font-medium px-2 py-1 rounded transition-all duration-200 hover:opacity-80"
+              style={{ color: "var(--color-accent)", background: "var(--color-accent-light)" }}>
+              {lsrExpandAll ? "Collapse all" : "Expand all"}
+            </button>
+          </div>
+          <div className="space-y-2">
+            {lsrRuleList.map((r) => {
+              const isExpanded = lsrExpanded.has(r.id) || lsrExpandAll;
+              return (
+                <div key={r.id} className="rounded-lg overflow-hidden" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+                  <button onClick={() => {
+                    const next = new Set(lsrExpanded);
+                    if (next.has(r.id)) next.delete(r.id);
+                    else next.add(r.id);
+                    setLsrExpanded(next);
+                  }} className="w-full p-3 flex items-center gap-3 text-left transition-all duration-200 hover:bg-[var(--color-surface-sunken)]"
+                    style={{ background: isExpanded ? "var(--color-surface-sunken)" : "transparent" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      className="flex-shrink-0 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                      <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: "var(--color-danger-light)", color: "var(--color-danger)", fontVariantNumeric: "tabular-nums" }}>
+                      {String(r.id).padStart(2, "0")}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: "var(--color-ink)" }}>{r.title}</p>
+                      <p className="text-xs italic mt-0.5 truncate" style={{ color: "var(--color-ink-muted)" }}>{r.rule}</p>
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-3 pb-3 pt-0" style={{ borderTop: "1px solid var(--color-border)" }}>
+                      <ul className="mt-3 space-y-1.5 pl-8">
+                        {r.actions.map((a) => (
+                          <li key={a} className="text-xs leading-relaxed flex items-start gap-1.5" style={{ color: "var(--color-ink-muted)" }}>
+                            <span className="mt-[5px] w-1 h-1 rounded-full flex-shrink-0" style={{ background: "var(--color-danger)" }} />
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
