@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useState } from "react";
 import Link from "next/link";
-import { DEPARTMENTS, autoAssignDept, getDeptIcon, formatDateIST, HAZARD_CATEGORIES } from "@/lib/helpers";
+import { DEPARTMENTS, autoAssignDept, getDeptIcon, deptSlug, formatDateIST, HAZARD_CATEGORIES } from "@/lib/helpers";
 
 interface Report {
   id: number; site: string; reporterRole: string; reportText: string;
@@ -47,6 +47,11 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
 
   const sites = [...new Set(reports.map((r) => r.site))];
   const depts = [...new Set(taskList.map((t) => t.assignedTo))];
+  // Union of canonical departments + any name used on tasks, for page links
+  const allDepts = Array.from(new Set([...DEPARTMENTS.map((d) => d.name), ...depts]));
+  const openByDept = (d: string) => taskList.filter((t) => t.assignedTo === d && t.status === "open").length;
+  const overdueByDept = (d: string) =>
+    taskList.filter((t) => t.assignedTo === d && t.status !== "done" && t.status !== "cancelled" && t.dueDate && new Date(t.dueDate) < new Date()).length;
 
   const filteredReports = reports.filter((r) => {
     if (filterSite !== "all" && r.site !== filterSite) return false;
@@ -123,6 +128,36 @@ export default function AdminClient({ reports, tasks, smsRecipients: initialReci
             <p className="text-xl sm:text-[28px] font-heading font-bold leading-none" style={{ color: card.color, fontVariantNumeric: "tabular-nums" }}>{card.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Department quick links */}
+      <div className="mb-6 rounded-xl p-4" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-ink-muted)" }}>
+            Department pages
+          </h3>
+          <span className="text-[10px]" style={{ color: "var(--color-ink-faint)" }}>{allDepts.length} departments</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {allDepts.map((d) => {
+            const open = openByDept(d);
+            const overdue = overdueByDept(d);
+            return (
+              <Link key={d} href={"/departments/" + deptSlug(d)}
+                className="flex items-center gap-2.5 p-2.5 rounded-lg transition-all duration-200 hover:shadow-sm group"
+                style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
+                <span className="text-base" aria-hidden>{getDeptIcon(d)}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-xs font-semibold text-[var(--color-ink)] truncate">{d}</span>
+                  <span className="block text-[10px]" style={{ color: "var(--color-ink-faint)" }}>
+                    {open} open{overdue > 0 ? ` · ${overdue} overdue` : ""}
+                  </span>
+                </span>
+                <span className="text-[var(--color-ink-faint)] group-hover:text-[var(--color-accent)] transition-colors" aria-hidden>→</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tabs */}

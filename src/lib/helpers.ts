@@ -554,6 +554,16 @@ export function getDeptIcon(dept: string): string {
   return DEPARTMENTS.find((d) => d.name === dept)?.icon || "📋";
 }
 
+/** URL-safe slug for a department name, e.g. "Traffic & Vehicles" -> "traffic-vehicles" */
+export function deptSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/** Resolve a department slug back to the canonical department info, if known. */
+export function deptFromSlug(slug: string): { name: string; icon: string; categories: string[] } | undefined {
+  return DEPARTMENTS.find((d) => deptSlug(d.name) === slug);
+}
+
 // â”€â”€ Fallback Task Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function fallbackTaskExtraction(
