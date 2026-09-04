@@ -179,8 +179,8 @@ export function hasHotWorkContext(reportText: string): boolean {
   return HOT_WORK_RE.test(t) && FUEL_CONTEXT_RE.test(t);
 }
 
-const RISK_LEVELS = ["high", "medium", "low"];
-const SIF_LEVELS = ["SIF-Unlikely", "SIF-Potential", "SIF-High Potential", "SIF-Critical / Hi-Po"];
+export const RISK_LEVELS = ["high", "medium", "low"];
+export const SIF_LEVELS = ["SIF-Unlikely", "SIF-Potential", "SIF-High Potential", "SIF-Critical / Hi-Po"];
 const CATEGORY_ALIASES: Record<string, string> = {
   "fire/explosion": "Fire/Explosion",
   "fire": "Fire/Explosion",

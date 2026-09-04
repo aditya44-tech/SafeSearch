@@ -14,6 +14,7 @@ interface Report {
   clusterId: string | null; slaDeadline: string | null;
   humanOverrideRiskLevel: string | null; isAnonymous: boolean;
   sifPotential?: string | null;
+  humanOverrideSifPotential?: string | null;
 }
 
 export default function ReportsClient({ reports: initial, sites = [] }: { reports: Report[]; sites?: string[] }) {
@@ -428,7 +429,12 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                               <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
                             )}
                           </div>
-                          <SifBadge level={r.sifPotential} />
+                          <div className="flex items-center gap-1.5">
+                            <SifBadge level={r.humanOverrideSifPotential || r.sifPotential} />
+                            {r.humanOverrideSifPotential && r.humanOverrideSifPotential !== r.sifPotential && (
+                              <span className="text-[9px] font-medium px-1 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-ink)] max-w-[220px] truncate" title={r.reportText}>
@@ -477,6 +483,11 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
                           {r.humanOverrideRiskLevel && r.humanOverrideRiskLevel !== r.riskLevel && (
                             <p className="text-sm mb-2" style={{ color: "var(--color-warning)" }}>
                               <span className="font-semibold">Override:</span> Risk changed to {r.humanOverrideRiskLevel} by human reviewer
+                            </p>
+                          )}
+                          {r.humanOverrideSifPotential && r.humanOverrideSifPotential !== r.sifPotential && (
+                            <p className="text-sm mb-2" style={{ color: "var(--color-warning)" }}>
+                              <span className="font-semibold">Override:</span> SIF changed to {r.humanOverrideSifPotential} by human reviewer
                             </p>
                           )}
                           <div className="flex items-center gap-3">

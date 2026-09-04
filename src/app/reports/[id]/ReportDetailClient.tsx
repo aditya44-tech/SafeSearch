@@ -35,6 +35,7 @@ interface Report {
   overrideReason: string | null; overriddenBy: string | null; slaDeadline: string | null;
   keyPhrases?: string | null; isAnonymous?: boolean; smsSentAt?: string | null;
   sifPotential?: string | null; sifReasoning?: string | null; sifConfidence?: number | null;
+  humanOverrideSifPotential?: string | null; sifOverrideReason?: string | null; sifOverriddenBy?: string | null;
   auditLogs?: { id: number; action: string; performedBy: string; timestamp: string; details: string | null }[];
   tasks?: { id: number; title: string; assignedTo: string; status: string; priority: string; dueDate: string | null; description: string | null }[];
 }
@@ -47,6 +48,11 @@ export default function ReportDetailClient({ report }: { report: Report }) {
   const [showOverride, setShowOverride] = useState(false);
   const [overrideLevel, setOverrideLevel] = useState("high");
   const [overrideReason, setOverrideReason] = useState("");
+  const [showSifOverride, setShowSifOverride] = useState(false);
+  const [sifOverrideLevel, setSifOverrideLevel] = useState<string>(
+    report.humanOverrideSifPotential || report.sifPotential || "SIF-Unlikely"
+  );
+  const [sifOverrideReason, setSifOverrideReason] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [toast, setToast] = useState("");
@@ -95,6 +101,19 @@ export default function ReportDetailClient({ report }: { report: Report }) {
         body: JSON.stringify({ riskLevel: overrideLevel, reason: overrideReason, performedBy: "Current User" }),
       });
       if (res.ok) { setShowOverride(false); setOverrideReason(""); router.refresh(); }
+    } finally { setSaving(false); }
+  };
+
+  const handleSifOverride = async () => {
+    if (!sifOverrideReason.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/reports/" + report.id + "/override", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sifPotential: sifOverrideLevel, reason: sifOverrideReason, performedBy: "Current User" }),
+      });
+      if (res.ok) { setShowSifOverride(false); setSifOverrideReason(""); router.refresh(); }
     } finally { setSaving(false); }
   };
 
@@ -207,8 +226,14 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               Report details
             </h1>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <RiskBadge level={report.riskLevel} />
-              <SifBadge level={report.sifPotential ?? null} />
+              <RiskBadge level={report.humanOverrideRiskLevel || report.riskLevel} />
+              {report.humanOverrideRiskLevel && report.humanOverrideRiskLevel !== report.riskLevel && (
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+              )}
+              <SifBadge level={(report.humanOverrideSifPotential || report.sifPotential) ?? null} />
+              {report.humanOverrideSifPotential && report.humanOverrideSifPotential !== report.sifPotential && (
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>override</span>
+              )}
               <StatusBadge status={status} />
               {isOverdue && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-semibold"
@@ -231,6 +256,13 @@ export default function ReportDetailClient({ report }: { report: Report }) {
                 className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
                 style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-muted)", border: "1px solid var(--color-border)" }}>
                 Override risk
+              </button>
+            )}
+            {report.sifPotential && (
+              <button onClick={() => setShowSifOverride(!showSifOverride)}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-80 active:scale-[0.97]"
+                style={{ background: "var(--color-surface-sunken)", color: "var(--color-ink-muted)", border: "1px solid var(--color-border)" }}>
+                Override SIF
               </button>
             )}
             <button onClick={async () => {
@@ -336,6 +368,49 @@ export default function ReportDetailClient({ report }: { report: Report }) {
           </div>
         )}
 
+        {/* SIF Override Form */}
+        {showSifOverride && (
+          <div className="mb-6 p-4 rounded-lg" style={{ background: "var(--color-warning-light)", border: "1px solid rgba(217,119,6,0.2)" }}>
+            <h4 className="text-sm font-semibold text-[var(--color-ink)] mb-3">Override AI SIF potential</h4>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              {["SIF-Unlikely", "SIF-Potential", "SIF-High Potential", "SIF-Critical / Hi-Po"].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setSifOverrideLevel(level)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${sifOverrideLevel === level ? "ring-2 ring-offset-1" : ""}`}
+                  style={{
+                    background: sifOverrideLevel === level ? "var(--color-accent)" : "var(--color-surface)",
+                    color: sifOverrideLevel === level ? "white" : "var(--color-ink-muted)",
+                    border: "1px solid " + (sifOverrideLevel === level ? "var(--color-accent)" : "var(--color-border)"),
+                  }}
+                >
+                  {level === "SIF-Critical / Hi-Po" ? "SIF-Critical" : level === "SIF-High Potential" ? "SIF-High" : level}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={sifOverrideReason}
+              onChange={(e) => setSifOverrideReason(e.target.value)}
+              placeholder="Explain why you're overriding this SIF assessment..."
+              rows={2}
+              className="w-full px-3 py-2 text-sm rounded-lg outline-none transition-all duration-200 focus:ring-2 resize-none"
+              style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <button onClick={handleSifOverride} disabled={saving || !sifOverrideReason.trim()}
+                className="px-4 py-1.5 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50"
+                style={{ background: "var(--color-warning)" }}>
+                {saving ? "Saving..." : "Save override"}
+              </button>
+              <button onClick={() => setShowSifOverride(false)}
+                className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-[var(--color-surface-sunken)]"
+                style={{ color: "var(--color-ink-muted)" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Fields Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
           {[
@@ -427,15 +502,40 @@ export default function ReportDetailClient({ report }: { report: Report }) {
             </div>
           </div>
           <div className="rounded-lg p-4" style={{ background: "var(--color-surface-sunken)", border: "1px solid var(--color-border)" }}>
-            <div className="flex items-center gap-3 mb-2">
-              <SifBadge level={report.sifPotential ?? null} />
-              {report.sifConfidence != null && (
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <SifBadge level={(report.humanOverrideSifPotential || report.sifPotential) ?? null} />
+              {report.humanOverrideSifPotential && report.humanOverrideSifPotential !== report.sifPotential && (
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--color-warning-light)", color: "var(--color-warning)" }}>human override</span>
+              )}
+              {report.sifConfidence != null && !report.humanOverrideSifPotential && (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ background: "var(--color-accent-light)", color: "var(--color-accent)" }}>
                   Confidence: {Math.round(report.sifConfidence * 100)}%
                 </span>
               )}
             </div>
-            {report.sifReasoning && (
+            {report.humanOverrideSifPotential && report.sifPotential && (
+              <div className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg" style={{ background: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-ink-muted)" }}>
+                    AI Assessment
+                  </h4>
+                  <SifBadge level={report.sifPotential} />
+                  {report.sifConfidence != null && (
+                    <p className="text-[10px] text-[var(--color-ink-faint)] mt-1.5">Confidence: {Math.round(report.sifConfidence * 100)}%</p>
+                  )}
+                  {report.sifReasoning && <p className="text-xs italic mt-1.5" style={{ color: "var(--color-ink-muted)" }}>{report.sifReasoning}</p>}
+                </div>
+                <div className="p-3 rounded-lg" style={{ background: "var(--color-warning-light)", border: "1px solid rgba(217,119,6,0.15)" }}>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-warning)" }}>
+                    Human Override
+                  </h4>
+                  <SifBadge level={report.humanOverrideSifPotential} />
+                  {report.sifOverrideReason && <p className="text-xs mt-1.5" style={{ color: "var(--color-ink)" }}>{report.sifOverrideReason}</p>}
+                  <p className="text-[10px] text-[var(--color-ink-faint)] mt-1">By {report.sifOverriddenBy}</p>
+                </div>
+              </div>
+            )}
+            {report.sifReasoning && !report.humanOverrideSifPotential && (
               <p className="text-sm italic leading-relaxed" style={{
                 color: "var(--color-ink)",
                 display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
@@ -636,8 +736,9 @@ export default function ReportDetailClient({ report }: { report: Report }) {
               {report.auditLogs.map((log) => {
                 const isSMS = log.action === "sms_alert_sent";
                 const smsFailed = log.action === "sms_alert_failed";
-                const dotColor = isSMS ? "var(--color-safe)" : smsFailed ? "var(--color-danger)" : log.action === "risk_overridden" ? "var(--color-warning)" : "var(--color-accent)";
-                const actionLabel = log.action === "sms_alert_sent" ? "SMS sent" : log.action === "sms_alert_failed" ? "SMS failed" : log.action === "report_analyzed" ? "Analyzed" : log.action === "risk_overridden" ? "Risk overridden" : log.action.replace(/_/g, " ");
+                const isSifOverride = log.action === "sif_overridden";
+                const dotColor = isSMS ? "var(--color-safe)" : smsFailed ? "var(--color-danger)" : (log.action === "risk_overridden" || isSifOverride) ? "var(--color-warning)" : "var(--color-accent)";
+                const actionLabel = log.action === "sms_alert_sent" ? "SMS sent" : log.action === "sms_alert_failed" ? "SMS failed" : log.action === "report_analyzed" ? "Analyzed" : log.action === "risk_overridden" ? "Risk overridden" : isSifOverride ? "SIF overridden" : log.action.replace(/_/g, " ");
                 return (
                   <div key={log.id} className="flex items-center gap-2 text-xs py-2 px-3 rounded-lg" style={{ background: "var(--color-surface-sunken)" }}>
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />
