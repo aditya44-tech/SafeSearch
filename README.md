@@ -4,14 +4,17 @@ AI-powered workplace safety early-warning system. Every safety report is classif
 
 ## Features
 
-- **AI Risk Classification** — Reports are analyzed in under 2 seconds using Groq LLM, assigning risk levels (high / medium / low), hazard categories, justifications, and key phrases automatically.
-- **Instant SMS Alerts** — High-risk reports trigger SMS notifications to category-mapped departments via Textbee. No manual routing required.
+- **Dual AI Assessment (Severity + SIF Potential)** — Every report is analyzed in under 2 seconds using Groq LLM. The AI produces **two independent assessments**: *incident severity* (how serious the actual outcome was — high / medium / low) and *SIF potential* (whether the situation could realistically have caused a Serious Injury or Fatality — SIF-Unlikely → SIF-Critical / Hi-Po). A near miss with no injury is correctly rated low severity with high SIF potential, so latent killers aren't buried.
+- **Human Review Overrides** — HSE reviewers can override either the AI risk level or the SIF potential with a required reason. Overrides keep the original AI assessment visible in an AI-vs-human comparison, write an audit entry, and raise an SMS alert when a rating is escalated to high risk or high/critical SIF.
+- **Life-Saving Rules Mapping** — The 9 IOGP-aligned Life-Saving Rules are matched to each report's hazard category (e.g. fall hazards → Working at Height, welding near fuel → Hot Work) and shown as expandable cards on the report detail.
+- **Instant SMS Alerts** — High-risk or high-SIF reports (and overrides raised to those levels) trigger SMS notifications to category-mapped departments via Textbee, with a safety-officer fallback. No manual routing required.
 - **Heinrich's Law Scoring** — Site scores follow the industry-standard escalation model. Critical patterns surface before incidents occur.
+- **Multilingual Reporting + Voice Input** — Reports can be typed or spoken (Hindi, Marathi, English, Hinglish…). Language is auto-detected on submit; non-English text is translated to English for analysis, with a preview before creation.
 - **Offline Reporting** — IndexedDB stores reports locally when there is no connectivity and auto-syncs once the network returns.
-- **Task Management** — Corrective tasks are auto-generated from high-risk reports and tracked through open → in-progress → resolved states.
-- **Dashboard & Analytics** — Real-time dashboards with anomaly detection, site scorecards, trend analysis, and Recharts-powered visualizations.
-- **Regulatory & Safety Standards Mapping** — Curated knowledge base for upstream oil & gas. Activity-aware mapping to applicable standards (Oil Mines Regulations, OISD standards, Mines Act, etc.).
-- **Audit Logging** — Every action on a report is recorded with timestamps and user attribution.
+- **Task Management** — Corrective tasks are auto-generated from medium/high-risk reports and tracked through open → in-progress → done / cancelled states.
+- **Dashboard & Analytics** — Real-time dashboards with anomaly detection, site scorecards, trend analysis, escalation risk, and Recharts-powered visualizations.
+- **Regulatory & Safety Standards Mapping** — Curated knowledge base for upstream oil & gas. Activity-aware mapping to applicable standards (Oil Mines Regulations 2017, OISD standards, Mines Act, Factories Act, etc.).
+- **Audit Logging** — Every action on a report (analysis, overrides, status changes, SMS alerts, compliance mapping) is recorded with timestamps and user attribution.
 
 ## Tech Stack
 
@@ -46,7 +49,7 @@ cd sif-watch
 # Install dependencies
 npm install
 
-# Copy environment file (contains DATABASE_URL, GEMINI_API_KEY, etc.)
+# Copy environment file (contains DATABASE_URL, GROQ_API_KEY, TEXTBEE_API_KEY, etc.)
 cp ../.env .env
 
 # Generate Prisma client
@@ -93,11 +96,13 @@ sif-watch/
 │   │   ├── query/           # Natural language query
 │   │   ├── landing/         # Marketing landing page
 │   │   └── api/             # API routes (report creation, analysis, SMS)
-│   ├── components/          # Shared UI components (Navbar, RiskBadge, StatusBadge)
+│   ├── components/          # Shared UI components (Navbar, RiskBadge, SifBadge, StatusBadge)
 │   ├── lib/
-│   │   ├── helpers.ts       # Department mapping, SLA calculation, scoring logic
+│   │   ├── helpers.ts       # AI prompt, classifier fallback, SLA, scoring logic
 │   │   ├── prisma.ts        # Prisma client singleton
 │   │   ├── offline-queue.ts # IndexedDB offline report queue
+│   │   ├── regulatory-kb.ts # Oil & gas regulatory standards knowledge base
+│   │   ├── life-saving-rules.ts # IOGP-aligned Life-Saving Rules data
 │   │   └── org-context.tsx  # Organization context provider
 │   └── generated/prisma/    # Auto-generated Prisma client
 ├── public/                  # Static assets
@@ -109,14 +114,16 @@ sif-watch/
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string (Neon pooler) |
-| `GEMINI_API_KEY` | API key for AI risk classification |
+| `GROQ_API_KEY` | API key for AI classification, translation & query (Groq, OpenAI-compatible) |
+| `TEXTBEE_API_KEY` | API key for SMS alerts via Textbee |
+| `SAFETY_OFFICER_PHONE` | Fallback SMS recipient when no category-mapped numbers exist |
 
 ## Database Schema
 
 Key models:
 
-- **SafetyReport** — Core entity with report text, site, risk level, hazard category, status, SLA deadline, and audit trail.
-- **Task** — Corrective actions auto-generated from high-risk reports, assigned to departments.
+- **SafetyReport** — Core entity with report text, site, independent AI assessments (risk level + SIF potential with reasoning/confidence), hazard category, status, SLA deadline, human override fields (risk & SIF, each with reason and reviewer), and audit trail.
+- **Task** — Corrective actions auto-generated from medium/high-risk reports, assigned to departments.
 - **SiteScore** — Heinrich's Law scoring per site based on report frequency and severity.
 - **Organization** — Multi-tenant support with per-org SMS recipients and site scores.
 - **SmsRecipient** — Category-mapped phone numbers for automated SMS alerts.
