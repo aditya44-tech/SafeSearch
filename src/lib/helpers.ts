@@ -608,15 +608,27 @@ export function fallbackAnalysis(reportText: string): AnalysisResult {
       sifReasoning = "Near-miss event with credible pathway to serious injury or fatality, despite no reported injury.";
     }
     // If there IS an actual serious injury
-    if (text.includes("hospitalized") || text.includes("unconscious") || text.includes("amputation") || text.includes("fatality") || text.includes("death") || text.includes("fracture") || text.includes("broken bone") || text.includes("bleeding")) {
+    const seriousOutcome = /hospitalized|unconscious|amputation|amputat|fatality|fatal|death|died|fracture|broken bone|severe bleeding|electrocuted|run over|crushed|blown up|explosion occurred/.test(text);
+    if (seriousOutcome) {
       sifPotential = "SIF-Critical / Hi-Po";
       sifReasoning = "Report indicates actual serious injury occurred — high SIF realization potential.";
     }
 
+    // Severity reflects the ACTUAL outcome, never the potential danger (that lives in SIF):
+    //   actual serious harm -> high; near miss with no injury -> low; unsafe condition /
+    //   PPE violation / procedural gap with no injury -> medium.
+    const nearMiss = /near[- ]?miss|close call|almost|nearly/.test(text);
+    const severityRisk: "high" | "medium" | "low" = seriousOutcome ? "high" : nearMiss ? "low" : "medium";
+    const justification = seriousOutcome
+      ? "An actual serious event occurred or someone was seriously harmed."
+      : nearMiss
+        ? "Nothing actually happened - a near miss with no injury - but it was a close call that must be fixed."
+        : "Unsafe condition or safety-control violation found with no actual injury yet; requires correction.";
+
     return {
-      risk_level: "high",
+      risk_level: severityRisk,
       hazard_category: category,
-      justification: "Report describes conditions with a credible path to serious injury or death if left unaddressed.",
+      justification,
       sif_potential: sifPotential,
       sif_reasoning: sifReasoning,
       sif_confidence: 0.75,

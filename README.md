@@ -90,7 +90,6 @@ sif-watch/
 │   │   ├── alerts/          # SMS alert configuration
 │   │   ├── map/             # Site map view
 │   │   ├── scoreboard/      # Site scoring
-│   │   ├── impact/          # Impact analysis
 │   │   ├── query/           # Natural language query
 │   │   ├── landing/         # Marketing landing page
 │   │   └── api/             # API routes (report creation, analysis, SMS)

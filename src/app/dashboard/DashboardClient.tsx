@@ -176,7 +176,7 @@ export default function DashboardClient({ categoryData, timeData, recurringSites
                     <span className="text-sm font-medium text-[var(--color-ink)] truncate">{s.site}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-[var(--color-ink-muted)]">
-                    <span>{s.highRiskCount > 0 && <span style={{ color: "var(--color-danger)" }}>{s.highRiskCount} high</span>}{s.mediumRiskCount > 0 && <span> {s.mediumRiskCount} med</span>}{s.lowRiskCount > 0 && <span> {s.lowRiskCount} low</span>}</span>
+                    <span className="max-w-[260px] sm:max-w-none truncate sm:whitespace-normal">{s.explanation}</span>
                     <span
                       className="font-heading font-bold text-sm min-w-[36px] text-right"
                       style={{ color: style.text, fontVariantNumeric: "tabular-nums" }}

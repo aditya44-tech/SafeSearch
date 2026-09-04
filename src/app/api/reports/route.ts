@@ -35,6 +35,8 @@ You must produce TWO independent assessments:
 
 IMPORTANT: These are INDEPENDENT assessments. A near miss with no injury can have Low Incident Severity but High SIF Potential. Do NOT automatically equate them.
 
+CRITICAL: NEVER raise INCIDENT SEVERITY because the hazard COULD have been serious. If nothing serious actually happened - a near miss, an unsafe condition found during inspection, a PPE violation caught, or a procedural gap identified - severity must be low or medium even if the hazard was potentially lethal. Put that potential danger in SIF POTENTIAL, never in severity.
+
 NEGATION RULE - read carefully:
 - "no fire occurred", "no leak", "nothing happened", "no one was hurt", "no injuries reported" mean the EVENT DID NOT HAPPEN.
 - Assign LOW incident severity to such near misses / unsafe conditions. Do NOT rate severity high just because the words fire/leak/explosion appear after "no" or "not". Let the SIF POTENTIAL assessment carry the danger instead.
