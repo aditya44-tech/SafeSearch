@@ -52,8 +52,10 @@ export function nowIST(): Date {
 
 export const GROQ_MODELS = [
   "openai/gpt-oss-120b",
-  "qwen/qwen3.6-27b",
   "openai/gpt-oss-20b",
+  // NOTE: qwen/qwen3.6-27b was removed — Groq returns HTTP 400
+  // "Failed to validate JSON" from it on several translation tasks
+  // (Devanagari input), which silently broke /api/translate's AI path.
 ];
 
 // No vision model available on Groq - photo cross-check will use text-only fallback
@@ -107,7 +109,7 @@ Report text: "{{reportText}}"`;
 export async function callGroq(
   prompt: string,
   apiKey: string,
-  opts?: { temperature?: number; maxOutputTokens?: number; responseFormat?: { type: string } }
+  opts?: { temperature?: number; maxOutputTokens?: number; responseFormat?: { type: string }; reasoningEffort?: "low" | "medium" | "high" }
 ): Promise<string> {
   for (const model of GROQ_MODELS) {
     try {
@@ -121,8 +123,15 @@ export async function callGroq(
           model,
           messages: [{ role: "user", content: prompt }],
           temperature: opts?.temperature ?? 0.1,
-          max_tokens: opts?.maxOutputTokens ?? 500,
+          max_tokens: opts?.maxOutputTokens ?? 2000,
           response_format: opts?.responseFormat,
+          // The gpt-oss models are reasoning models: they spend tokens on hidden
+          // reasoning BEFORE producing the visible answer. At default effort that
+          // reasoning alone can exhaust max_tokens, and Groq then returns HTTP 400
+          // "Failed to generate/validate JSON" — which silently broke translation
+          // and classification. Low effort keeps the JSON answer reliable
+          // (verified: reasoning drops from ~500+ tokens to ~40).
+          reasoning_effort: opts?.reasoningEffort ?? "low",
         }),
       });
       const data = await response.json();

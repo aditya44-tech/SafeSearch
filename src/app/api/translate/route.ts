@@ -46,7 +46,9 @@ export async function POST(request: NextRequest) {
       const raw = await callGroq(
         TRANSLATE_PROMPT + `\n\nReport text:\n"""${text.slice(0, 4000)}"""`,
         apiKey,
-        { temperature: 0.1, maxOutputTokens: 900, responseFormat: { type: "json_object" } }
+        // Generous token budget: long Devanagari reports need room for both the
+        // (low-effort) reasoning phase and the full English translation.
+        { temperature: 0.1, maxOutputTokens: 4000, responseFormat: { type: "json_object" }, reasoningEffort: "low" }
       );
       const parsed = extractJson<{ detectedLanguage?: string; translatedText?: string; isEnglish?: boolean }>(raw);
       const detected = ["english", "hindi", "marathi", "mixed"].includes(parsed.detectedLanguage || "")

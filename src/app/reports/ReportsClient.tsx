@@ -30,7 +30,15 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
   const [sortDropdown, setSortDropdown] = useState(false);
   const [sifFilter, setSifFilter] = useState<string>("all");
 
-  // Multilingual + voice input: text language is auto-detected on submit
+  // Multilingual + voice input: text language is auto-detected on submit.
+  // Voice recognition language is user-pickable; "auto" tries English, then Hindi.
+  const VOICE_LANGS = [
+    { value: "auto", label: "🌐 Auto" },
+    { value: "en-IN", label: "English" },
+    { value: "hi-IN", label: "हिन्दी" },
+    { value: "mr-IN", label: "मराठी" },
+  ] as const;
+  const [voiceLang, setVoiceLang] = useState<string>("auto");
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [micSupported, setMicSupported] = useState(false);
@@ -55,28 +63,48 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
     if (micRef.current) { stopMic(); return; }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
-    const rec = new SR();
-    // No language picker: recognize speech (Hindi-first for field workers).
-    // The transcript is auto-detected / translated when the report is submitted.
-    rec.lang = "hi-IN";
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.onresult = (ev: any) => {
-      let interimTxt = "";
-      let finalTxt = "";
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const tr = ev.results[i][0]?.transcript || "";
-        if (ev.results[i].isFinal) finalTxt += tr;
-        else interimTxt += tr;
-      }
-      if (finalTxt) {
-        setNewReport((p) => ({ ...p, reportText: (p.reportText ? p.reportText.trimEnd() + " " : "") + finalTxt.trim() }));
-      }
-      setInterim(interimTxt);
+
+    // Tracks whether anything was heard, so Auto mode can retry in Hindi
+    // if the first pass picked up nothing.
+    let gotAnyResult = false;
+
+    const startRecognition = (lang: string, isAutoRetry: boolean) => {
+      const rec = new SR();
+      rec.lang = lang;
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.onresult = (ev: any) => {
+        let interimTxt = "";
+        let finalTxt = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const tr = ev.results[i][0]?.transcript || "";
+          if (ev.results[i].isFinal) finalTxt += tr;
+          else interimTxt += tr;
+        }
+        if (finalTxt || interimTxt) gotAnyResult = true;
+        if (finalTxt) {
+          setNewReport((p) => ({ ...p, reportText: (p.reportText ? p.reportText.trimEnd() + " " : "") + finalTxt.trim() }));
+        }
+        setInterim(interimTxt);
+      };
+      rec.onend = () => {
+        // Auto mode: if nothing was heard, retry once in Hindi before giving up
+        // (covers Hindi-first field workers who leave the picker on Auto).
+        if (isAutoRetry && !gotAnyResult) {
+          startRecognition("hi-IN", false);
+          return;
+        }
+        micRef.current = null; setListening(false); setInterim("");
+      };
+      rec.onerror = (e: any) => {
+        if (e?.error === "no-speech" && isAutoRetry && !gotAnyResult) return; // onend will retry
+        micRef.current = null; setListening(false); setInterim("");
+      };
+      try { rec.start(); micRef.current = rec; setListening(true); } catch { /* noop */ }
     };
-    rec.onend = () => { micRef.current = null; setListening(false); setInterim(""); };
-    rec.onerror = () => { micRef.current = null; setListening(false); setInterim(""); };
-    try { rec.start(); micRef.current = rec; setListening(true); } catch { /* noop */ }
+
+    const lang = voiceLang === "auto" ? "en-IN" : voiceLang;
+    startRecognition(lang, voiceLang === "auto");
   };
 
   // Close sort dropdown on outside click
@@ -327,6 +355,11 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
           <div>
             <label className="block text-xs font-medium text-[var(--color-ink-muted)] mb-1 uppercase tracking-wide">Report Text</label>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <select value={voiceLang} onChange={(e) => setVoiceLang(e.target.value)} aria-label="Voice language"
+                className="px-2 py-1.5 text-xs rounded-lg outline-none transition-all duration-200"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-ink)" }}>
+                {VOICE_LANGS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
               <button type="button" onClick={toggleMic} disabled={!micSupported}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                 style={{
@@ -339,7 +372,9 @@ export default function ReportsClient({ reports: initial, sites = [] }: { report
               <span className="text-[10px]" style={{ color: "var(--color-ink-faint)" }}>
                 {!micSupported
                   ? "Voice input needs Chrome with mic permission"
-                  : "Type or speak in any language - English / हिन्दी / मराठी - auto-detected on submit"}
+                  : voiceLang === "auto"
+                    ? "Auto: speak English or Hindi - English tried first, auto-detected on submit"
+                    : "Type or speak in any language - auto-detected on submit"}
               </span>
               {listening && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-medium" style={{ color: "var(--color-danger)" }}>
